@@ -1,0 +1,73 @@
+# General
+.DS_Store
+*.lock
+*.log
+*.bak
+*.tmp
+*.swp
+*.swo
+thumbs.db
+ehthumbs.db
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+.flutter-build/
+doc/api/
+
+# Android
+android/.gradle
+android/.idea/
+android/**/*.jks
+android/**/*.keystore
+android/keystore.properties
+android/local.properties
+android/**/build/
+android/**/out
+!android/gradle/wrapper/gradle-wrapper.jar
+
+# iOS/Mac
+ios/.generated/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+ios/Pods/
+ios/Runner.xcworkspace
+ios/Runner.xcodeproj/project.xcworkspace
+ios/Runner.xcodeproj/xcshareddata/
+ios/Runner.xcodeproj/xcuserdata/
+
+# macOS
+macos/Pods/
+macos/Flutter/ephemeral/
+macos/Flutter/.symlinks/
+macos/Flutter/Flutter.framework
+macos/Flutter/GeneratedPluginRegistrant.swift
+
+# Windows
+windows/flutter/ephemeral/
+
+# Linux
+linux/flutter/ephemeral/
+
+# VSCode
+.vscode/
+
+# Exceptions to above rules.
+!/ios/Runner/Info.plist
+!/ios/Runner/Assets.xcassets/
+!/android/app/src/main/res/mipmap-*/
+!/android/app/src/main/res/drawable-*/
+
+
