@@ -14,6 +14,7 @@
 
 import 'package:json_annotation/json_annotation.dart';
 
+/// @nodoc
 class PlanetKitDisconnectSourceConverter
     implements JsonConverter<PlanetKitDisconnectSource, int> {
   const PlanetKitDisconnectSourceConverter();
@@ -26,15 +27,25 @@ class PlanetKitDisconnectSourceConverter
   int toJson(PlanetKitDisconnectSource object) => object.intValue;
 }
 
+/// Enumerates the sources of a call disconnection.
+///
+/// This enum provides identifiers for different sources that can initiate the disconnection of a call,
+/// which are used to specify the originator of the disconnection event.
 enum PlanetKitDisconnectSource {
+  /// Represents an undefined source of disconnection.
   undefined,
+  /// Indicates that the disconnection was initiated by the callee in a 1-to-1 call.
   callee,
+  /// Indicates that the disconnection was initiated by the caller in a 1-to-1 call.
   caller,
+  /// Indicates that the disconnection was initiated by a participant in a group call.
   participant,
+  /// Indicates that the disconnection was initiated by the cloud server.
   cloudServer,
-  appServer,
-  extension;
+  /// Indicates that the disconnection was initiated by the application server.
+  appServer;
 
+  /// @nodoc
   int get intValue {
     switch (this) {
       case PlanetKitDisconnectSource.undefined:
@@ -54,6 +65,7 @@ enum PlanetKitDisconnectSource {
     }
   }
 
+  /// @nodoc
   static PlanetKitDisconnectSource fromInt(int rawValue) {
     switch (rawValue) {
       case 0:

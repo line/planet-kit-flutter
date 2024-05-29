@@ -15,20 +15,35 @@
 import 'package:json_annotation/json_annotation.dart';
 part 'planet_kit_make_call_param.g.dart';
 
+/// A data model representing the parameters required to initiate a call with PlanetKit.
+///
+/// This class encapsulates all necessary details needed to make a call, including user
+/// and service identifiers for both the initiator and the receiver, as well as an access token.
 @JsonSerializable(explicitToJson: true)
 class PlanetKitMakeCallParam {
-  // TODO: support country code
+  /// The user ID of the caller.
   final String myUserId;
+
+  /// The service ID of the caller's service.
   final String myServiceId;
+
+  /// The user ID of the call receiver.
   final String peerUserId;
+
+  /// The service ID of the call receiver's service.
   final String peerServiceId;
+
+  /// The access token to authenticate the call request.
   final String accessToken;
 
-  PlanetKitMakeCallParam(
-      {required this.myUserId,
+  /// Constructs a [PlanetKitMakeCallParam] with necessary details for making a call.
+  PlanetKitMakeCallParam({
+      required this.myUserId,
       required this.myServiceId,
       required this.peerUserId,
       required this.peerServiceId,
       required this.accessToken});
+
+  /// @nodoc
   Map<String, dynamic> toJson() => _$PlanetKitMakeCallParamToJson(this);
 }

@@ -14,6 +14,7 @@
 
 import 'package:json_annotation/json_annotation.dart';
 
+/// @nodoc
 class PlanetKitStartFailReasonConverter
     implements JsonConverter<PlanetKitStartFailReason, int> {
   const PlanetKitStartFailReasonConverter();
@@ -26,50 +27,127 @@ class PlanetKitStartFailReasonConverter
   int toJson(PlanetKitStartFailReason object) => object.intValue;
 }
 
+/// Enumerates reasons for start failures in PlanetKit.
 enum PlanetKitStartFailReason {
+  /// Success.
   none,
+
+  /// Some mandatory parameters are not filled.
   invalidParam,
+
+  /// There already exists an unfinished call or conference with the same identifier.
   alreadyExist,
+
+  /// Failed to decode the argument of the API.
   decodeCallParam,
+
+  /// Failed to allocate memory for a call or conference.
   memoryError,
+
+  /// The user ID of the callee or room ID must not be the same as the user ID.
   idConflict,
+
+  /// Cannot re-use an instance for a new call or conference that has already been used before.
   reuse,
+
+  /// The user ID string is not in a valid format.
   invalidUserId,
+
+  /// The service ID string is not in a valid format.
   invalidServiceId,
+
+  /// The API-key string is not in a valid format.
   invalidAPIKey,
+
+  /// The room ID string is not in a valid format.
   invalidRoomId,
+
+  /// The app server data is too long.
   tooLongAppServerData,
+
+  /// PlanetKit is not initialized.
   notInitialized,
 
   // apple
+  /// The media type is unknown. Please set the specific media type.
   kitUnknownMediaType,
+
+  /// The room ID string is not in a valid format.
   kitInvalidRoomId,
+
+  /// The peer ID (aka. user ID) string is not in a valid format.
   kitInvalidPeerId,
+
+  /// The given push message is not in a valid format.
   kitInvalidPushMessage,
+
+  /// No available Metal device to perform a video call or conference.
+  /// The video graphic chip doesn't support Metal Graphic API.
   kitNoMetalDevice,
+
+  /// The access token or the API key is not specified.
   kitInvalidAuthentication,
+
+  /// The internal error caused by PlanetKit cannot be handled by the app developer.
+  /// Please ask PlanetKit developers to resolve the issue.
   kitInternalInitializationError,
 
   // android
+  /// The 'Manifest.permission.RECORD_AUDIO' permission is required to access the microphone.
   kitNoPermissionRecordAudio,
+
+  /// The initialization data size for the call is invalid.
   kitCallInitDataInvalidSize,
+
+  /// The user ID of the initiator is blank.
   kitMyUserIdBlank,
+
+  /// The service ID of the initiator is blank.
   kitMyServiceIdBlank,
+
+  /// The user ID of the peer is blank.
   kitPeerUserIdBlank,
+
+  /// The service ID of the peer is blank.
   kitPeerServiceIdBlank,
+
+  /// Invalid state to make a call.
   kitInvalidStateToMakeCall,
+
+  /// Cannot create a new session due to a concurrent cellular call.
   kitCannotCreateNewSession,
+
+  /// Invalid state to join a conference.
   kitInvalidStateToJoinConference,
+
+  /// The room ID for the conference is blank.
   kitRoomIdBlank,
+
+  /// The room service ID for the conference is blank.
   kitRoomServiceIdBlank,
+
+  /// The 'Manifest.permission.READ_PHONE_STATE' permission is required for checking concurrent cellular calls.
   kitNoPermissionReadPhoneState,
+
+  /// An unknown internal exception occurred while verifying the call.
   kitInternalUnknownExceptionAtVerifyCall,
+
+  /// JNI environment is invalid or not found.
   kitInternalJNIEnv,
+
+  /// JNI handle is a nullptr.
   kitInternalJNIHandleNullptr,
+
+  /// JNI object is a nullptr.
   kitInternalJNIObjNullptr,
+
+  /// JNI class is a nullptr.
   kitInternalJNIClassNullptr,
+
+  /// An undefined internal error occurred.
   kitInternalUndefined;
 
+  /// @nodoc
   int get intValue {
     switch (this) {
       case PlanetKitStartFailReason.none:
@@ -157,6 +235,7 @@ enum PlanetKitStartFailReason {
     }
   }
 
+  /// @nodoc
   static PlanetKitStartFailReason fromInt(int value) {
     switch (value) {
       case 0:

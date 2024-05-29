@@ -23,17 +23,35 @@ import '../../internal/call/planet_kit_platform_call_event.dart';
 import '../../internal/call/planet_kit_platform_call_event_types.dart';
 import '../../internal/planet_kit_platform_resource_manager.dart';
 
+/// A handler for managing call events within the PlanetKit framework.
+///
+/// This class provides a set of callbacks to handle various call states and events.
 class PlanetKitCallEventHandler {
+  /// Callback triggered when the outgoing call is waiting to be connected.
   final void Function(PlanetKitCall call) onWaitConnected;
+
+  /// Callback triggered when the call is successfully connected.
   final void Function(PlanetKitCall call) onConnected;
+
+  /// Callback triggered when the call is disconnected.
+  ///
+  /// This callback has detailed parameters including [PlanetKitDisconnectReason] for the disconnect reason, 
+  /// [PlanetKitDisconnectSource] for the disconnect source, and [byRemote] as a flag indicating whether the disconnection was initiated by the remote peer.
   final void Function(PlanetKitCall call, PlanetKitDisconnectReason reason,
       PlanetKitDisconnectSource source, bool byRemote) onDisconnected;
+
+  /// Callback triggered when the incoming call is verified.
   final void Function(PlanetKitCall call) onVerified;
+
+  /// Optional callback triggered when the peer's microphone is muted.
   final void Function(PlanetKitCall call)? onPeerMicMuted;
+
+  /// Optional callback triggered when the peer's microphone is unmuted.
   final void Function(PlanetKitCall call)? onPeerMicUnmuted;
 
-  const PlanetKitCallEventHandler(
-      {required this.onWaitConnected,
+  /// Constructs a [PlanetKitCallEventHandler].
+  const PlanetKitCallEventHandler({
+      required this.onWaitConnected,
       required this.onConnected,
       required this.onDisconnected,
       required this.onVerified,
@@ -41,49 +59,68 @@ class PlanetKitCallEventHandler {
       this.onPeerMicUnmuted});
 }
 
+/// A handler for intercepted audio within the PlanetKit framework.
+///
+/// Provides a callback to handle intercepted audio data during a call.
 class PlanetKitCallInterceptedAudioHandler {
-  final void Function(PlanetKitCall call, PlanetKitInterceptedAudio audio)
-      onIntercept;
+  /// Callback triggered when audio data is intercepted during a call.
+  final void Function(PlanetKitCall call, PlanetKitInterceptedAudio audio) onIntercept;
+
+  /// Constructs a [PlanetKitCallInterceptedAudioHandler].
   PlanetKitCallInterceptedAudioHandler({required this.onIntercept});
 }
 
+/// Represents a call managed by the PlanetKit framework.
+///
+/// This class is used to manage the call session.
 class PlanetKitCall implements CallEventHandler, InterceptedAudioHandler {
   final PlanetKitCallEventHandler? _eventHandler;
   PlanetKitCallInterceptedAudioHandler? _interceptedAudioHandler;
+  /// @nodoc
   final String callId;
 
-  PlanetKitCall(
-      {required this.callId, required PlanetKitCallEventHandler eventHandler})
-      : _eventHandler = eventHandler {
+  /// @nodoc
+  PlanetKitCall({
+      required this.callId,
+      required PlanetKitCallEventHandler eventHandler}) : _eventHandler = eventHandler {
     NativeResourceManager.instance.add(this, callId);
     Platform.instance.eventManager.addCallEventHandler(callId, this);
   }
 
+  /// Whether the local user's audio is muted.
   Future<bool> get isMyAudioMuted async =>
       await Platform.instance.isMyAudioMuted(callId);
+
+  /// Whether the speaker output is enabled.
   Future<bool> get isSpeakerOut async =>
       await Platform.instance.isSpeakerOut(callId);
 
+  /// Accepts the incoming call.
   Future<bool> acceptCall() async {
     return await Platform.instance.acceptCall(callId);
   }
 
+  /// Ends the current call.
   Future<bool> endCall() async {
     return await Platform.instance.endCall(callId);
   }
 
+  /// Mutes the local user's audio.
   Future<bool> muteMyAudio() async {
     return await Platform.instance.muteMyAudio(callId);
   }
 
+  /// Unmutes the local user's audio.
   Future<bool> unmuteMyAudio() async {
     return await Platform.instance.unmuteMyAudio(callId);
   }
 
+  /// Enables or disables the speaker output.
   Future<bool> speakerOut(bool speakerOut) async {
     return await Platform.instance.speakerOut(callId, speakerOut);
   }
 
+  /// @nodoc
   @override
   void onCallEvent(String callId, Map<String, dynamic> data) {
     if (callId != this.callId) {
@@ -119,6 +156,7 @@ class PlanetKitCall implements CallEventHandler, InterceptedAudioHandler {
         eventData.disconnectSource, eventData.byRemote);
   }
 
+  /// @nodoc  
   @override
   void onInterceptedAudio(String callId, Map<String, dynamic> audioData) {
     final String audioId = audioData["audioId"];
@@ -143,10 +181,15 @@ class PlanetKitCall implements CallEventHandler, InterceptedAudioHandler {
   }
 }
 
+/// Extension on [PlanetKitCall] to manage audio interception.
 extension InterceptAudioExtension on PlanetKitCall {
+  /// Wheter interception of the local user's audio is enabled.
   Future<bool> get isInterceptMyAudioEnabled async =>
       await Platform.instance.isInterceptMyAudioEnabled(callId);
 
+  /// Enables interception of the local user's audio.
+  ///
+  /// Requires a [handler] to manage intercepted audio events.
   Future<bool> enableInterceptMyAudio(
       PlanetKitCallInterceptedAudioHandler handler) async {
     if (!await Platform.instance.enableInterceptMyAudio(callId, this)) {
@@ -160,6 +203,7 @@ extension InterceptAudioExtension on PlanetKitCall {
     return true;
   }
 
+  /// Disables interception of the local user's audio.
   Future<bool> disableInterceptMyAudio() async {
     if (!await Platform.instance.disableInterceptMyAudio(callId)) {
       print("#planet_kit_call disableInterceptMyAudio failed");
@@ -172,6 +216,7 @@ extension InterceptAudioExtension on PlanetKitCall {
     return true;
   }
 
+  /// Puts back the intercepted audio data so that it can be sent to the peer.
   Future<bool> putInterceptedMyAudioBack(
       PlanetKitInterceptedAudio audio) async {
     if (!await Platform.instance.putInterceptedMyAudioBack(callId, audio.id)) {

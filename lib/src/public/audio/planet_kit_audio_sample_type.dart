@@ -14,6 +14,7 @@
 
 import 'package:json_annotation/json_annotation.dart';
 
+/// @nodoc
 class PlanetKitAudioSampleTypeConverter
     implements JsonConverter<PlanetKitAudioSampleType, int> {
   const PlanetKitAudioSampleTypeConverter();
@@ -26,11 +27,21 @@ class PlanetKitAudioSampleTypeConverter
   int toJson(PlanetKitAudioSampleType object) => object.intValue;
 }
 
+/// Enumerates the types of audio sample formats supported by the PlanetKit system.
+///
+/// This enum provides identifiers for different audio sample types, which are used
+/// to specify the format of audio data handled within the system.
 enum PlanetKitAudioSampleType {
+  /// Represents an error or an undefined sample type.
   error,
+
+  /// Represents audio samples formatted as 32-bit signed floats.
   signedFloat32,
+
+  /// Represents audio samples formatted as 16-bit signed shorts.
   signedShort16;
 
+  /// @nodoc
   int get intValue {
     switch (this) {
       case PlanetKitAudioSampleType.signedFloat32:
@@ -42,6 +53,7 @@ enum PlanetKitAudioSampleType {
     }
   }
 
+  /// @nodoc
   static PlanetKitAudioSampleType fromInt(int value) {
     switch (value) {
       case 0:

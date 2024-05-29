@@ -22,19 +22,28 @@ import 'call/planet_kit_verify_call_result.dart';
 import 'call/planet_kit_make_call_result.dart';
 import 'call/planet_kit_make_call_param.dart';
 
+/// Manager providing methods to initialize the system, make calls, and verify calls.
+///
 class PlanetKitManager {
   PlanetKitManager._privateConstructor();
-  static final PlanetKitManager instance =
-      PlanetKitManager._privateConstructor();
 
+  /// The singleton instance of [PlanetKitManager].
+  static final PlanetKitManager instance = PlanetKitManager._privateConstructor();
+
+  /// Retrieves the platform version.
   Future<String?> getPlatformVersion() {
     return Platform.instance.getPlatformVersion();
   }
 
+  /// Initializes the PlanetKit with the given initialization parameters.
+  /// 
+  /// PlanetKit user must call this method before using PlanetKit features.
+  /// 
   Future<bool> initializePlanetKit(PlanetKitInitParam initParam) {
     return Platform.instance.initializePlanetKit(initParam);
   }
 
+  /// Makes a call with the specified parameters and event handler.
   Future<PlanetKitMakeCallResult> makeCall(PlanetKitMakeCallParam param,
       PlanetKitCallEventHandler eventHandler) async {
     var response = await Platform.instance.makeCall(param);
@@ -43,8 +52,7 @@ class PlanetKitManager {
     PlanetKitStartFailReason failReason = response.failReason;
 
     if (response.failReason == PlanetKitStartFailReason.none) {
-      call =
-          PlanetKitCall(callId: response.callId!, eventHandler: eventHandler);
+      call = PlanetKitCall(callId: response.callId!, eventHandler: eventHandler);
     }
 
     final result = PlanetKitMakeCallResult(call: call, reason: failReason);
@@ -52,6 +60,7 @@ class PlanetKitManager {
     return result;
   }
 
+  /// Verifies a call with the specified parameters and event handler.
   Future<PlanetKitVerifyCallResult> verifyCall(PlanetKitVerifyCallParam param,
       PlanetKitCallEventHandler eventHandler) async {
     var response = await Platform.instance.verifyCall(param);
@@ -60,8 +69,7 @@ class PlanetKitManager {
     PlanetKitStartFailReason failReason = response.failReason;
 
     if (response.failReason == PlanetKitStartFailReason.none) {
-      call =
-          PlanetKitCall(callId: response.callId!, eventHandler: eventHandler);
+      call = PlanetKitCall(callId: response.callId!, eventHandler: eventHandler);
     }
 
     final result = PlanetKitVerifyCallResult(call: call, reason: failReason);

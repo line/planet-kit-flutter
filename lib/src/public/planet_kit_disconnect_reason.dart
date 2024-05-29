@@ -14,6 +14,7 @@
 
 import 'package:json_annotation/json_annotation.dart';
 
+/// @nodoc
 class PlanetKitDisconnectReasonConverter
     implements JsonConverter<PlanetKitDisconnectReason, int> {
   const PlanetKitDisconnectReasonConverter();
@@ -26,49 +27,139 @@ class PlanetKitDisconnectReasonConverter
   int toJson(PlanetKitDisconnectReason object) => object.intValue;
 }
 
+/// Enumerates the reasons for a call being disconnected in the PlanetKit system.
 enum PlanetKitDisconnectReason {
+  /// (Both)(Caller, Callee, Participant) Disconnected the call without exceptions.
   normal,
+
+  /// (Both)(Callee, CloudServer) 1:1 Call: Responder rejects a call.
+  /// Conference: The previously joined conference is declined when entering the same conference room(e.g. Re-join after crash).
   decline,
+
+  /// (Both)(Caller, Callee, Participant) Received cellular call during the Planet call.
   cellCall,
+
+  /// (Both)(Caller, Callee, Participant, CloudServer) Disconnected by internal error.
   internalError,
+
+  /// (Both)(Caller, Callee, AppServer) Application defined error. user_rel_code is accompanied.
+  /// 1:1 call: user_rel_code is defined by the call peer.
+  /// Group call: user_rel_code is defined by AppServer. For example) https://docs.lineplanet.me/api/server/server-api-kickout.
   userError,
+
+  /// (Both)(Caller, Callee, Participant) Disconnected by OS specific error.
   internalKitError,
+
+  /// (Both)(Caller, Callee, Participant) Audio source (i.e. mic) has not sent any audio data for a while.
   micNoSource,
+
+  /// (1:1)(Caller) Initiator disconnects the call before the responder answers.
   cancel,
+
+  /// (1:1)(Callee) Responder is calling.
   busy,
+
+  /// (1:1)(Caller) Responder doesn't answer. Initiator waits for the answer for 60 seconds.
   noAnswer,
+
+  /// (Both)(CloudServer) The initiator or the participant already has an incoming call but not received push yet.
   alreadyGotACall,
+
+  /// (Both)(CloudServer) The same id pair (user-id and service-id) is calling in another device.
   multiDeviceInUse,
+
+  /// (1:1)(CloudServer) Responder using the same id pair (user-id and service-id) answered the call in another device.
   multiDeviceAnswer,
+
+  /// (1:1)(CloudServer) Responder using the same id pair(user-id and service-id) declined the call in another device.
   multiDeviceDecline,
+
+  /// (Both)(Caller, Callee, Participant, CloudServer) Network is unavailable to keep a call.
   networkUnstable,
+
+  /// (1:1)(CloudServer) LINE Planet GW failed to call Notify or notify_cb returned a failure. Please check AppServer or Notify url.
   pushError,
+
+  /// (Both)(CloudServer) Authentication failure.
   authError,
+
+  /// (Both)(CloudServer) The call was already released. Ex) Initiator already canceled.
   releasedCall,
+
+  /// (Both)(CloudServer) Server disconnected a call because of internal error.
   serverInternalError,
+
+  /// (Both)(Caller, Callee, Participant) Network is unavailable to keep a call.
   unavailableNetwork,
+
+  /// (Both)(Caller, Callee, Participant) Application process is terminated.
   appDestroy,
+
+  /// (Both)(Caller, Callee, Participant) Application is in sleep mode.
   systemSleep,
+
+  /// (Both)(Caller, Callee, Participant) Application is in logoff.
   systemLogOff,
+
+  /// (Both)(Caller, Callee, Participant) The call could not be connected because the MTU is exceeded.
   mtuExceeded,
+
+  /// (Both)(CloudServer) Server failed to deliver app server data to AppServer.
   appServerDataError,
+
+  /// (Group)(CloudServer) The number of participants in this room is full.
   roomIsFull,
+
+  /// (Group)(CloudServer) Server kicks out a user when the user stays in a conference room alone for a long time.
   aloneKickOut,
+
+  /// (Group)(CloudServer) The room is destroyed because all remaining participants leave before the other participant's join is complete.
   roomNotFound,
+
+  /// (Group)(Participant) Disconnected by trying to join from another instance.
   anotherInstanceTryToJoin,
+
+  /// (Both)(CloudServer) Invalid access token.
   serviceAccessTokenError,
+
+  /// (Both)(CloudServer) Unacceptable character is used in service-id or user-id.
+  /// Please refer to https://docs.lineplanet.me/overview/glossary#service-id.
   serviceInvalidID,
+
+  /// (Both)(CloudServer) Under maintenance.
   serviceMaintenance,
+
+  /// (Both)(CloudServer) LINE Planet GW is busy for now.
   serviceBusy,
+
+  /// (Both)(CloudServer) LINE Planet GW internal error. Join failure in old version(<3.6) because the room has the SUBGROUP room attribute(Created by >= 3.6).
   serviceInternalError,
+
+  /// (Both)(Caller, Participant) Could not make a HTTP request.
+  /// Please check user network environment.
+  /// 1. Firewall https://docs.lineplanet.me/help/troubleshooting/troubleshooting-firewall
+  /// 2. Client vaccine program.
   serviceHttpError,
+
+  /// (Both)(Caller, Participant) HTTP connection timed out.
   serviceHttpConnectionTimeOut,
+
+  /// (Both)(Caller, Participant) SSL peer certificate or SSH remote key was not OK.
   serviceHttpInvalidPeerCert,
+  
+  /// (Both)(Caller, Participant) HTTP connection failed.
   serviceHttpConnectFail,
+
+  /// (Both)(Caller, Participant) Wrong URL format or could not resolve host or proxy name.
   serviceHttpInvalidUrl,
+
+  /// (Both)(CloudServer) The current PlanetKit version is deprecated. Need to upgrade.
   serviceIncompatiblePlanetKitVer,
+
+  /// Represents an unknown or undefined disconnect reason.
   unknown;
 
+  /// @nodoc
   int get intValue {
     switch (this) {
       case PlanetKitDisconnectReason.normal:
@@ -157,6 +248,7 @@ enum PlanetKitDisconnectReason {
     }
   }
 
+  /// @nodoc
   static PlanetKitDisconnectReason fromInt(int value) {
     switch (value) {
       case 1001:

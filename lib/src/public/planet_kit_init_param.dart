@@ -15,20 +15,35 @@
 import 'package:json_annotation/json_annotation.dart';
 part 'planet_kit_init_param.g.dart';
 
+/// Parameter class for the PlanetKit initialization.
+///
+/// This class encapsulates initialization settings related to logging and server configuration.
 @JsonSerializable(explicitToJson: true)
 class PlanetKitInitParam {
+  /// Configuration settings for logging.
   final PlanetKitLogSetting logSetting;
+
+  /// The server URL for PlanetKit.
+  /// ref: https://docs.lineplanet.me/getting-started/essentials/development-environment
   final String serverUrl;
+
+  /// Constructs a [PlanetKitInitParam] with specified log settings and server URL.
   PlanetKitInitParam({required this.logSetting, required this.serverUrl});
 
+  /// @nodoc
   Map<String, dynamic> toJson() => _$PlanetKitInitParamToJson(this);
 }
 
+/// Defines the log level settings.
 enum PlanetKitLogLevel {
+  /// No logs are recorded.
   silent,
+  /// Basic logs are recorded.
   simple,
+  /// Detailed logs are recorded including debug information.
   detailed;
 
+  /// @nodoc
   int get intValue {
     switch (this) {
       case PlanetKitLogLevel.silent:
@@ -40,6 +55,7 @@ enum PlanetKitLogLevel {
     }
   }
 
+  /// @nodoc
   static PlanetKitLogLevel fromInt(int value) {
     switch (value) {
       case 0:
@@ -54,10 +70,18 @@ enum PlanetKitLogLevel {
   }
 }
 
+/// Defines the log size limits.
 enum PlanetKitLogSizeLimit {
+  /// The maximum log size is 16MB.
   small,
+
+  /// The maximum log size is 64MB.
   medium,
+
+  /// The maximum log size is 256MB.
   large,
+
+  /// The maximum log size is unlimited.
   unlimited;
 
   int get intValue {
@@ -89,29 +113,36 @@ enum PlanetKitLogSizeLimit {
   }
 }
 
+/// Configuration settings for logging within PlanetKit.
 @JsonSerializable()
 class PlanetKitLogSetting {
+  /// Indicates whether logging will be enabled.
   final bool enabled;
 
+  /// The level of details for logs.
   @PlanetKitLogLevelConverter()
   final PlanetKitLogLevel logLevel;
 
+  /// The size limit for log files.
   @PlanetKitLogSizeLimitConverter()
   final PlanetKitLogSizeLimit logSizeLimit;
 
+  /// Constructs a [PlanetKitLogSetting].
   PlanetKitLogSetting({
     required this.enabled,
     required this.logLevel,
     required this.logSizeLimit,
   });
 
+  /// @nodoc
   factory PlanetKitLogSetting.fromJson(Map<String, dynamic> json) =>
       _$PlanetKitLogSettingFromJson(json);
 
+  /// @nodoc
   Map<String, dynamic> toJson() => _$PlanetKitLogSettingToJson(this);
 }
 
-// Custom converter for PlanetKitLogLevel
+/// @nodoc
 class PlanetKitLogLevelConverter
     implements JsonConverter<PlanetKitLogLevel, int> {
   const PlanetKitLogLevelConverter();
@@ -123,7 +154,8 @@ class PlanetKitLogLevelConverter
   int toJson(PlanetKitLogLevel object) => object.intValue;
 }
 
-// Custom converter for PlanetKitLogSizeLimit
+
+/// @nodoc
 class PlanetKitLogSizeLimitConverter
     implements JsonConverter<PlanetKitLogSizeLimit, int> {
   const PlanetKitLogSizeLimitConverter();

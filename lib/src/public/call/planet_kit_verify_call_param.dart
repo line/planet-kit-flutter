@@ -16,16 +16,27 @@ import 'package:json_annotation/json_annotation.dart';
 import 'planet_kit_cc_param.dart';
 part 'planet_kit_verify_call_param.g.dart';
 
+/// A data model representing the parameters required to verify a call with PlanetKit.
+///
+/// This class encapsulates details necessary for verifying a call, including user and
+/// service identifiers, along with a configuration parameter object.
 @JsonSerializable(explicitToJson: true)
 class PlanetKitVerifyCallParam {
-  // TODO: support country code
+  /// The user ID of the individual initiating the verification.
   final String myUserId;
+
+  /// The service ID associated with the user's service.
   final String myServiceId;
+
+  /// A [PlanetKitCcParam] instance.
   final PlanetKitCcParam ccParam;
 
-  PlanetKitVerifyCallParam(
-      {required this.myUserId,
+  /// Constructs a [PlanetKitVerifyCallParam] with necessary details for call verification.
+  PlanetKitVerifyCallParam({
+      required this.myUserId,
       required this.myServiceId,
       required this.ccParam});
+      
+  /// @nodoc
   Map<String, dynamic> toJson() => _$PlanetKitVerifyCallParamToJson(this);
 }
