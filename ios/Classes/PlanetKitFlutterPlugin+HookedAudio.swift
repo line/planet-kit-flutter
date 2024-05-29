@@ -25,7 +25,7 @@ import Flutter
 
 
 extension PlanetKitFlutterPlugin {
-    func enableInterceptMyAudio(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    func enableHookMyAudio(call: FlutterMethodCall, result: @escaping FlutterResult) {
         PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
 
         let callId = call.arguments as! String
@@ -43,7 +43,7 @@ extension PlanetKitFlutterPlugin {
         }
     }
     
-    func disableInterceptMyAudio(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    func disableHookMyAudio(call: FlutterMethodCall, result: @escaping FlutterResult) {
         PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
 
         let callId = call.arguments as! String
@@ -61,11 +61,11 @@ extension PlanetKitFlutterPlugin {
         }
     }
     
-    func putInterceptedMyAudioBack(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    func putHookedMyAudioBack(call: FlutterMethodCall, result: @escaping FlutterResult) {
         PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
         let args = call.arguments as! Dictionary<String, Any>
         let jsonData = try! JSONSerialization.data(withJSONObject: args, options: [])
-        let param = try! JSONDecoder().decode(PutInterceptedAudioBackParam.self, from: jsonData)
+        let param = try! JSONDecoder().decode(PutHookedAudioBackParam.self, from: jsonData)
         
         let callId = param.callId
         let audioId = param.audioId
@@ -91,7 +91,7 @@ extension PlanetKitFlutterPlugin {
         result(ret)
     }
     
-    func isInterceptMyAudioEnabled(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    func isHookMyAudioEnabled(call: FlutterMethodCall, result: @escaping FlutterResult) {
         PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
 
         let callId = call.arguments as! String
@@ -104,7 +104,7 @@ extension PlanetKitFlutterPlugin {
         result(call.isInterceptMyAudioEnabled)
     }
     
-    func setInterceptedAudioData(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    func setHookedAudioData(call: FlutterMethodCall, result: @escaping FlutterResult) {
         PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
         let args = call.arguments as! Dictionary<String, Any>
         
@@ -139,6 +139,6 @@ extension PlanetKitFlutterPlugin: PlanetKitCallInterceptedAudioDelegate {
                                      "seq" : audio.seq,
                                      "data" : audio.data]
         
-        interceptedAudioStreamHandler.eventSink?(data)
+        hookedAudioStreamHandler.eventSink?(data)
     }
 }

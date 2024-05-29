@@ -34,14 +34,19 @@ class PlanetKitDisconnectSourceConverter
 enum PlanetKitDisconnectSource {
   /// Represents an undefined source of disconnection.
   undefined,
+
   /// Indicates that the disconnection was initiated by the callee in a 1-to-1 call.
   callee,
+
   /// Indicates that the disconnection was initiated by the caller in a 1-to-1 call.
   caller,
+
   /// Indicates that the disconnection was initiated by a participant in a group call.
   participant,
+
   /// Indicates that the disconnection was initiated by the cloud server.
   cloudServer,
+
   /// Indicates that the disconnection was initiated by the application server.
   appServer;
 

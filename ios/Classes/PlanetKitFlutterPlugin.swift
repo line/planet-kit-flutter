@@ -27,7 +27,7 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
     let _nativeInstancesLock = NSLock()
     
     let eventStreamHandler = PlanetKitFlutterStreamHandler()
-    let interceptedAudioStreamHandler = PlanetKitFlutterStreamHandler()
+    let hookedAudioStreamHandler = PlanetKitFlutterStreamHandler()
     
     public static func register(with registrar: FlutterPluginRegistrar) {
         NSLog("\(#function)")
@@ -37,7 +37,7 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
         registrar.addMethodCallDelegate(instance, channel: channel)
 
         FlutterEventChannel(name: "planetkit_event", binaryMessenger: messenger).setStreamHandler(instance.eventStreamHandler)        
-        FlutterEventChannel(name: "planetkit_intercepted_audio", binaryMessenger: messenger).setStreamHandler(instance.interceptedAudioStreamHandler)
+        FlutterEventChannel(name: "planetkit_hooked_audio", binaryMessenger: messenger).setStreamHandler(instance.hookedAudioStreamHandler)
     }
     
     func addNativeInstance(key: String, instance: Any) {
@@ -106,20 +106,20 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
         case "createCcParam":
             createCcParam(call: call, result: result)
             break
-        case "enableInterceptMyAudio":
-            enableInterceptMyAudio(call: call, result: result)
+        case "enableHookMyAudio":
+            enableHookMyAudio(call: call, result: result)
             break
-        case "disableInterceptMyAudio":
-            disableInterceptMyAudio(call: call, result: result)
+        case "disableHookMyAudio":
+            disableHookMyAudio(call: call, result: result)
             break
-        case "putInterceptedMyAudioBack":
-            putInterceptedMyAudioBack(call: call, result: result)
+        case "putHookedMyAudioBack":
+            putHookedMyAudioBack(call: call, result: result)
             break
-        case "isInterceptMyAudioEnabled":
-            isInterceptMyAudioEnabled(call: call, result: result)
+        case "isHookMyAudioEnabled":
+            isHookMyAudioEnabled(call: call, result: result)
             break
-        case "setInterceptedAudioData":
-            setInterceptedAudioData(call: call, result: result)
+        case "setHookedAudioData":
+            setHookedAudioData(call: call, result: result)
             break
         default:
             NSLog("#flutter unknow call method \(call.method)")

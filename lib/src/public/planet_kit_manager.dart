@@ -28,7 +28,8 @@ class PlanetKitManager {
   PlanetKitManager._privateConstructor();
 
   /// The singleton instance of [PlanetKitManager].
-  static final PlanetKitManager instance = PlanetKitManager._privateConstructor();
+  static final PlanetKitManager instance =
+      PlanetKitManager._privateConstructor();
 
   /// Retrieves the platform version.
   Future<String?> getPlatformVersion() {
@@ -36,9 +37,9 @@ class PlanetKitManager {
   }
 
   /// Initializes the PlanetKit with the given initialization parameters.
-  /// 
+  ///
   /// PlanetKit user must call this method before using PlanetKit features.
-  /// 
+  ///
   Future<bool> initializePlanetKit(PlanetKitInitParam initParam) {
     return Platform.instance.initializePlanetKit(initParam);
   }
@@ -52,7 +53,8 @@ class PlanetKitManager {
     PlanetKitStartFailReason failReason = response.failReason;
 
     if (response.failReason == PlanetKitStartFailReason.none) {
-      call = PlanetKitCall(callId: response.callId!, eventHandler: eventHandler);
+      call =
+          PlanetKitCall(callId: response.callId!, eventHandler: eventHandler);
     }
 
     final result = PlanetKitMakeCallResult(call: call, reason: failReason);
@@ -69,7 +71,8 @@ class PlanetKitManager {
     PlanetKitStartFailReason failReason = response.failReason;
 
     if (response.failReason == PlanetKitStartFailReason.none) {
-      call = PlanetKitCall(callId: response.callId!, eventHandler: eventHandler);
+      call =
+          PlanetKitCall(callId: response.callId!, eventHandler: eventHandler);
     }
 
     final result = PlanetKitVerifyCallResult(call: call, reason: failReason);

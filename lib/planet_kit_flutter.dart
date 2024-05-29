@@ -21,7 +21,7 @@ export 'package:planet_kit_flutter/src/public/planet_kit_disconnect_reason.dart'
 export 'package:planet_kit_flutter/src/public/planet_kit_disconnect_source.dart';
 
 export 'package:planet_kit_flutter/src/public/audio/planet_kit_audio_sample_type.dart';
-export 'package:planet_kit_flutter/src/public/audio/planet_kit_intercepted_audio.dart';
+export 'package:planet_kit_flutter/src/public/audio/planet_kit_hooked_audio.dart';
 
 export 'package:planet_kit_flutter/src/public/call/planet_kit_call.dart';
 export 'package:planet_kit_flutter/src/public/call/planet_kit_cc_param.dart';

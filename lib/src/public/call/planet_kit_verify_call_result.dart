@@ -18,9 +18,9 @@ import '../planet_kit_start_fail_reason.dart';
 /// A data model representing the result of an attempt to verify a call using PlanetKit.
 ///
 /// This class encapsulates the result of a [PlanetKitManager.verifyCall].
-/// If [PlanetKitStartFailReason] reason is [PlanetKitStartFailReason.none], store the [PlanetKitCall] instance. 
-/// 
-/// '''dart
+/// If [PlanetKitStartFailReason] reason is [PlanetKitStartFailReason.none], store the [PlanetKitCall] instance.
+///
+/// ```dart
 /// final result = await PlanetKitManager.instance.verifyCall(param, eventHandler);
 /// if (result.reason == PlanetKitStartFailReason.none) {
 ///   print("verify call success")
@@ -29,8 +29,8 @@ import '../planet_kit_start_fail_reason.dart';
 /// else {
 ///   print("verify call failed reason: $param.reason")
 /// }
-/// '''
-/// 
+/// ```
+///
 class PlanetKitVerifyCallResult {
   /// The [PlanetKitCall] instance representing the incoming call.
   ///

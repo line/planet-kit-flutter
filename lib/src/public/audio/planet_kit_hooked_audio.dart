@@ -18,11 +18,11 @@ import '../../internal/planet_kit_platform_resource_manager.dart';
 import 'planet_kit_audio_sample_type.dart';
 import '../../internal/planet_kit_platform_interface.dart';
 
-/// A data model used for intercepted audio feature.
+/// A data model used for hooked audio feature.
 ///
-/// This class encapsulates the details of intercepted audio data,
+/// This class encapsulates the details of hooked audio data,
 /// including audio metadata and raw audio data.
-class PlanetKitInterceptedAudio {
+class PlanetKitHookedAudio {
   /// @nodoc
   final String id;
 
@@ -45,7 +45,7 @@ class PlanetKitInterceptedAudio {
   final int seq;
 
   /// @nodoc
-  PlanetKitInterceptedAudio({
+  PlanetKitHookedAudio({
     required this.id,
     required this.sampleRate,
     required this.channel,
@@ -59,11 +59,11 @@ class PlanetKitInterceptedAudio {
 
   /// Updates the audio data stored in this object.
   ///
-  /// Attempts to set the intercepted audio data on the platform side. If successful, updates the local data.
+  /// Attempts to set the hooked audio data on the platform side. If successful, updates the local data.
   /// The new [data] must have the same audio attributes as the original audio data.
   Future<bool> setData(Uint8List data) async {
-    if (!await Platform.instance.setInterceptedAudioData(id, _data)) {
-      print("#planet_kit_call setInterceptedAudioData failed");
+    if (!await Platform.instance.setHookedAudioData(id, _data)) {
+      print("#planet_kit_call setHookedAudioData failed");
       return false;
     }
     _data = data;

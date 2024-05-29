@@ -32,11 +32,11 @@ class PlanetKitVerifyCallParam {
   final PlanetKitCcParam ccParam;
 
   /// Constructs a [PlanetKitVerifyCallParam] with necessary details for call verification.
-  PlanetKitVerifyCallParam({
-      required this.myUserId,
+  PlanetKitVerifyCallParam(
+      {required this.myUserId,
       required this.myServiceId,
       required this.ccParam});
-      
+
   /// @nodoc
   Map<String, dynamic> toJson() => _$PlanetKitVerifyCallParamToJson(this);
 }

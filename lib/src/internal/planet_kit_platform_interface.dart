@@ -32,15 +32,15 @@ abstract class CallEventHandler {
   void onCallEvent(String callId, Map<String, dynamic> data);
 }
 
-abstract class InterceptedAudioHandler {
-  void onInterceptedAudio(String callId, Map<String, dynamic> audioData);
+abstract class HookedAudioHandler {
+  void onHookedAudio(String callId, Map<String, dynamic> audioData);
 }
 
 abstract class EventManagerInterface {
   void addCallEventHandler(String callId, CallEventHandler eventHandler);
   void removeCallEventHandler(String callId);
-  void addInterceptedAudioHandler(String id, InterceptedAudioHandler handler);
-  void removeInterceptedAudioHandler(String id);
+  void addHookedAudioHandler(String id, HookedAudioHandler handler);
+  void removeHookedAudioHandler(String id);
 }
 
 abstract class Platform extends PlatformInterface {
@@ -114,30 +114,30 @@ abstract class Platform extends PlatformInterface {
     throw UnimplementedError('isPeerAudioMuted() has not been implemented.');
   }
 
-  Future<bool> enableInterceptMyAudio(
-      String callId, InterceptedAudioHandler handler) {
+  Future<bool> enableHookMyAudio(
+      String callId, HookedAudioHandler handler) {
     throw UnimplementedError(
-        'enableInterceptMyAduio() has not been implemented.');
+        'enableHookMyAudio() has not been implemented.');
   }
 
-  Future<bool> disableInterceptMyAudio(String callId) {
+  Future<bool> disableHookMyAudio(String callId) {
     throw UnimplementedError(
-        'disableInterceptMyAduio() has not been implemented.');
+        'disableHookMyAudio() has not been implemented.');
   }
 
-  Future<bool> putInterceptedMyAudioBack(String callId, String audioId) {
+  Future<bool> putHookedMyAudioBack(String callId, String audioId) {
     throw UnimplementedError(
-        'disableInterceptMyAduio() has not been implemented.');
+        'putHookedMyAudioBack() has not been implemented.');
   }
 
-  Future<bool> setInterceptedAudioData(String audioId, Uint8List data) {
+  Future<bool> setHookedAudioData(String audioId, Uint8List data) {
     throw UnimplementedError(
-        'disableInterceptMyAduio() has not been implemented.');
+        'setHookedAudioData() has not been implemented.');
   }
 
-  Future<bool> isInterceptMyAudioEnabled(String callId) {
+  Future<bool> isHookMyAudioEnabled(String callId) {
     throw UnimplementedError(
-        'isInterceptMyAudioEnabled() has not been implemented.');
+        'isHookMyAudioEnabled() has not been implemented.');
   }
 
   Future<bool> releaseInstance(String id) {

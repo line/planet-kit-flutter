@@ -182,7 +182,7 @@ struct CallPeerMicUnmutedEventData: CallEventData {
 }
 
 // TODO: organize types by feature
-struct PutInterceptedAudioBackParam: Codable {
+struct PutHookedAudioBackParam: Codable {
     let callId: String
     let audioId: String
 }

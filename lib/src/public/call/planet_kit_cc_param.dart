@@ -19,7 +19,7 @@ part 'planet_kit_cc_param.g.dart';
 
 /// Represents cc_param for the PlanetKit framework.
 ///
-/// cc_param is used to verify an incoming call. 
+/// cc_param is used to verify an incoming call.
 /// Refer to https://docs.lineplanet.me/getting-started/essentials/appserver-role for more information about cc_param.
 @JsonSerializable(explicitToJson: true, constructor: "_PlanetKitCcParam")
 class PlanetKitCcParam {

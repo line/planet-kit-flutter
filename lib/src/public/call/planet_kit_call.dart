@@ -17,7 +17,7 @@ import 'dart:typed_data';
 import '../audio/planet_kit_audio_sample_type.dart';
 import '../planet_kit_disconnect_source.dart';
 import '../planet_kit_disconnect_reason.dart';
-import '../audio/planet_kit_intercepted_audio.dart';
+import '../audio/planet_kit_hooked_audio.dart';
 import '../../internal/planet_kit_platform_interface.dart';
 import '../../internal/call/planet_kit_platform_call_event.dart';
 import '../../internal/call/planet_kit_platform_call_event_types.dart';
@@ -35,7 +35,7 @@ class PlanetKitCallEventHandler {
 
   /// Callback triggered when the call is disconnected.
   ///
-  /// This callback has detailed parameters including [PlanetKitDisconnectReason] for the disconnect reason, 
+  /// This callback has detailed parameters including [PlanetKitDisconnectReason] for the disconnect reason,
   /// [PlanetKitDisconnectSource] for the disconnect source, and [byRemote] as a flag indicating whether the disconnection was initiated by the remote peer.
   final void Function(PlanetKitCall call, PlanetKitDisconnectReason reason,
       PlanetKitDisconnectSource source, bool byRemote) onDisconnected;
@@ -50,8 +50,8 @@ class PlanetKitCallEventHandler {
   final void Function(PlanetKitCall call)? onPeerMicUnmuted;
 
   /// Constructs a [PlanetKitCallEventHandler].
-  const PlanetKitCallEventHandler({
-      required this.onWaitConnected,
+  const PlanetKitCallEventHandler(
+      {required this.onWaitConnected,
       required this.onConnected,
       required this.onDisconnected,
       required this.onVerified,
@@ -59,30 +59,32 @@ class PlanetKitCallEventHandler {
       this.onPeerMicUnmuted});
 }
 
-/// A handler for intercepted audio within the PlanetKit framework.
+/// A handler for hooked audio within the PlanetKit framework.
 ///
-/// Provides a callback to handle intercepted audio data during a call.
-class PlanetKitCallInterceptedAudioHandler {
-  /// Callback triggered when audio data is intercepted during a call.
-  final void Function(PlanetKitCall call, PlanetKitInterceptedAudio audio) onIntercept;
+/// Provides a callback to handle hooked audio data during a call.
+class PlanetKitCallHookedAudioHandler {
+  /// Callback triggered when audio data is hooked during a call.
+  final void Function(PlanetKitCall call, PlanetKitHookedAudio audio)
+      onHook;
 
-  /// Constructs a [PlanetKitCallInterceptedAudioHandler].
-  PlanetKitCallInterceptedAudioHandler({required this.onIntercept});
+  /// Constructs a [PlanetKitCallHookedAudioHandler].
+  PlanetKitCallHookedAudioHandler({required this.onHook});
 }
 
 /// Represents a call managed by the PlanetKit framework.
 ///
 /// This class is used to manage the call session.
-class PlanetKitCall implements CallEventHandler, InterceptedAudioHandler {
+class PlanetKitCall implements CallEventHandler, HookedAudioHandler {
   final PlanetKitCallEventHandler? _eventHandler;
-  PlanetKitCallInterceptedAudioHandler? _interceptedAudioHandler;
+  PlanetKitCallHookedAudioHandler? _hookedAudioHandler;
+
   /// @nodoc
   final String callId;
 
   /// @nodoc
-  PlanetKitCall({
-      required this.callId,
-      required PlanetKitCallEventHandler eventHandler}) : _eventHandler = eventHandler {
+  PlanetKitCall(
+      {required this.callId, required PlanetKitCallEventHandler eventHandler})
+      : _eventHandler = eventHandler {
     NativeResourceManager.instance.add(this, callId);
     Platform.instance.eventManager.addCallEventHandler(callId, this);
   }
@@ -156,9 +158,9 @@ class PlanetKitCall implements CallEventHandler, InterceptedAudioHandler {
         eventData.disconnectSource, eventData.byRemote);
   }
 
-  /// @nodoc  
+  /// @nodoc
   @override
-  void onInterceptedAudio(String callId, Map<String, dynamic> audioData) {
+  void onHookedAudio(String callId, Map<String, dynamic> audioData) {
     final String audioId = audioData["audioId"];
     final int sampleRate = audioData["sampleRate"];
     final int channel = audioData["channel"];
@@ -168,7 +170,7 @@ class PlanetKitCall implements CallEventHandler, InterceptedAudioHandler {
     final int seq = audioData["seq"];
     final Uint8List data = audioData["data"];
 
-    final interceptedAudio = PlanetKitInterceptedAudio(
+    final hookedAudio = PlanetKitHookedAudio(
         id: audioId,
         sampleRate: sampleRate,
         channel: channel,
@@ -177,50 +179,49 @@ class PlanetKitCall implements CallEventHandler, InterceptedAudioHandler {
         seq: seq,
         data: data);
 
-    _interceptedAudioHandler?.onIntercept(this, interceptedAudio);
+    _hookedAudioHandler?.onHook(this, hookedAudio);
   }
 }
 
-/// Extension on [PlanetKitCall] to manage audio interception.
-extension InterceptAudioExtension on PlanetKitCall {
-  /// Wheter interception of the local user's audio is enabled.
-  Future<bool> get isInterceptMyAudioEnabled async =>
-      await Platform.instance.isInterceptMyAudioEnabled(callId);
+/// Extension on [PlanetKitCall] to manage audio hooking.
+extension HookAudioExtension on PlanetKitCall {
+  /// Whether hooking of the local user's audio is enabled.
+  Future<bool> get isHookMyAudioEnabled async =>
+      await Platform.instance.isHookMyAudioEnabled(callId);
 
-  /// Enables interception of the local user's audio.
+  /// Enables hooking of the local user's audio.
   ///
-  /// Requires a [handler] to manage intercepted audio events.
-  Future<bool> enableInterceptMyAudio(
-      PlanetKitCallInterceptedAudioHandler handler) async {
-    if (!await Platform.instance.enableInterceptMyAudio(callId, this)) {
-      print("#planet_kit_call enableInterceptMyAudio failed");
+  /// Requires a [handler] to manage hooked audio events.
+  Future<bool> enableHookMyAudio(
+      PlanetKitCallHookedAudioHandler handler) async {
+    if (!await Platform.instance.enableHookMyAudio(callId, this)) {
+      print("#planet_kit_call enableHookMyAudio failed");
       return false;
     }
 
-    Platform.instance.eventManager.addInterceptedAudioHandler(callId, this);
+    Platform.instance.eventManager.addHookedAudioHandler(callId, this);
 
-    _interceptedAudioHandler = handler;
+    _hookedAudioHandler = handler;
     return true;
   }
 
-  /// Disables interception of the local user's audio.
-  Future<bool> disableInterceptMyAudio() async {
-    if (!await Platform.instance.disableInterceptMyAudio(callId)) {
-      print("#planet_kit_call disableInterceptMyAudio failed");
+  /// Disables hooking of the local user's audio.
+  Future<bool> disableHookMyAudio() async {
+    if (!await Platform.instance.disableHookMyAudio(callId)) {
+      print("#planet_kit_call disableHookMyAudio failed");
       return false;
     }
 
-    Platform.instance.eventManager.removeInterceptedAudioHandler(callId);
+    Platform.instance.eventManager.removeHookedAudioHandler(callId);
 
-    _interceptedAudioHandler = null;
+    _hookedAudioHandler = null;
     return true;
   }
 
-  /// Puts back the intercepted audio data so that it can be sent to the peer.
-  Future<bool> putInterceptedMyAudioBack(
-      PlanetKitInterceptedAudio audio) async {
-    if (!await Platform.instance.putInterceptedMyAudioBack(callId, audio.id)) {
-      print("#planet_kit_call disableInterceptMyAudio failed");
+  /// Puts back the hooked audio data so that it can be sent to the peer.
+  Future<bool> putHookedMyAudioBack(PlanetKitHookedAudio audio) async {
+    if (!await Platform.instance.putHookedMyAudioBack(callId, audio.id)) {
+      print("#planet_kit_call putHookedMyAudioBack failed");
       return false;
     }
 

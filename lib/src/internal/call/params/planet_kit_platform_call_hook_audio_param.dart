@@ -13,13 +13,13 @@
 // under the License.
 
 import 'package:json_annotation/json_annotation.dart';
-part 'planet_kit_platform_call_intercept_audio_param.g.dart';
+part 'planet_kit_platform_call_hook_audio_param.g.dart';
 
 @JsonSerializable(explicitToJson: true)
-class PutInterceptedAudioBackParam {
+class PutHookedAudioBackParam {
   final String callId;
   final String audioId;
 
-  PutInterceptedAudioBackParam({required this.callId, required this.audioId});
-  Map<String, dynamic> toJson() => _$PutInterceptedAudioBackParamToJson(this);
+  PutHookedAudioBackParam({required this.callId, required this.audioId});
+  Map<String, dynamic> toJson() => _$PutHookedAudioBackParamToJson(this);
 }

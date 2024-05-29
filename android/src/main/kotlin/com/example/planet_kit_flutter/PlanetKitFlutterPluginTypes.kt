@@ -63,7 +63,7 @@ class PlanetKitLogSizeLimitDeserializer : JsonDeserializer<PlanetKitLogSizeLimit
     }
 }
 
-data class PutInterceptedAudioBackParam(
+data class PutHookedAudioBackParam(
     val callId: String,
     val audioId: String
 )

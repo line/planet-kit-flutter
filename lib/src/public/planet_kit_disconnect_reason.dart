@@ -146,7 +146,7 @@ enum PlanetKitDisconnectReason {
 
   /// (Both)(Caller, Participant) SSL peer certificate or SSH remote key was not OK.
   serviceHttpInvalidPeerCert,
-  
+
   /// (Both)(Caller, Participant) HTTP connection failed.
   serviceHttpConnectFail,
 

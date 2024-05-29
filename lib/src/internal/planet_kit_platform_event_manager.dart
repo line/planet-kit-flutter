@@ -23,10 +23,10 @@ import 'planet_kit_platform_interface.dart';
 class EventManager implements EventManagerInterface {
   final EventChannel _eventChannel = const EventChannel('planetkit_event');
   final EventChannel _interceptedAudioStream =
-      const EventChannel('planetkit_intercepted_audio');
+      const EventChannel('planetkit_hooked_audio');
 
   final Map<String, CallEventHandler> _callEventHandlers = {};
-  final Map<String, InterceptedAudioHandler> _interceptedAudioHandlers = {};
+  final Map<String, HookedAudioHandler> _interceptedAudioHandlers = {};
 
   void initializeEventChannel() {
     print("#flutter_method_channel setEventChannel");
@@ -66,7 +66,7 @@ class EventManager implements EventManagerInterface {
     final callId = audioData['callId'];
 
     if (_interceptedAudioHandlers.containsKey(callId)) {
-      _interceptedAudioHandlers[callId]?.onInterceptedAudio(callId, audioData);
+      _interceptedAudioHandlers[callId]?.onHookedAudio(callId, audioData);
     }
   }
 
@@ -75,12 +75,12 @@ class EventManager implements EventManagerInterface {
   }
 
   @override
-  void addInterceptedAudioHandler(String id, InterceptedAudioHandler handler) {
+  void addHookedAudioHandler(String id, HookedAudioHandler handler) {
     _interceptedAudioHandlers[id] = handler;
   }
 
   @override
-  void removeInterceptedAudioHandler(String id) {
+  void removeHookedAudioHandler(String id) {
     _interceptedAudioHandlers.remove(id);
   }
 }

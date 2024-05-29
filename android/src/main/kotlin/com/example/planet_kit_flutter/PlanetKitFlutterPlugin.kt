@@ -70,7 +70,7 @@ class PlanetKitFlutterPlugin: FlutterPlugin, MethodCallHandler {
   }
 
   val eventStreamHandler = PlanetKitFlutterStreamHandler()
-  val interceptedAudioStreamHandler = PlanetKitFlutterStreamHandler()
+  val hookedAudioStreamHandler = PlanetKitFlutterStreamHandler()
 
   // TODO: remove after SDK update
   val isInterceptedAudioEnabled = HashMap<String, Boolean>()
@@ -183,7 +183,7 @@ class PlanetKitFlutterPlugin: FlutterPlugin, MethodCallHandler {
       .create()
 
     EventChannel(flutterPluginBinding.binaryMessenger, "planetkit_event").setStreamHandler(eventStreamHandler)
-    EventChannel(flutterPluginBinding.binaryMessenger, "planetkit_intercepted_audio").setStreamHandler(interceptedAudioStreamHandler)
+    EventChannel(flutterPluginBinding.binaryMessenger, "planetkit_hooked_audio").setStreamHandler(hookedAudioStreamHandler)
   }
 
   // Handle incoming method calls
@@ -203,11 +203,11 @@ class PlanetKitFlutterPlugin: FlutterPlugin, MethodCallHandler {
       "isPeerAudioMuted" -> isPeerAudioMuted(call, result)
       "releaseInstance" -> releaseInstance(call, result)
       "createCcParam" -> createCcParam(call, result)
-      "enableInterceptMyAudio" -> enableInterceptMyAudio(call, result)
-      "disableInterceptMyAudio" -> disableInterceptMyAudio(call, result)
-      "putInterceptedMyAudioBack" -> putInterceptedMyAudioBack(call, result)
-      "isInterceptMyAudioEnabled" -> isInterceptMyAudioEnabled(call, result)
-      "setInterceptedAudioData" -> setInterceptedAudioData(call, result)
+      "enableHookMyAudio" -> enableHookMyAudio(call, result)
+      "disableHookMyAudio" -> disableHookMyAudio(call, result)
+      "putHookedMyAudioBack" -> putHookedMyAudioBack(call, result)
+      "isHookMyAudioEnabled" -> isHookMyAudioEnabled(call, result)
+      "setHookedAudioData" -> setHookedAudioData(call, result)
 
       else -> result.notImplemented()
     }
@@ -476,8 +476,8 @@ class PlanetKitFlutterPlugin: FlutterPlugin, MethodCallHandler {
     result.success(id)
   }
 
-  private fun enableInterceptMyAudio(call: MethodCall, result: Result) {
-    Log.d("FlutterPlugin", "enableInterceptMyAudio")
+  private fun enableHookMyAudio(call: MethodCall, result: Result) {
+    Log.d("FlutterPlugin", "enableHookMyAudio")
     val callId = call.arguments<String>() as String
     val planetKitCall = getNativeInstance(callId) as? PlanetKitCall
 
@@ -503,7 +503,7 @@ class PlanetKitFlutterPlugin: FlutterPlugin, MethodCallHandler {
         )
 
         Handler(Looper.getMainLooper()).post {
-          interceptedAudioStreamHandler.eventSink?.success(data)
+          hookedAudioStreamHandler.eventSink?.success(data)
         }
       }
     }
@@ -522,8 +522,8 @@ class PlanetKitFlutterPlugin: FlutterPlugin, MethodCallHandler {
     }
   }
 
-  private fun disableInterceptMyAudio(call: MethodCall, result: Result) {
-    Log.d("FlutterPlugin", "disableInterceptMyAudio")
+  private fun disableHookMyAudio(call: MethodCall, result: Result) {
+    Log.d("FlutterPlugin", "disableHookMyAudio")
     val callId = call.arguments<String>() as String
     val planetKitCall = getNativeInstance(callId) as? PlanetKitCall
 
@@ -547,11 +547,11 @@ class PlanetKitFlutterPlugin: FlutterPlugin, MethodCallHandler {
     }
   }
 
-  private fun putInterceptedMyAudioBack(call: MethodCall, result: Result) {
-    Log.d("FlutterPlugin", "putInterceptedMyAudioBack")
+  private fun putHookedMyAudioBack(call: MethodCall, result: Result) {
+    Log.d("FlutterPlugin", "putHookedMyAudioBack")
     val args = call.arguments<Map<String, Any>>()
     val jsonArgs = gson.toJson(args)
-    val param = gson.fromJson(jsonArgs, PutInterceptedAudioBackParam::class.java)
+    val param = gson.fromJson(jsonArgs, PutHookedAudioBackParam::class.java)
 
     val callId = param.callId
     val audioId = param.audioId
@@ -579,8 +579,8 @@ class PlanetKitFlutterPlugin: FlutterPlugin, MethodCallHandler {
     result.success(ret)
   }
 
-  private fun isInterceptMyAudioEnabled(call: MethodCall, result: Result) {
-    Log.d("FlutterPlugin", "isInterceptMyAudioEnabled")
+  private fun isHookMyAudioEnabled(call: MethodCall, result: Result) {
+    Log.d("FlutterPlugin", "isHookMyAudioEnabled")
     val callId = call.arguments<String>() as String
     val planetKitCall = getNativeInstance(callId) as? PlanetKitCall
 
@@ -599,8 +599,8 @@ class PlanetKitFlutterPlugin: FlutterPlugin, MethodCallHandler {
     result.success(isInterceptedAudioEnabled[planetKitCall.hashCode().toString()])
   }
 
-  private fun setInterceptedAudioData(call: MethodCall, result: Result) {
-    Log.d("FlutterPlugin", "setInterceptedAudioData")
+  private fun setHookedAudioData(call: MethodCall, result: Result) {
+    Log.d("FlutterPlugin", "setHookedAudioData")
     val args = call.arguments as? Map<String, Any>
 
     val audioId = args?.get("audioId") as? String

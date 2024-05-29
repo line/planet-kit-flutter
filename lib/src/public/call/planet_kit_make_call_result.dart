@@ -18,9 +18,9 @@ import '../planet_kit_start_fail_reason.dart';
 /// A data model representing the result of an attempt to make a call using PlanetKit.
 ///
 /// This class encapsulates the result of a [PlanetKitManager.makeCall].
-/// If [PlanetKitStartFailReason] reason is [PlanetKitStartFailReason.none], store the [PlanetKitCall] instance. 
-/// 
-/// '''dart
+/// If [PlanetKitStartFailReason] reason is [PlanetKitStartFailReason.none], store the [PlanetKitCall] instance.
+///
+/// ```dart
 /// final result = await PlanetKitManager.instance.makeCall(param, eventHandler);
 /// if (result.reason == PlanetKitStartFailReason.none) {
 ///   print("make call success")
@@ -29,8 +29,8 @@ import '../planet_kit_start_fail_reason.dart';
 /// else {
 ///   print("make call failed reason: $param.reason")
 /// }
-/// '''
-/// 
+/// ```
+///
 class PlanetKitMakeCallResult {
   /// The [PlanetKitCall] instance representing the outgoing call.
   ///

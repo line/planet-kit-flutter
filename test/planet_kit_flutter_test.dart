@@ -97,14 +97,14 @@ class MockPlanetKitFlutterPlatform
   }
 
   @override
-  Future<bool> disableInterceptMyAudio(String callId) {
+  Future<bool> disableHookMyAudio(String callId) {
     // TODO: implement disableInterceptMyAduio
     throw UnimplementedError();
   }
 
   @override
-  Future<bool> enableInterceptMyAudio(
-      String callId, InterceptedAudioHandler handler) {
+  Future<bool> enableHookMyAudio(
+      String callId, HookedAudioHandler handler) {
     // TODO: implement enableInterceptMyAduio
     throw UnimplementedError();
   }
@@ -116,8 +116,7 @@ class MockPlanetKitFlutterPlatform
   }
 
   @override
-  Future<bool> putInterceptedMyAudioBack(
-      String callId, String interceptedAudioId) {
+  Future<bool> putHookedMyAudioBack(String callId, String interceptedAudioId) {
     // TODO: implement putInterceptedMyAudioBack
     throw UnimplementedError();
   }
@@ -129,7 +128,7 @@ class MockPlanetKitFlutterPlatform
   }
 
   @override
-  Future<bool> setInterceptedAudioData(String audioId, Uint8List data) {
+  Future<bool> setHookedAudioData(String audioId, Uint8List data) {
     // TODO: implement setInterceptedAudioData
     throw UnimplementedError();
   }
@@ -137,9 +136,9 @@ class MockPlanetKitFlutterPlatform
   @override
   // TODO: implement eventManager
   EventManagerInterface get eventManager => throw UnimplementedError();
-  
+
   @override
-  Future<bool> isInterceptMyAudioEnabled(String callId) {
+  Future<bool> isHookMyAudioEnabled(String callId) {
     // TODO: implement isInterceptMyAudioEnabled
     throw UnimplementedError();
   }

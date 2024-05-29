@@ -38,8 +38,10 @@ class PlanetKitInitParam {
 enum PlanetKitLogLevel {
   /// No logs are recorded.
   silent,
+
   /// Basic logs are recorded.
   simple,
+
   /// Detailed logs are recorded including debug information.
   detailed;
 
@@ -153,7 +155,6 @@ class PlanetKitLogLevelConverter
   @override
   int toJson(PlanetKitLogLevel object) => object.intValue;
 }
-
 
 /// @nodoc
 class PlanetKitLogSizeLimitConverter

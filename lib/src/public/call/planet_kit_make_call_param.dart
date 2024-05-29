@@ -37,8 +37,8 @@ class PlanetKitMakeCallParam {
   final String accessToken;
 
   /// Constructs a [PlanetKitMakeCallParam] with necessary details for making a call.
-  PlanetKitMakeCallParam({
-      required this.myUserId,
+  PlanetKitMakeCallParam(
+      {required this.myUserId,
       required this.myServiceId,
       required this.peerUserId,
       required this.peerServiceId,

@@ -17,7 +17,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:planet_kit_flutter/src/internal/call/params/planet_kit_platform_call_intercept_audio_param.dart';
+import 'package:planet_kit_flutter/src/internal/call/params/planet_kit_platform_call_hook_audio_param.dart';
 
 import '../public/planet_kit_init_param.dart';
 import '../public/call/planet_kit_make_call_param.dart';
@@ -154,41 +154,39 @@ class MethodChannelPlanetKit extends Platform {
   }
 
   @override
-  Future<bool> enableInterceptMyAudio(
-      String callId, InterceptedAudioHandler handler) async {
-    print("#flutter_method_channel enableInterceptMyAudio with callId $callId");
+  Future<bool> enableHookMyAudio(
+      String callId, HookedAudioHandler handler) async {
+    print("#flutter_method_channel enableHookMyAudio with callId $callId");
     return await methodChannel.invokeMethod<bool>(
-        'enableInterceptMyAudio', callId) as bool;
+        'enableHookMyAudio', callId) as bool;
   }
 
   @override
-  Future<bool> disableInterceptMyAudio(String callId) async {
+  Future<bool> disableHookMyAudio(String callId) async {
     print(
-        "#flutter_method_channel disableInterceptMyAudio with callId $callId");
+        "#flutter_method_channel disableHookMyAudio with callId $callId");
 
     return await methodChannel.invokeMethod<bool>(
-        'disableInterceptMyAudio', callId) as bool;
+        'disableHookMyAudio', callId) as bool;
   }
 
   @override
-  Future<bool> putInterceptedMyAudioBack(String callId, String audioId) async {
-    print(
-        "#flutter_method_channel putInterceptedMyAudioBack with callId $callId");
-    return await methodChannel.invokeMethod<bool>(
-        'putInterceptedMyAudioBack',
-        PutInterceptedAudioBackParam(callId: callId, audioId: audioId)
-            .toJson()) as bool;
+  Future<bool> putHookedMyAudioBack(String callId, String audioId) async {
+    print("#flutter_method_channel putHookedMyAudioBack with callId $callId");
+    return await methodChannel.invokeMethod<bool>('putHookedMyAudioBack',
+            PutHookedAudioBackParam(callId: callId, audioId: audioId).toJson())
+        as bool;
   }
 
   @override
-  Future<bool> setInterceptedAudioData(String audioId, Uint8List data) async {
+  Future<bool> setHookedAudioData(String audioId, Uint8List data) async {
     return await methodChannel.invokeMethod<bool>(
-        'setInterceptedAudioData', {'audioId': audioId, 'data': data}) as bool;
+        'setHookedAudioData', {'audioId': audioId, 'data': data}) as bool;
   }
 
   @override
-  Future<bool> isInterceptMyAudioEnabled(String callId) async {
+  Future<bool> isHookMyAudioEnabled(String callId) async {
     return await methodChannel.invokeMethod<bool>(
-        'isInterceptMyAudioEnabled', callId) as bool;
+        'isHookMyAudioEnabled', callId) as bool;
   }
 }
