@@ -13,7 +13,7 @@
 // under the License.
 
 import 'package:json_annotation/json_annotation.dart';
-import 'planet_kit_platform_call_event_types.dart';
+import 'planet_kit_platform_call_event_type.dart';
 import '../planet_kit_platform_event.dart';
 import '../planet_kit_platform_event_types.dart';
 import '../../public/planet_kit_disconnect_reason.dart';
@@ -21,22 +21,45 @@ import '../../public/planet_kit_disconnect_source.dart';
 
 part 'planet_kit_platform_call_event.g.dart';
 
-@JsonSerializable(explicitToJson: true)
-class CallEventData extends EventData {
-  @CallEventTypeConverter()
-  CallEventType callEventType;
+class CallEventFactory {
+  static CallEvent fromJson(Map<String, dynamic> data) {
+    final event = CallEvent.fromJson(data);
+    final type = event.subType;
 
-  CallEventData(EventType type, String id, this.callEventType)
-      : super(type: type, id: id);
-
-  @override
-  Map<String, dynamic> toJson() => _$CallEventDataToJson(this);
-  factory CallEventData.fromJson(Map<String, dynamic> json) =>
-      _$CallEventDataFromJson(json);
+    if (type == CallEventType.connected) {
+      return ConnectedEvent.fromJson(data);
+    } else if (type == CallEventType.disconnected) {
+      return DisconnectedEvent.fromJson(data);
+    } else if (type == CallEventType.verified) {
+      return VerifiedEvent.fromJson(data);
+    } else if (type == CallEventType.networkDidUnavailable) {
+      return NetworkDidUnavailableEvent.fromJson(data);
+    } else if (type == CallEventType.networkDidReavailable) {
+      return NetworkDidReavailableEvent.fromJson(data);
+    } else if (type == CallEventType.peerHold) {
+      return PeerHoldEvent.fromJson(data);
+    } else if (type == CallEventType.muteMyAudioRequestByPeer) {
+      return MyAudioMuteRequestByPeerEvent.fromJson(data);
+    } else {
+      return event;
+    }
+  }
 }
 
-@JsonSerializable(explicitToJson: true)
-class DisconnectedEventData extends CallEventData {
+@JsonSerializable(createToJson: false)
+class CallEvent extends Event {
+  @CallEventTypeConverter()
+  CallEventType subType;
+
+  CallEvent(EventType type, String id, this.subType)
+      : super(type: type, id: id);
+
+  factory CallEvent.fromJson(Map<String, dynamic> json) =>
+      _$CallEventFromJson(json);
+}
+
+@JsonSerializable(createToJson: false)
+class DisconnectedEvent extends CallEvent {
   @PlanetKitDisconnectReasonConverter()
   final PlanetKitDisconnectReason disconnectReason;
 
@@ -45,11 +68,70 @@ class DisconnectedEventData extends CallEventData {
 
   final bool byRemote;
 
-  DisconnectedEventData(super.type, super.id, super.callEventType,
-      this.disconnectReason, this.disconnectSource, this.byRemote);
+  DisconnectedEvent(super.type, super.id, super.subType, this.disconnectReason,
+      this.disconnectSource, this.byRemote);
 
-  @override
-  Map<String, dynamic> toJson() => _$DisconnectedEventDataToJson(this);
-  factory DisconnectedEventData.fromJson(Map<String, dynamic> json) =>
-      _$DisconnectedEventDataFromJson(json);
+  factory DisconnectedEvent.fromJson(Map<String, dynamic> json) =>
+      _$DisconnectedEventFromJson(json);
+}
+
+@JsonSerializable(createToJson: false)
+class NetworkDidUnavailableEvent extends CallEvent {
+  final bool isPeer;
+  final int willDisconnectSec;
+
+  NetworkDidUnavailableEvent(
+      super.type, super.id, super.subType, this.isPeer, this.willDisconnectSec);
+
+  factory NetworkDidUnavailableEvent.fromJson(Map<String, dynamic> json) =>
+      _$NetworkDidUnavailableEventFromJson(json);
+}
+
+@JsonSerializable(createToJson: false)
+class NetworkDidReavailableEvent extends CallEvent {
+  final bool isPeer;
+
+  NetworkDidReavailableEvent(super.type, super.id, super.subType, this.isPeer);
+
+  factory NetworkDidReavailableEvent.fromJson(Map<String, dynamic> json) =>
+      _$NetworkDidReavailableEventFromJson(json);
+}
+
+@JsonSerializable(createToJson: false)
+class ConnectedEvent extends CallEvent {
+  final bool isInResponderPreparation;
+  final bool shouldFinishPreparation;
+  ConnectedEvent(super.type, super.id, super.subType,
+      this.isInResponderPreparation, this.shouldFinishPreparation);
+
+  factory ConnectedEvent.fromJson(Map<String, dynamic> json) =>
+      _$ConnectedEventFromJson(json);
+}
+
+@JsonSerializable(createToJson: false)
+class VerifiedEvent extends CallEvent {
+  final bool peerUseResponderPreparation;
+  VerifiedEvent(
+      super.type, super.id, super.subType, this.peerUseResponderPreparation);
+
+  factory VerifiedEvent.fromJson(Map<String, dynamic> json) =>
+      _$VerifiedEventFromJson(json);
+}
+
+@JsonSerializable(createToJson: false)
+class PeerHoldEvent extends CallEvent {
+  final String? reason;
+  PeerHoldEvent(super.type, super.id, super.subType, this.reason);
+
+  factory PeerHoldEvent.fromJson(Map<String, dynamic> json) =>
+      _$PeerHoldEventFromJson(json);
+}
+
+@JsonSerializable(createToJson: false)
+class MyAudioMuteRequestByPeerEvent extends CallEvent {
+  final bool mute;
+  MyAudioMuteRequestByPeerEvent(super.type, super.id, super.subType, this.mute);
+
+  factory MyAudioMuteRequestByPeerEvent.fromJson(Map<String, dynamic> json) =>
+      _$MyAudioMuteRequestByPeerEventFromJson(json);
 }

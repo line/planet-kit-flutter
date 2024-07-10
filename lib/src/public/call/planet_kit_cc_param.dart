@@ -21,7 +21,7 @@ part 'planet_kit_cc_param.g.dart';
 ///
 /// cc_param is used to verify an incoming call.
 /// Refer to https://docs.lineplanet.me/getting-started/essentials/appserver-role for more information about cc_param.
-@JsonSerializable(explicitToJson: true, constructor: "_PlanetKitCcParam")
+@JsonSerializable(explicitToJson: true, createFactory: false)
 class PlanetKitCcParam {
   /// Creates a new [PlanetKitCcParam] instance from [ccParam] string.
   ///
@@ -46,8 +46,4 @@ class PlanetKitCcParam {
 
   /// @nodoc
   Map<String, dynamic> toJson() => _$PlanetKitCcParamToJson(this);
-
-  /// @nodoc
-  factory PlanetKitCcParam.fromJson(Map<String, dynamic> json) =>
-      _$PlanetKitCcParamFromJson(json);
 }

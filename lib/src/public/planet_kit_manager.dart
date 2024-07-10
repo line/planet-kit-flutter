@@ -13,7 +13,7 @@
 // under the License.
 
 import '../internal/planet_kit_platform_interface.dart';
-
+import 'my_media_status/planet_kit_my_media_status.dart';
 import 'planet_kit_start_fail_reason.dart';
 import 'planet_kit_init_param.dart';
 import 'call/planet_kit_call.dart';
@@ -21,6 +21,9 @@ import 'call/planet_kit_verify_call_param.dart';
 import 'call/planet_kit_verify_call_result.dart';
 import 'call/planet_kit_make_call_result.dart';
 import 'call/planet_kit_make_call_param.dart';
+import 'conference/planet_kit_conference.dart';
+import 'conference/planet_kit_conference_join_conference_result.dart';
+import 'conference/planet_kit_join_conference_param.dart';
 
 /// Manager providing methods to initialize the system, make calls, and verify calls.
 ///
@@ -53,8 +56,7 @@ class PlanetKitManager {
     PlanetKitStartFailReason failReason = response.failReason;
 
     if (response.failReason == PlanetKitStartFailReason.none) {
-      call =
-          PlanetKitCall(callId: response.callId!, eventHandler: eventHandler);
+      call = await _createPlanetKitCall(response.callId!, eventHandler);
     }
 
     final result = PlanetKitMakeCallResult(call: call, reason: failReason);
@@ -71,11 +73,62 @@ class PlanetKitManager {
     PlanetKitStartFailReason failReason = response.failReason;
 
     if (response.failReason == PlanetKitStartFailReason.none) {
-      call =
-          PlanetKitCall(callId: response.callId!, eventHandler: eventHandler);
+      call = await _createPlanetKitCall(response.callId!, eventHandler);
     }
 
     final result = PlanetKitVerifyCallResult(call: call, reason: failReason);
+    return result;
+  }
+
+  Future<PlanetKitCall?> _createPlanetKitCall(
+      String callId, PlanetKitCallEventHandler eventHandler) async {
+    final myMediaStatusId =
+        await Platform.instance.callInterface.getMyMediaStatus(callId);
+
+    if (myMediaStatusId == null) {
+      print("#manager _createPlanetKitCall myMediaStatusId is null");
+      return null;
+    }
+    final myMediaStatus =
+        PlanetKitMyMediaStatus(myMediaStatusId: myMediaStatusId);
+
+    final call = PlanetKitCall(
+        callId: callId,
+        eventHandler: eventHandler,
+        myMediaStatus: myMediaStatus);
+    print("#manager call instance created $call");
+    return call;
+  }
+
+  /// Joins a conference with the specified parameters and event handler.
+  ///
+  /// Returns a [PlanetKitJoinConferenceResult] which contains the conference instance if successful,
+  /// or the reason for failure if not.
+  Future<PlanetKitJoinConferenceResult> joinConference(
+      PlanetKitJoinConferenceParam param,
+      PlanetKitConferenceEventHandler eventHandler) async {
+    var response = await Platform.instance.joinConference(param);
+    PlanetKitConference? conference;
+    PlanetKitStartFailReason failReason = response.failReason;
+
+    if (response.failReason == PlanetKitStartFailReason.none) {
+      final myMediaStatusId = await Platform.instance.conferenceInterface
+          .getMyMediaStatus(response.id!);
+
+      if (myMediaStatusId == null) {
+        print("#manager joinConference myMediaStatusId is null");
+      } else {
+        final myMediaStatus =
+            PlanetKitMyMediaStatus(myMediaStatusId: myMediaStatusId);
+
+        conference = PlanetKitConference(
+            id: response.id!,
+            eventHandler: eventHandler,
+            myMediaStatus: myMediaStatus);
+      }
+    }
+    final result = PlanetKitJoinConferenceResult(
+        conference: conference, reason: failReason);
     return result;
   }
 }

@@ -3,7 +3,7 @@
 //  PlanetKit+iOS
 //
 //  Created by LINER on 2020/08/24.
-//  Copyright © 2020 LINE Corp. All rights reserved.
+//  Copyright © 2020 LINE Plus Corp. All rights reserved.
 //
 
 #ifndef PlanetKitVideoFormatConverter_h

@@ -248,7 +248,7 @@ typedef enum planetkit_disconnect_reason {
     PLANETKIT_DISCONNECT_REASON_RELEASED_CALL       = 1304,             ///< [Both][CloudServer] The call was already released. Ex) Initiator already canceled
 
     PLANETKIT_DISCONNECT_REASON_SERVER_INTERNAL_ERROR   = 1305,         ///< [Both][CloudServer] Server disconnected a call because of internal error
-    PLANETKIT_DISCONNECT_REASON_UNAVAILABLE_NETWORK     = 1308,         ///< [Both][Caller, Callee, Participant] Network is unavailable to keep a call
+    PLANETKIT_DISCONNECT_REASON_UNAVAILABLE_NETWORK     = 1308,         ///< [Both][Caller, Callee, Participant] Disconnected due to the network being unavailable for a certain period of time
     PLANETKIT_DISCONNECT_REASON_APP_DESTROY             = 1309,         ///< [Both][Caller, Callee, Participant] Application process is terminated
     PLANETKIT_DISCONNECT_REASON_SYSTEM_SLEEP            = 1310,         ///< [Both][Caller, Callee, Participant] Application is in sleep mode
     PLANETKIT_DISCONNECT_REASON_SYSTEM_LOGOFF           = 1311,         ///< [Both][Caller, Callee, Participant] Application is in logoff mode
@@ -317,10 +317,6 @@ typedef enum planetkit_media_disable_reason {
     /* Release by user: 1 ~ 100 */
     PLANETKIT_MEDIA_DISABLE_REASON_USER         = 1,
     PLANETKIT_MEDIA_DISABLE_REASON_DECLINE      = 2,
-
-    /* Release by error : 201 ~ 300 */
-    PLANETKIT_MEDIA_DISABLE_REASON_NO_MEDIA_SRC = 201,
-    PLANETKIT_MEDIA_DISABLE_REASON_NO_RECV_MEDIA = 202,
 } planetkit_media_disable_reason_e;
 
 #define PLANETKIT_SCRN_SHR_REASON_MIN       0
@@ -581,9 +577,9 @@ typedef struct planetkit_dbg_mon_info_video_rx {
         uint16_t    height;                     /// height of the current decoded frame
         uint32_t    layer_id;                   /// layer ID of current decoded frame, NO[0], BASE, ENHANCE_1, ENHANCE_2
 
+        uint32_t    frames_receive_cnt;         /// count of frames that the decoder received from the sender
         uint32_t    decoded_frames_cnt;         /// count of frame that decoder succeed to decode whole layers
         uint32_t    partially_decoded_frames_cnt;   /// count of frames that decoder succeed to decode partial layers
-        uint32_t    skipped_frames_cnt;         /// count of frames that decoder skipped until the key frame arrives
         uint32_t    failed_frames_cnt;          /// count of frames that decoder failed to decode
 
         float       fps;                        /// decoded frames per second

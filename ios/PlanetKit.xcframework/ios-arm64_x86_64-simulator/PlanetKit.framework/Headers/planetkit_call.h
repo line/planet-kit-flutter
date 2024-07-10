@@ -20,6 +20,7 @@
 #include "planetkit_send_voice_processor.h"
 #include "planetkit_cc_param.h"
 #include "planetkit_call_start_message.h"
+#include "planetkit_my_status.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -193,6 +194,8 @@ kit_bool_t      planetkit_call_send_short_data_to_peer(planetkit_call_t * NONNUL
                                                        void * NONNULL sresult_user, planetkit_result_handler_t NONNULL result_handler);
 kit_bool_t      planetkit_call_get_statistics(planetkit_call_t * NONNULL call, planetkit_statistics_t *NONNULL out_statistics);
 
+planetkit_my_media_status_t * NULLABLE planetkit_call_get_my_media_status(planetkit_call_t * NONNULL call);
+
 /**
  * Screen share API set
  */
@@ -233,13 +236,8 @@ kit_bool_t     planetkit_call_unset_exclusively_shared_contents(planetkit_call_t
 /**
  * Data session API set
  */
-kit_bool_t     planetkit_call_make_outbound_data_session(planetkit_call_t * NONNULL call,
-                                                         planetkit_data_session_stream_id_t stream_id, planetkit_data_session_type_e type,
-                                                         void * NULLABLE tlqe_handler_user, planetkit_data_session_too_long_queued_exception_handler_t NULLABLE tlqe_handler,
-                                                         void * NULLABLE result_handler_user, planetkit_data_session_activated_handler_t NULLABLE result_handler);
-kit_bool_t     planetkit_call_make_inbound_data_session(planetkit_call_t * NONNULL call, planetkit_data_session_stream_id_t stream_id,
-                                                        void * NULLABLE recv_handler_user, planetkit_data_session_recv_handler_t NONNULL recv_handler,
-                                                        void * NULLABLE result_handler_user, planetkit_data_session_activated_handler_t NULLABLE result_handler);
+kit_bool_t     planetkit_call_make_outbound_data_session(planetkit_call_t * NONNULL call, planetkit_data_session_outbound_create_param_t *NONNULL create_param);
+kit_bool_t     planetkit_call_make_inbound_data_session(planetkit_call_t * NONNULL call, planetkit_data_session_inbound_create_param_t *NONNULL create_param);
 kit_bool_t     planetkit_call_unsupport_inbound_data_session(planetkit_call_t * NONNULL call, planetkit_data_session_stream_id_t stream_id);
 
 /**

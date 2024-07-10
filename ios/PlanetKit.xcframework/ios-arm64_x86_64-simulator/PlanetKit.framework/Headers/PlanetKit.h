@@ -3,7 +3,7 @@
 //  PlanetKit
 //
 //  Created by LINER on 2020/01/15.
-//  Copyright © 2020 LINE Corp. All rights reserved.
+//  Copyright © 2020 LINE Plus Corp. All rights reserved.
 //
 
 #import <Foundation/Foundation.h>

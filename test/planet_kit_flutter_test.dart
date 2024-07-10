@@ -103,8 +103,7 @@ class MockPlanetKitFlutterPlatform
   }
 
   @override
-  Future<bool> enableHookMyAudio(
-      String callId, HookedAudioHandler handler) {
+  Future<bool> enableHookMyAudio(String callId, HookedAudioHandler handler) {
     // TODO: implement enableInterceptMyAduio
     throw UnimplementedError();
   }

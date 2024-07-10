@@ -26,12 +26,18 @@ typedef enum planetkit_data_session_fail_reason_e
 {
     PLANETKIT_DATA_SESSION_FAIL_REASON_NONE = 0,           /// Success.
     PLANETKIT_DATA_SESSION_FAIL_REASON_INTERNAL = 1,       /// Unexpected error occurred internally.
-    PLANETKIT_DATA_SESSION_FAIL_REASON_UNSUPPORTED = 2,    /// Data session ID is unsupported by the peer.
     PLANETKIT_DATA_SESSION_FAIL_REASON_NOT_INCOMING = 3,   /// Cannot make receive data session without incoming event(PLANETKIT_EVENT_TYPE_COMMON_DATA_SESSION_INCOMING).
     PLANETKIT_DATA_SESSION_FAIL_REASON_ALREADY_EXIST = 4,  /// Data session ID already exists.
     PLANETKIT_DATA_SESSION_FAIL_REASON_INVALID_ID = 5,     /// Data session ID is invalid. Valid ID is 100 to 999.
     PLANETKIT_DATA_SESSION_FAIL_REASON_INVALID_TYPE = 6,   /// Data session type is invalid.
 } planetkit_data_session_fail_reason_e;
+
+typedef enum planetkit_data_session_closed_reason_e
+{
+    PLANETKIT_DATA_SESSION_CLOSED_REASON_SESSION_END = 0,   /// Data session has ended.
+    PLANETKIT_DATA_SESSION_CLOSED_REASON_INTERNAL = 1,      /// Unexpected error occurred internally.
+    PLANETKIT_DATA_SESSION_CLOSED_REASON_UNSUPPORTED = 2,   /// Data session ID is unsupported by the peer.
+} planetkit_data_session_closed_reason_e;
 
 typedef struct planetkit_data_session_outbound_data_flow_state_t
 {
@@ -45,6 +51,27 @@ typedef void (*planetkit_data_session_activated_handler_t)(void *NULLABLE user_p
 typedef void (*planetkit_data_session_outbound_data_flow_handler_t)(void *NULLABLE user_ptr,
                                                                     planetkit_data_session_outbound_data_flow_state_t *NULLABLE data_flow,
                                                                     kit_bool_t is_success);
+typedef void (*planetkit_data_session_closed_handler_t)(void * NULLABLE user_ptr, planetkit_data_session_closed_reason_e reason);
+
+typedef struct planetkit_data_session_outbound_create_param_t {
+    planetkit_data_session_stream_id_t stream_id;
+    planetkit_data_session_type_e type;
+ 
+    planetkit_data_session_closed_handler_t NONNULL closed_handler;
+    planetkit_data_session_activated_handler_t NONNULL activated_handler;
+    planetkit_data_session_too_long_queued_exception_handler_t NULLABLE tlqe_handler;
+    void *NULLABLE user_ptr;
+} planetkit_data_session_outbound_create_param_t;
+ 
+typedef struct planetkit_data_session_inbound_create_param_t {
+    planetkit_data_session_stream_id_t stream_id;
+ 
+    planetkit_data_session_closed_handler_t NONNULL closed_handler;
+    planetkit_data_session_activated_handler_t NONNULL activated_handler;
+    planetkit_data_session_recv_handler_t NONNULL recv_handler;
+    void *NULLABLE user_ptr;
+} planetkit_data_session_inbound_create_param_t;
+
 /*************************************************************************
  * API DEFINITION
  *************************************************************************/

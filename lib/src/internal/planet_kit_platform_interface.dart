@@ -13,9 +13,16 @@
 // under the License.
 
 import 'dart:typed_data';
+import 'package:planet_kit_flutter/src/internal/conference/planet_kit_platform_conference_responses.dart';
+import 'package:planet_kit_flutter/src/public/conference/planet_kit_join_conference_param.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
-import 'call/responses/planet_kit_platform_make_call_response.dart';
-import 'call/responses/planet_kit_platform_verify_call_response.dart';
+import '../public/conference/planet_kit_conference_peer.dart';
+import '../public/planet_kit_user_id.dart';
+import 'call/planet_kit_platform_call_event.dart';
+import 'call/planet_kit_platform_call_reponses.dart';
+import 'conference/planet_kit_platform_conference_event.dart';
+import 'my_media_status/planet_kit_platform_my_media_status_event.dart';
+import 'peer_control/planet_kit_platform_peer_control_event.dart';
 import 'planet_kit_method_channel.dart';
 
 import '../public/planet_kit_init_param.dart';
@@ -28,19 +35,74 @@ import '../public/call/planet_kit_verify_call_param.dart';
 // Also MethodChannelPlanetKit user would not have to consider native instance management
 // and attaching/detaching native events.
 
-abstract class CallEventHandler {
-  void onCallEvent(String callId, Map<String, dynamic> data);
-}
-
 abstract class HookedAudioHandler {
   void onHookedAudio(String callId, Map<String, dynamic> audioData);
 }
 
 abstract class EventManagerInterface {
-  void addCallEventHandler(String callId, CallEventHandler eventHandler);
-  void removeCallEventHandler(String callId);
+  Stream<CallEvent> get onCallEvent;
+  Stream<MyMediaStatusEvent> get onMyMediaStatusEvent;
+  Stream<ConferenceEvent> get onConferenceEvent;
+  Stream<PeerControlEvent> get onPeerControlEvent;
+
+  void dispose();
+
   void addHookedAudioHandler(String id, HookedAudioHandler handler);
   void removeHookedAudioHandler(String id);
+}
+
+abstract class CallInterface {
+  Future<bool> acceptCall(String callId, bool useResponderPreparation);
+  Future<bool> endCall(String callId, String? userReleasePhrase);
+  Future<bool> endCallWithError(String callId, String userReleasePhrase);
+  Future<bool> muteMyAudio(String callId, bool mute);
+  Future<bool> speakerOut(String callId, bool speakerOut);
+  Future<bool> isSpeakerOut(String callId);
+  Future<bool> isMyAudioMuted(String callId);
+  Future<bool> isPeerAudioMuted(String callId);
+  Future<bool> enableHookMyAudio(String callId, HookedAudioHandler handler);
+  Future<bool> disableHookMyAudio(String callId);
+  Future<bool> putHookedMyAudioBack(String callId, String audioId);
+  Future<bool> setHookedAudioData(String audioId, Uint8List data);
+  Future<bool> isHookMyAudioEnabled(String callId);
+  Future<bool> notifyCallKitAudioActivation(String callId);
+  Future<bool> finishPreparation(String callId);
+  Future<bool> isOnHold(String callId);
+  Future<bool> hold(String callId, String? reason);
+  Future<bool> unhold(String callId);
+  Future<bool> requestPeerMute(String callId, bool mute);
+  Future<String?> getMyMediaStatus(String callId);
+  Future<bool> silencePeerAudio(String callId, bool silent);
+}
+
+abstract class ConferenceInterface {
+  Future<bool> leaveConference(String id);
+  Future<bool> muteMyAudio(String id, bool mute);
+  Future<bool> speakerOut(String id, bool speakerOut);
+  Future<bool> isSpeakerOut(String id);
+  Future<bool> notifyCallKitAudioActivation(String id);
+  Future<bool> silencePeersAudio(String id, bool silent);
+  Future<bool> requestPeerMute(String id, bool mute, PlanetKitUserId peerId);
+  Future<bool> requestPeersMute(String id, bool mute);
+  Future<bool> isOnHold(String id);
+  Future<bool> hold(String id, String? reason);
+  Future<bool> unhold(String id);
+  Future<String?> getMyMediaStatus(String id);
+  Future<String?> createPeerControl(String conferenceId, String peerId);
+}
+
+abstract class ConferencePeerInterface {
+  Future<PlanetKitHoldStatus> getHoldStatus(String id);
+  Future<bool> isMuted(String id);
+}
+
+abstract class MyMediaStatusInterface {
+  Future<bool> isMyAudioMuted(String myMediaStatusId);
+}
+
+abstract class PeerControlInterface {
+  Future<bool> register(String id);
+  Future<bool> unregister(String id);
 }
 
 abstract class Platform extends PlatformInterface {
@@ -66,6 +128,21 @@ abstract class Platform extends PlatformInterface {
 
   EventManagerInterface get eventManager => _instance.eventManager;
 
+  CallInterface get callInterface =>
+      throw UnimplementedError('callInterface not available');
+
+  ConferenceInterface get conferenceInterface =>
+      throw UnimplementedError('conferenceInterface not available');
+
+  MyMediaStatusInterface get myMediaStatusInterface =>
+      throw UnimplementedError('MyMediaStatusInterface not available');
+
+  ConferencePeerInterface get conferencePeerInterface =>
+      throw UnimplementedError('ConferencePeerInterface not available');
+
+  PeerControlInterface get peerControlInterface =>
+      throw UnimplementedError('PeerControlInterface not available');
+
   Future<String?> getPlatformVersion() {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
@@ -82,62 +159,9 @@ abstract class Platform extends PlatformInterface {
     throw UnimplementedError('verifyCall() has not been implemented.');
   }
 
-  Future<bool> acceptCall(String callId) {
-    throw UnimplementedError('acceptCall() has not been implemented.');
-  }
-
-  Future<bool> endCall(String callId) {
-    throw UnimplementedError('endCall() has not been implemented.');
-  }
-
-  Future<bool> muteMyAudio(String callId) {
-    throw UnimplementedError('muteMyAudio() has not been implemented.');
-  }
-
-  Future<bool> unmuteMyAudio(String callId) {
-    throw UnimplementedError('unmuteMyAudio() has not been implemented.');
-  }
-
-  Future<bool> speakerOut(String callId, bool speakerOut) {
-    throw UnimplementedError('speakerOut() has not been implemented.');
-  }
-
-  Future<bool> isSpeakerOut(String callId) {
-    throw UnimplementedError('isMySpeakerOut() has not been implemented.');
-  }
-
-  Future<bool> isMyAudioMuted(String callId) {
-    throw UnimplementedError('isMyAudioMuted() has not been implemented.');
-  }
-
-  Future<bool> isPeerAudioMuted(String callId) {
-    throw UnimplementedError('isPeerAudioMuted() has not been implemented.');
-  }
-
-  Future<bool> enableHookMyAudio(
-      String callId, HookedAudioHandler handler) {
-    throw UnimplementedError(
-        'enableHookMyAudio() has not been implemented.');
-  }
-
-  Future<bool> disableHookMyAudio(String callId) {
-    throw UnimplementedError(
-        'disableHookMyAudio() has not been implemented.');
-  }
-
-  Future<bool> putHookedMyAudioBack(String callId, String audioId) {
-    throw UnimplementedError(
-        'putHookedMyAudioBack() has not been implemented.');
-  }
-
-  Future<bool> setHookedAudioData(String audioId, Uint8List data) {
-    throw UnimplementedError(
-        'setHookedAudioData() has not been implemented.');
-  }
-
-  Future<bool> isHookMyAudioEnabled(String callId) {
-    throw UnimplementedError(
-        'isHookMyAudioEnabled() has not been implemented.');
+  Future<JoinConferenceResponse> joinConference(
+      PlanetKitJoinConferenceParam param) {
+    throw UnimplementedError('joinConference() has not been implemented.');
   }
 
   Future<bool> releaseInstance(String id) {

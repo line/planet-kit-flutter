@@ -20,12 +20,7 @@ part of 'planet_kit_platform_event.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-EventData _$EventDataFromJson(Map<String, dynamic> json) => EventData(
-      type: const EventTypeConverter().fromJson(json['type'] as int),
+Event _$EventFromJson(Map<String, dynamic> json) => Event(
+      type: const EventTypeConverter().fromJson((json['type'] as num).toInt()),
       id: json['id'] as String,
     );
-
-Map<String, dynamic> _$EventDataToJson(EventData instance) => <String, dynamic>{
-      'type': const EventTypeConverter().toJson(instance.type),
-      'id': instance.id,
-    };

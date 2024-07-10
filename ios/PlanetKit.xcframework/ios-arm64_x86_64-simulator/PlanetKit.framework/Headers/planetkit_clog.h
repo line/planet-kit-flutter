@@ -3,7 +3,7 @@
 //  PlanetKit
 //
 //  Created by LINER on 2022/04/11.
-//  Copyright © 2022 LINE Corp. All rights reserved.
+//  Copyright © 2022 LINE Plus Corp. All rights reserved.
 //
 
 #ifndef __planetkit_clog_h

@@ -21,26 +21,28 @@ class EventTypeConverter implements JsonConverter<EventType, int> {
   EventType fromJson(int json) => EventType.fromInt(json);
 
   @override
-  int toJson(EventType object) => object.intValue;
+  int toJson(EventType object) {
+    throw UnimplementedError('Serialization is not supported.');
+  }
 }
 
 enum EventType {
   error,
-  call;
-
-  int get intValue {
-    switch (this) {
-      case EventType.call:
-        return 0;
-      default:
-        return -1;
-    }
-  }
+  call,
+  myMediaStatus,
+  conference,
+  peerControl;
 
   static EventType fromInt(int value) {
     switch (value) {
       case 0:
         return EventType.call;
+      case 1:
+        return EventType.myMediaStatus;
+      case 2:
+        return EventType.conference;
+      case 3:
+        return EventType.peerControl;
       default:
         return EventType.error;
     }

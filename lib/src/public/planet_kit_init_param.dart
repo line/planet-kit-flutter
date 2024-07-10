@@ -18,7 +18,7 @@ part 'planet_kit_init_param.g.dart';
 /// Parameter class for the PlanetKit initialization.
 ///
 /// This class encapsulates initialization settings related to logging and server configuration.
-@JsonSerializable(explicitToJson: true)
+@JsonSerializable(explicitToJson: true, createFactory: false)
 class PlanetKitInitParam {
   /// Configuration settings for logging.
   final PlanetKitLogSetting logSetting;
@@ -116,7 +116,7 @@ enum PlanetKitLogSizeLimit {
 }
 
 /// Configuration settings for logging within PlanetKit.
-@JsonSerializable()
+@JsonSerializable(explicitToJson: true, createFactory: false)
 class PlanetKitLogSetting {
   /// Indicates whether logging will be enabled.
   final bool enabled;
@@ -135,10 +135,6 @@ class PlanetKitLogSetting {
     required this.logLevel,
     required this.logSizeLimit,
   });
-
-  /// @nodoc
-  factory PlanetKitLogSetting.fromJson(Map<String, dynamic> json) =>
-      _$PlanetKitLogSettingFromJson(json);
 
   /// @nodoc
   Map<String, dynamic> toJson() => _$PlanetKitLogSettingToJson(this);

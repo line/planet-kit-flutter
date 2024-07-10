@@ -62,7 +62,7 @@ class PlanetKitHookedAudio {
   /// Attempts to set the hooked audio data on the platform side. If successful, updates the local data.
   /// The new [data] must have the same audio attributes as the original audio data.
   Future<bool> setData(Uint8List data) async {
-    if (!await Platform.instance.setHookedAudioData(id, _data)) {
+    if (!await Platform.instance.callInterface.setHookedAudioData(id, _data)) {
       print("#planet_kit_call setHookedAudioData failed");
       return false;
     }

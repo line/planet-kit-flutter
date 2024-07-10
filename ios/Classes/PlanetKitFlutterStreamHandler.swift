@@ -12,13 +12,6 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-//
-//  PlanetKitFlutterStreamHandler.swift
-//  planet_kit_flutter
-//
-//  Created by USER on 4/23/24.
-//
-
 import Foundation
 import Flutter
 

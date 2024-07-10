@@ -3,7 +3,7 @@
 //  PlanetKit
 //
 //  Created by LINER on 2020/03/16.
-//  Copyright © 2020 LINE Corp. All rights reserved.
+//  Copyright © 2020 LINE Plus Corp. All rights reserved.
 //
 
 #ifndef PlanetKitAudioMixer_h
@@ -34,11 +34,10 @@
 @interface PlanetKitAudioMixer : NSObject
 
 
-@property(nonatomic, readonly) AUNode    node;
 @property(nonatomic, readonly) AudioUnit unit;
 
 
-- (OSStatus)setupWithGraph:(AUGraph)aGraph busCount:(UInt32)aBusCount;
+- (OSStatus)setupWithAudioUnit:(AudioUnit)aAudioUnit busCount:(UInt32)aBusCount;
 - (void)dispose;
 - (void)start;
 

@@ -3,7 +3,7 @@
 //  Planet
 //
 //  Created by LINER on 2019/12/17.
-//  Copyright © 2019 LINE Corp. All rights reserved.
+//  Copyright © 2019 LINE Plus Corp. All rights reserved.
 //
 
 #import <Foundation/Foundation.h>
@@ -13,6 +13,13 @@
 
 #import "PlanetKitAudioMixer.h"
 
+
+#if !TARGET_OS_IPHONE
+CF_ENUM(AudioObjectPropertySelector)
+{
+    kAudioDevicePropertyTabEnabled = 'tapd',
+};
+#endif
 
 
 #if TARGET_OS_IPHONE

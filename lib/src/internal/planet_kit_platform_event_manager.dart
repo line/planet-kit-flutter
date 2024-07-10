@@ -12,10 +12,14 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
-
+import 'package:planet_kit_flutter/src/internal/peer_control/planet_kit_platform_peer_control_event.dart';
+import 'conference/planet_kit_platform_conference_event.dart';
+import 'call/planet_kit_platform_call_event.dart';
+import 'my_media_status/planet_kit_platform_my_media_status_event.dart';
 import 'planet_kit_platform_event_types.dart';
 import 'planet_kit_platform_event.dart';
 import 'planet_kit_platform_interface.dart';
@@ -25,7 +29,6 @@ class EventManager implements EventManagerInterface {
   final EventChannel _interceptedAudioStream =
       const EventChannel('planetkit_hooked_audio');
 
-  final Map<String, CallEventHandler> _callEventHandlers = {};
   final Map<String, HookedAudioHandler> _interceptedAudioHandlers = {};
 
   void initializeEventChannel() {
@@ -42,23 +45,21 @@ class EventManager implements EventManagerInterface {
 
   void _onEvent(dynamic data) {
     Map<String, dynamic> jsonMap = jsonDecode(data);
-    final eventData = EventData.fromJson(jsonMap);
+    final eventData = Event.fromJson(jsonMap);
 
     if (eventData.type == EventType.call) {
-      if (_callEventHandlers.containsKey(eventData.id)) {
-        _callEventHandlers[eventData.id]?.onCallEvent(eventData.id, jsonMap);
-      }
+      final callEvent = CallEventFactory.fromJson(jsonMap);
+      _callEventController.add(callEvent);
+    } else if (eventData.type == EventType.myMediaStatus) {
+      final eventData = MyMediaStatusEventFactory.fromJson(jsonMap);
+      _myMediaStatusEventController.add(eventData);
+    } else if (eventData.type == EventType.conference) {
+      final eventData = ConferenceEventFactory.fromJson(jsonMap);
+      _conferenceEventController.add(eventData);
+    } else if (eventData.type == EventType.peerControl) {
+      final eventData = PeerControlEventFactory.fromJson(jsonMap);
+      _peerControlEventController.add(eventData);
     }
-  }
-
-  @override
-  void addCallEventHandler(String id, CallEventHandler eventHandler) {
-    _callEventHandlers[id] = eventHandler;
-  }
-
-  @override
-  void removeCallEventHandler(String id) {
-    _callEventHandlers.remove(id);
   }
 
   void _onInterceptedAudio(dynamic data) {
@@ -83,4 +84,33 @@ class EventManager implements EventManagerInterface {
   void removeHookedAudioHandler(String id) {
     _interceptedAudioHandlers.remove(id);
   }
+
+  @override
+  Stream<CallEvent> get onCallEvent => _callEventController.stream;
+  final StreamController<CallEvent> _callEventController =
+      StreamController<CallEvent>.broadcast();
+
+  @override
+  void dispose() {
+    _callEventController.close();
+    _myMediaStatusEventController.close();
+  }
+
+  @override
+  Stream<MyMediaStatusEvent> get onMyMediaStatusEvent =>
+      _myMediaStatusEventController.stream;
+  final StreamController<MyMediaStatusEvent> _myMediaStatusEventController =
+      StreamController<MyMediaStatusEvent>.broadcast();
+
+  @override
+  Stream<ConferenceEvent> get onConferenceEvent =>
+      _conferenceEventController.stream;
+  final StreamController<ConferenceEvent> _conferenceEventController =
+      StreamController<ConferenceEvent>.broadcast();
+
+  @override
+  Stream<PeerControlEvent> get onPeerControlEvent =>
+      _peerControlEventController.stream;
+  final StreamController<PeerControlEvent> _peerControlEventController =
+      StreamController<PeerControlEvent>.broadcast();
 }

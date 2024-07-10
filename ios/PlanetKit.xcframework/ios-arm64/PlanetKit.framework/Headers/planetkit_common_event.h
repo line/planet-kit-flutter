@@ -50,8 +50,8 @@ typedef enum planetkit_event_type {
     PLANETKIT_EVENT_TYPE_CONF_PEER_LIST_UPDATED         = 102,  ///< planetkit_event_param.conf_peer_list_updated
     PLANETKIT_EVENT_TYPE_CONF_PEERS_VIDEO_UPDATED       = 103,  ///< planetkit_event_param.conf_peers_video_updated
     PLANETKIT_EVENT_TYPE_CONF_PUBLIC_SUBGROUP_UPDATED   = 104,  ///< planetkit_event_param.conf_pub_subgrp_updated
-    PLANETKIT_EVENT_TYPE_CONF_BAD_NETWORK_DETECTED      = 106,  ///< planetkit_event_param.detect_bad_network
-    PLANETKIT_EVENT_TYPE_CONF_BAD_NETWORK_RESOLVED      = 107,  ///< no param
+    PLANETKIT_EVENT_TYPE_CONF_NET_UNAVAILABLE           = 106,  ///< planetkit_event_param.conf_network_unavailable
+    PLANETKIT_EVENT_TYPE_CONF_NET_REAVAILABLE           = 107,  ///< no param
     PLANETKIT_EVENT_TYPE_CONF_EXCEPTION                 = 108,  ///< planetkit_event_param.conf_exception
     PLANETKIT_EVENT_TYPE_CONF_PEER_SCREEN_SHARE_UPDATED   = 109,  ///< planetkit_event_param.conf_peer_scrn_shr_updated;
     PLANETKIT_EVENT_TYPE_CONF_PEER_SET_ROOM_SHARED_CONTENTS     = 110, ///< planetkit_event_param.conf_peer_set_room_shrd_ct
@@ -305,9 +305,9 @@ typedef struct planetkit_event_data_recv_app_ctrl_msg {
     uint32_t                        msg_size;
 } planetkit_event_data_recv_app_ctrl_msg_t;
 
-typedef struct planetkit_event_data_detect_bad_net_param {
-    int                                 will_disconnect_after_sec;      /// if the value is negative, will not disconnect
-} planetkit_event_data_detect_bad_net_param_t;
+typedef struct planetkit_event_data_conf_network_unavailable_param {
+    uint32_t                        will_disconnect_after_sec;
+} planetkit_event_data_conf_network_unavailable_param_t;
 
 typedef struct planetkit_event_conf_exception {
     planetkit_peer_t    *   NONNULL peer;
@@ -377,7 +377,7 @@ typedef struct planetkit_event_param {
 
         planetkit_event_data_sess_incoming_param_t  data_sess_incoming;
         planetkit_event_data_recv_app_ctrl_msg_t    app_ctrl_msg;
-        planetkit_event_data_detect_bad_net_param_t detect_bad_network;
+        planetkit_event_data_conf_network_unavailable_param_t conf_network_unavailable;
 
         planetkit_event_connection_updated_t        connection_updated;
 

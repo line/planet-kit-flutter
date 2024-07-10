@@ -16,18 +16,46 @@ import Flutter
 import UIKit
 import PlanetKit
 
-extension NSObject {
+protocol PluginInstance {
+    var instanceId: String { get }
+}
+
+extension PlanetKitCCParam: PluginInstance {
     var instanceId: String {
         return "\(Unmanaged<AnyObject>.passUnretained(self).toOpaque())"
     }
 }
 
+
 public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
-    var _nativeInstances: [String: Any] = [:]
-    let _nativeInstancesLock = NSLock()
-    
+    var registrar: FlutterPluginRegistrar?
     let eventStreamHandler = PlanetKitFlutterStreamHandler()
     let hookedAudioStreamHandler = PlanetKitFlutterStreamHandler()
+    let nativeInstances = PlanetKitFlutterNativeInstances()
+    
+    lazy var hookedAudioPlugin: PlanetKitFlutterHookedAudioPlugin = {
+        PlanetKitFlutterHookedAudioPlugin(nativeInstances: nativeInstances, hookedAudioStreamHandler: hookedAudioStreamHandler)
+    }()
+    
+    lazy var callPlugin: PlanetKitFlutterCallPlugin = {
+        PlanetKitFlutterCallPlugin(nativeInstances: nativeInstances, eventStreamHandler: eventStreamHandler)
+    }()
+    
+    lazy var myMediaStatusPlugin: PlanetKitFlutterMyMediaStatusPlugin = {
+        PlanetKitFlutterMyMediaStatusPlugin(nativeInstances: nativeInstances, eventStreamHandler: eventStreamHandler)
+    }()
+    
+    lazy var conferencePlugin: PlanetKitFlutterConferencePlugin = {
+        PlanetKitFlutterConferencePlugin(nativeInstances: nativeInstances, eventStreamHandler: eventStreamHandler)
+    }()
+    
+    lazy var conferencePeerPlugin: PlanetKitFlutterConferencePeerPlugin = {
+        PlanetKitFlutterConferencePeerPlugin(nativeInstances: nativeInstances, eventStreamHandler: eventStreamHandler)
+    }()
+    
+    lazy var peerControlPlugin: PlanetKitFlutterPeerControlPlugin = {
+        PlanetKitFlutterPeerControlPlugin(nativeInstances: nativeInstances, eventStreamHandler: eventStreamHandler)
+    }()
     
     public static func register(with registrar: FlutterPluginRegistrar) {
         NSLog("\(#function)")
@@ -35,33 +63,10 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
         let channel = FlutterMethodChannel(name: "planetkit_sdk", binaryMessenger: messenger)
         let instance = PlanetKitFlutterPlugin()
         registrar.addMethodCallDelegate(instance, channel: channel)
+        instance.registrar = registrar
 
         FlutterEventChannel(name: "planetkit_event", binaryMessenger: messenger).setStreamHandler(instance.eventStreamHandler)        
         FlutterEventChannel(name: "planetkit_hooked_audio", binaryMessenger: messenger).setStreamHandler(instance.hookedAudioStreamHandler)
-    }
-    
-    func addNativeInstance(key: String, instance: Any) {
-        _nativeInstancesLock.lock()
-        defer {
-            _nativeInstancesLock.unlock()
-        }
-        _nativeInstances[key] = instance
-    }
-    
-    func removeNativeInstance(key: String) {
-        _nativeInstancesLock.lock()
-        defer {
-            _nativeInstancesLock.unlock()
-        }
-        _nativeInstances[key] = nil
-    }
-    
-    func getNativeInstance(key: String) -> Any? {
-        _nativeInstancesLock.lock()
-        defer {
-            _nativeInstancesLock.unlock()
-        }
-        return _nativeInstances[key]
     }
     
     // TODO: separate handler by features
@@ -77,28 +82,31 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
         case "verifyCall":
             verifyCall(call: call, result: result)
             break
+        case "joinConference":
+            joinConference(call: call, result: result)
+            break
         case "acceptCall":
-            acceptCall(call: call, result: result)
+            callPlugin.acceptCall(call: call, result: result)
         case "endCall":
-            endCall(call: call, result: result)
+            callPlugin.endCall(call: call, result: result)
+            break
+        case "endCallWithError":
+            callPlugin.endCallWithError(call: call, result: result)
             break
         case "muteMyAudio":
-            muteMyAudio(call: call, result: result)
-            break
-        case "unmuteMyAudio":
-            unmuteMyAudio(call: call, result: result)
+            callPlugin.muteMyAudio(call: call, result: result)
             break
         case "speakerOut":
-            speakerOut(call: call, result: result)
+            callPlugin.speakerOut(call: call, result: result)
             break
         case "isSpeakerOut":
-            isSpeakerOut(call: call, result: result)
+            callPlugin.isSpeakerOut(call: call, result: result)
             break
         case "isMyAudioMuted":
-            isMyAudioMuted(call: call, result: result)
+            callPlugin.isMyAudioMuted(call: call, result: result)
             break
         case "isPeerAudioMuted":
-            isPeerAudioMuted(call: call, result: result)
+            callPlugin.isPeerAudioMuted(call: call, result: result)
             break
         case "releaseInstance":
             releaseInstance(call: call, result: result)
@@ -107,22 +115,103 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
             createCcParam(call: call, result: result)
             break
         case "enableHookMyAudio":
-            enableHookMyAudio(call: call, result: result)
+            hookedAudioPlugin.enableHookMyAudio(call: call, result: result)
             break
         case "disableHookMyAudio":
-            disableHookMyAudio(call: call, result: result)
+            hookedAudioPlugin.disableHookMyAudio(call: call, result: result)
             break
         case "putHookedMyAudioBack":
-            putHookedMyAudioBack(call: call, result: result)
+            hookedAudioPlugin.putHookedMyAudioBack(call: call, result: result)
             break
         case "isHookMyAudioEnabled":
-            isHookMyAudioEnabled(call: call, result: result)
+            hookedAudioPlugin.isHookMyAudioEnabled(call: call, result: result)
             break
         case "setHookedAudioData":
-            setHookedAudioData(call: call, result: result)
+            hookedAudioPlugin.setHookedAudioData(call: call, result: result)
+            break
+        case "notifyCallKitAudioActivation":
+            callPlugin.notifyCallKitAudioActivation(call: call, result: result)
+            break
+        case "finishPreparation":
+            callPlugin.finishPreparation(call: call, result: result)
+            break
+        case "holdCall":
+            callPlugin.hold(call: call, result: result)
+            break
+        case "unholdCall":
+            callPlugin.unhold(call: call, result: result)
+            break
+        case "isOnHold":
+            callPlugin.isOnHold(call: call, result: result)
+            break
+        case "requestPeerMute":
+            callPlugin.requestPeerMute(call: call, result: result)
+            break
+        case "getMyMediaStatus":
+            callPlugin.getMyMediaStatus(call: call, delegate: myMediaStatusPlugin, result: result)
+            break
+        case "silencePeerAudio":
+            callPlugin.silencePeerAudio(call: call, result: result)
+            break
+        case "isMyAudioMutedMyMediaStatus":
+            myMediaStatusPlugin.isMyAudioMutedMyMediaStatus(call: call, result: result)
+            break
+        case "conference_leaveConference":
+            conferencePlugin.leaveConference(call: call, result: result)
+            break
+        case "conference_muteMyAudio":
+            conferencePlugin.muteMyAudio(call: call, result: result)
+            break
+        case "conference_speakerOut":
+            conferencePlugin.speakerOut(call: call, result: result)
+            break
+        case "conference_isSpeakerOut":
+            conferencePlugin.isSpeakerOut(call: call, result: result)
+            break
+        case "conference_notifyCallKitAudioActivation":
+            conferencePlugin.notifyCallKitAudioActivation(call: call, result: result)
+            break
+        case "conference_silencePeersAudio":
+            conferencePlugin.silencePeersAudio(call: call, result: result)
+            break
+        case "conference_requestPeerMute":
+            conferencePlugin.requestPeerMute(call: call, result: result)
+            break
+        case "conference_requestPeersMute":
+            conferencePlugin.requestPeersMute(call: call, result: result)
+            break
+        case "conference_hold":
+            conferencePlugin.hold(call: call, result: result)
+            break
+        case "conference_unhold":
+            conferencePlugin.unhold(call: call, result: result)
+            break
+        case "conference_isOnHold":
+            conferencePlugin.isOnHold(call: call, result: result)
+            break
+        case "conference_getMyMediaStatus":
+            conferencePlugin.getMyMediaStatus(call: call, delegate: myMediaStatusPlugin, result: result)
+            break
+        case "conference_isPeersAudioSilenced":
+            conferencePlugin.isPeersAudioSilenced(call: call, result: result)
+            break
+        case "conferencePeer_getHoldStatus":
+            conferencePeerPlugin.getHoldStatus(call: call, result: result)
+            break
+        case "conferencePeer_isMuted":
+            conferencePeerPlugin.isMuted(call: call, result: result)
+            break
+        case "conference_createPeerControl":
+            conferencePlugin.createPeerControl(call: call, delegate: peerControlPlugin, result: result)
+            break
+        case "peerControl_register":
+            peerControlPlugin.register(call: call, result: result)
+            break
+        case "peerControl_unregister":
+            peerControlPlugin.unregister(call: call, result: result)
             break
         default:
-            NSLog("#flutter unknow call method \(call.method)")
+            NSLog("#flutter unknown call method \(call.method)")
             result(FlutterMethodNotImplemented)
         }
     }
@@ -142,7 +231,6 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
             settingsBuilder = settingsBuilder.withEnableKitLogKey(level: PlanetKitLogLevel(rawValue: Int32(logSetting.logLevel)) ?? .simple, enable: logSetting.enabled, logSize: PlanetKitLogSizeLimit(rawValue: logSetting.logSizeLimit) ?? .medium)
             PlanetKitLog.v("#flutter \(#function) plugin logSetting: \(logSetting)")
         }
-
         
         if let serverUrl = param.serverUrl {
             settingsBuilder = settingsBuilder.withSetKitServerKey(serverUrl: serverUrl)
@@ -155,198 +243,202 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
         result(true)
     }
     
+    func makeCall(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+
+        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: MakeCallParam.self)
+
+        let myPlanetKitUserId = PlanetKitUserId(id: param.myUserId, serviceId: param.myServiceId)
+        let peerPlanetKitUserId = PlanetKitUserId(id: param.peerUserId, serviceId: param.peerServiceId)
+        let makeCallParam = PlanetKitCallParam(myUserId: myPlanetKitUserId, peerUserId: peerPlanetKitUserId, delegate: callPlugin, accessToken: param.accessToken)
+        
+        makeCallParam.useResponderPreparation = param.useResponderPreparation
+        
+        var settings = PlanetKitMakeCallSettingBuilder()
+        
+        if let callKitType = param.callKitType {
+            let callKitSetting = PlanetKitCallKitSetting(type: callKitType, param: nil)
+            settings = settings.withCallKitSettingsKey(setting: callKitSetting)
+        }
+        
+        if let holdTonePath = param.holdTonePath, let key = registrar?.lookupKey(forAsset: holdTonePath), let url = Bundle.main.url(forResource: key, withExtension: nil), let resultSettings = try?  settings.withSetHoldToneKey(fileResourceUrl: url) {
+            PlanetKitLog.i("#flutter \(#function) hold url set")
+            settings = resultSettings
+        }
+        
+        if let ringbackTonePath = param.ringbackTonePath, let key = registrar?.lookupKey(forAsset: ringbackTonePath), let url = Bundle.main.url(forResource: key, withExtension: nil), let resultSettings = try?  settings.withSetRingbackToneKey(fileResourceUrl: url) {
+            PlanetKitLog.i("#flutter \(#function) ringbacktone url set")
+            settings = resultSettings
+        }
+        
+        if let endTonePath = param.endTonePath, let key = registrar?.lookupKey(forAsset: endTonePath), let url = Bundle.main.url(forResource: key, withExtension: nil), let resultSettings = try?  settings.withSetEndToneKey(fileResourceUrl: url) {
+            PlanetKitLog.v("#flutter \(#function) endtone url set")
+            settings = resultSettings
+        }
+        
+        if let allowCallWithoutMic = param.allowCallWithoutMic {
+            PlanetKitLog.v("#flutter \(#function) allowCallWithoutMic: \(allowCallWithoutMic)")
+            settings = settings.withAllowCallWithoutMicKey(allow: allowCallWithoutMic)
+        }
+        
+        if let enableAudioDescription = param.enableAudioDescription {
+            PlanetKitLog.v("#flutter \(#function) enableAudioDescription: \(enableAudioDescription)")
+            settings = settings.withEnableAudioDescriptionKey(enable: enableAudioDescription)
+        }
+        
+        if let audioDescriptionUpdateIntervalMs = param.audioDescriptionUpdateIntervalMs {
+            PlanetKitLog.v("#flutter \(#function) audioDescriptionUpdateIntervalMs: \(audioDescriptionUpdateIntervalMs)")
+            let interval = TimeInterval(audioDescriptionUpdateIntervalMs) / 1000.0
+            settings = settings.withAudioDescriptionUpdateIntervalKey(interval: interval)
+        }
+        
+        
+        let makeCallResult = PlanetKitManager.shared.makeCall(param: makeCallParam, settings: settings.build())
+        
+        
+        if makeCallResult.reason == .none, let planetKitCall = makeCallResult.call {
+            nativeInstances.add(key: planetKitCall.instanceId, instance: planetKitCall)
+        }
+                
+        let response = MakeCallResponse(callId: makeCallResult.call?.instanceId, failReason: makeCallResult.reason)
+        let encodedResponse = PlanetKitFlutterPlugin.encode(data: response)
+        
+        PlanetKitLog.v("#flutter \(#function) response: \(encodedResponse)")
+        result(encodedResponse)
+    }
     
-    private func decodeMethodCallArg<T: Codable>(call: FlutterMethodCall, codable: T.Type) -> T {
+    func verifyCall(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+
+        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: VerifyCallParam.self)
+        let myPlanetKitUserId = PlanetKitUserId(id: param.myUserId, serviceId: param.myServiceId)
+
+        guard let ccParam = nativeInstances.get(key: param.ccParam.id) as? PlanetKitCCParam else {
+            PlanetKitLog.e("#flutter \(#function) failed to get cc param")
+            let response = VerifyCallResponse(callId: nil, failReason: .invalidParam)
+            let encodedResponse = PlanetKitFlutterPlugin.encode(data: response)
+            result(response)
+            return
+        }
+        
+        var settings = PlanetKitVerifyCallSettingBuilder()
+        
+        if let callKitType = param.callKitType {
+            let callKitSetting = PlanetKitCallKitSetting(type: callKitType, param: nil)
+            settings = settings.withCallKitSettingsKey(setting: callKitSetting)
+        }
+        
+        if let holdTonePath = param.holdTonePath, let key = registrar?.lookupKey(forAsset: holdTonePath), let url = Bundle.main.url(forResource: key, withExtension: nil), let resultSettings = try?  settings.withSetHoldToneKey(fileResourceUrl: url) {
+            PlanetKitLog.v("#flutter \(#function) hold url set")
+            settings = resultSettings
+        }
+        
+        if let ringbackTonePath = param.ringtonePath, let key = registrar?.lookupKey(forAsset: ringbackTonePath), let url = Bundle.main.url(forResource: key, withExtension: nil), let resultSettings = try?  settings.withSetRingToneKey(fileResourceUrl: url) {
+            PlanetKitLog.v("#flutter \(#function) ringtone url set")
+            settings = resultSettings
+        }
+        
+        if let endTonePath = param.endTonePath, let key = registrar?.lookupKey(forAsset: endTonePath), let url = Bundle.main.url(forResource: key, withExtension: nil), let resultSettings = try? settings.withSetEndToneKey(fileResourceUrl: url) {
+            PlanetKitLog.v("#flutter \(#function) endtone url set")
+            settings = resultSettings
+        }
+        
+        if let allowCallWithoutMic = param.allowCallWithoutMic {
+            PlanetKitLog.v("#flutter \(#function) allowCallWithoutMic: \(allowCallWithoutMic)")
+            settings = settings.withAllowCallWithoutMicKey(allow: allowCallWithoutMic)
+        }
+        
+        if let enableAudioDescription = param.enableAudioDescription {
+            PlanetKitLog.v("#flutter \(#function) enableAudioDescription: \(enableAudioDescription)")
+            settings = settings.withEnableAudioDescriptionKey(enable: enableAudioDescription)
+        }
+        
+        if let audioDescriptionUpdateIntervalMs = param.audioDescriptionUpdateIntervalMs {
+            PlanetKitLog.v("#flutter \(#function) audioDescriptionUpdateIntervalSec: \(audioDescriptionUpdateIntervalMs)")
+            let interval = TimeInterval(audioDescriptionUpdateIntervalMs) / 1000.0
+            settings = settings.withAudioDescriptionUpdateIntervalKey(interval: interval)
+        }
+
+        
+        let verifyCallResult = PlanetKitManager.shared.verifyCall(myUserId: myPlanetKitUserId, ccParam: ccParam, settings: settings.build(), delegate: callPlugin)
+        
+        if verifyCallResult.reason == .none, let planetKitCall = verifyCallResult.call {
+            nativeInstances.add(key: planetKitCall.instanceId, instance: planetKitCall)
+        }
+        
+        let response = VerifyCallResponse(callId: verifyCallResult.call?.instanceId, failReason: verifyCallResult.reason)
+        let encodedResponse = PlanetKitFlutterPlugin.encode(data: response)
+
+        PlanetKitLog.v("#flutter \(#function) response: \(encodedResponse)")
+        result(encodedResponse)
+    }
+    
+    func joinConference(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        
+        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: ConferenceParams.JoinConferenceParam.self)
+        let myPlanetKitUserId = PlanetKitUserId(id: param.myUserId, serviceId: param.myServiceId)
+        
+        let joinConferenceParam = PlanetKitConferenceParam(myUserId: myPlanetKitUserId, roomId: param.roomId, roomServiceId: param.roomServiceId, displayName: nil, delegate: conferencePlugin, accessToken: param.accessToken)
+        
+        var settings = PlanetKitJoinConferenceSettingBuilder()
+
+        if let endTonePath = param.endTonePath, let key = registrar?.lookupKey(forAsset: endTonePath), let url = Bundle.main.url(forResource: key, withExtension: nil), let resultSettings = try? settings.withSetEndToneKey(fileResourceUrl: url) {
+            PlanetKitLog.v("#flutter \(#function) endtone url set")
+            settings = resultSettings
+        }
+        
+        if let allowConferenceWithoutMic = param.allowConferenceWithoutMic {
+            PlanetKitLog.v("#flutter \(#function) allowConferenceWithoutMic: \(allowConferenceWithoutMic)")
+            settings = settings.withAllowConferenceWithoutMicKey(allow: allowConferenceWithoutMic)
+        }
+        
+        if let enableAudioDescription = param.enableAudioDescription {
+            PlanetKitLog.v("#flutter \(#function) enableAudioDescription: \(enableAudioDescription)")
+            settings = settings.withEnableAudioDescriptionKey(enable: enableAudioDescription)
+        }
+        
+        if let audioDescriptionUpdateIntervalMs = param.audioDescriptionUpdateIntervalMs {
+            PlanetKitLog.v("#flutter \(#function) audioDescriptionUpdateIntervalSec: \(audioDescriptionUpdateIntervalMs)")
+            let interval = TimeInterval(audioDescriptionUpdateIntervalMs) / 1000.0
+            settings = settings.withAudioDescriptionUpdateIntervalKey(interval: interval)
+        }
+        
+        let joinConferenceResult = PlanetKitManager.shared.joinConference(param: joinConferenceParam, settings: settings.build())
+        
+        if joinConferenceResult.reason == .none, let conference = joinConferenceResult.conference {
+            nativeInstances.add(key: conference.instanceId, instance: conference)
+        }
+        
+        let response = JoinConferenceResponse(id: joinConferenceResult.conference?.instanceId, failReason: joinConferenceResult.reason)
+        let encodedResponse = PlanetKitFlutterPlugin.encode(data: response)
+
+        PlanetKitLog.v("#flutter \(#function) response: \(encodedResponse)")
+        result(encodedResponse)
+    }
+
+    static func decodeMethodCallArg<T: Decodable>(call: FlutterMethodCall, codable: T.Type) -> T {
         let args = call.arguments as! Dictionary<String, Any>
         let jsonData = try! JSONSerialization.data(withJSONObject: args, options: [])
         let param = try! JSONDecoder().decode(T.self, from: jsonData)
         return param
     }
     
-    private func encode<T: Codable>(data: T) -> String {
+    static func encode<T: Encodable>(data: T) -> String {
         let responseJsonData = try! JSONEncoder().encode(data)
         PlanetKitLog.v("#flutter \(responseJsonData)")
         return String(data: responseJsonData, encoding: .utf8)!
     }
     
-    private func makeCall(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
-
-        let param = decodeMethodCallArg(call: call, codable: MakeCallParam.self)
-
-        let myPlanetKitUserId = PlanetKitUserId(id: param.myUserId, serviceId: param.myServiceId)
-        let peerPlanetKitUserId = PlanetKitUserId(id: param.peerUserId, serviceId: param.peerServiceId)
-        let makeCallParam = PlanetKitCallParam(myUserId: myPlanetKitUserId, peerUserId: peerPlanetKitUserId, delegate: self, accessToken: param.accessToken)
-        
-        
-        let makeCallResult = PlanetKitManager.shared.makeCall(param: makeCallParam)
-        
-        
-        if makeCallResult.reason == .none, let planetKitCall = makeCallResult.call {
-            addNativeInstance(key: planetKitCall.instanceId, instance: planetKitCall)
-        }
-                
-        let response = MakeCallResponse(callId: makeCallResult.call?.instanceId, failReason: makeCallResult.reason)
-        let encodedResponse = encode(data: response)
-        
-        PlanetKitLog.v("#flutter \(#function) response: \(encodedResponse)")
-        result(encodedResponse)
-    }
-    
-    private func verifyCall(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
-
-        let param = decodeMethodCallArg(call: call, codable: VerifyCallParam.self)
-        let myPlanetKitUserId = PlanetKitUserId(id: param.myUserId, serviceId: param.myServiceId)
-
-        guard let ccParam = getNativeInstance(key: param.ccParam.id) as? PlanetKitCCParam else {
-            PlanetKitLog.e("#flutter \(#function) failed to get cc param")
-            let response = VerifyCallResponse(callId: nil, failReason: .invalidParam)
-            let encodedResponse = encode(data: response)
-            result(response)
-            return
-        }
-        
-        let verifyCallResult = PlanetKitManager.shared.verifyCall(myUserId: myPlanetKitUserId, ccParam: ccParam, delegate: self)
-        if verifyCallResult.reason == .none, let planetKitCall = verifyCallResult.call {
-            addNativeInstance(key: planetKitCall.instanceId, instance: planetKitCall)
-        }
-        
-        let response = VerifyCallResponse(callId: verifyCallResult.call?.instanceId, failReason: verifyCallResult.reason)
-        let encodedResponse = encode(data: response)
-
-        PlanetKitLog.v("#flutter \(#function) response: \(encodedResponse)")
-        result(encodedResponse)
-    }
-
-    private func acceptCall(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
-
-        let callId = call.arguments as! String
-        guard let call = getNativeInstance(key: callId) as? PlanetKitCall else {
-            PlanetKitLog.e("#flutter \(#function) call not found \(callId)")
-            result(false)
-            return
-        }
-        
-        call.acceptCall(startMessage: nil, useResponderPreparation: false)
-        result(true)
-    }
-    
-    private func endCall(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
-
-        let callId = call.arguments as! String
-        guard let call = getNativeInstance(key: callId) as? PlanetKitCall else {
-            PlanetKitLog.e("#flutter \(#function) call not found \(callId)")
-            result(false)
-            return
-        }
-        
-        call.endCall()
-        result(true)
-    }
-    
-    private func muteMyAudio(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
-
-        let callId = call.arguments as! String
-        guard let call = getNativeInstance(key: callId) as? PlanetKitCall else {
-            PlanetKitLog.e("#flutter \(#function) call not found \(callId)")
-            result(false)
-            return
-        }
-        
-        call.muteMyAudio(true) { success in
-            if !success {
-                PlanetKitLog.e("#flutter \(#function) platform api returned \(success)")
-            }
-            result(success)
-        }
-    }
-    
-    private func unmuteMyAudio(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
-
-        let callId = call.arguments as! String
-        guard let call = getNativeInstance(key: callId) as? PlanetKitCall else {
-            PlanetKitLog.e("#flutter \(#function) call not found \(callId)")
-            result(false)
-            return
-        }
-        
-        call.muteMyAudio(false) { success in
-            if !success {
-                PlanetKitLog.e("#flutter \(#function) platform api returned \(success)")
-            }
-            result(success)
-        }
-    }
-    
-    private func speakerOut(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
-
-        let param = decodeMethodCallArg(call: call, codable: SpeakerOutParam.self)
-        
-        let callId = param.callId
-        guard let call = getNativeInstance(key: callId) as? PlanetKitCall else {
-            PlanetKitLog.e("#flutter \(#function) call not found \(callId)")
-            result(false)
-            return
-        }
-        
-        call.audioManager.speakerOut(param.speakerOut)
-        result(true)
-    }
-    
-    private func isMyAudioMuted(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
-
-        let callId = call.arguments as! String
-        guard let call = getNativeInstance(key: callId) as? PlanetKitCall else {
-            PlanetKitLog.e("#flutter \(#function) call not found \(callId)")
-            result(false)
-            return
-        }
-        
-        result(call.isMyAudioMuted)
-    }
-    
-    private func isPeerAudioMuted(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
-
-        let callId = call.arguments as! String
-        guard let call = getNativeInstance(key: callId) as? PlanetKitCall else {
-            PlanetKitLog.e("#flutter \(#function) call not found \(callId)")
-            result(false)
-            return
-        }
-        
-        result(call.isPeerAudioMuted)
-    }
-    
-    private func isSpeakerOut(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
-
-        let callId = call.arguments as! String
-        guard let call = getNativeInstance(key: callId) as? PlanetKitCall else {
-            PlanetKitLog.e("#flutter \(#function) call not found \(callId)")
-            result(false)
-            return
-        }
-        
-        result(call.audioManager.isSpeakerOut)
-    }
-    
-    private func releaseInstance(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    func releaseInstance(call: FlutterMethodCall, result: @escaping FlutterResult) {
         PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
 
         let id = call.arguments as! String
-        removeNativeInstance(key: id)
+        nativeInstances.remove(key: id)
         result(true)
     }
     
-    private func createCcParam(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    func createCcParam(call: FlutterMethodCall, result: @escaping FlutterResult) {
         PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
         
         let ccParamString = call.arguments as! String
@@ -356,72 +448,7 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
             return
         }
         
-        addNativeInstance(key: ccParam.instanceId, instance: ccParam)
+        nativeInstances.add(key: ccParam.instanceId, instance: ccParam)
         result(ccParam.instanceId)
-    }
-}
-
-
-extension PlanetKitFlutterPlugin: PlanetKitCallDelegate {
-    public func didWaitConnect(_ call: PlanetKit.PlanetKitCall) {
-        DispatchQueue.main.async {
-            PlanetKitLog.v("#flutter \(#function)")
-            
-            let event = CallWaitConnectEventData(id: call.instanceId)
-            let encodedEvent = self.encode(data: event)
-            self.eventStreamHandler.eventSink?(encodedEvent)
-        }
-    }
-    
-    public func didConnect(_ call: PlanetKit.PlanetKitCall, connected: PlanetKit.PlanetKitCallConnectedParam) {
-        DispatchQueue.main.async {
-            PlanetKitLog.v("#flutter \(#function)")
-            
-            let event = CallConnectedEventData(id: call.instanceId)
-            let encodedEvent = self.encode(data: event)
-            self.eventStreamHandler.eventSink?(encodedEvent)
-        }
-    }
-    
-    public func didDisconnect(_ call: PlanetKit.PlanetKitCall, disconnected: PlanetKit.PlanetKitDisconnectedParam) {
-        DispatchQueue.main.async {
-            PlanetKitLog.v("#flutter \(#function) \(disconnected.reason)")
-            let event = CallDisconnectedEventData(id: call.instanceId, disconnectReason: disconnected.reason, disconnectSource: disconnected.source, byRemote: disconnected.byRemote)
-            let encodedEvent = self.encode(data: event)
-            self.eventStreamHandler.eventSink?(encodedEvent)
-        }
-    }
-    
-    public func didVerify(_ call: PlanetKit.PlanetKitCall, peerStartMessage: PlanetKit.PlanetKitCallStartMessage?, peerUseResponderPreparation: Bool) {
-        DispatchQueue.main.async {
-            PlanetKitLog.v("#flutter \(#function)")
-            let event = CallVerifiedEventData(id: call.instanceId)
-            let encodedEvent = self.encode(data: event)
-            self.eventStreamHandler.eventSink?(encodedEvent)
-        }
-    }
-    
-    public func didFinishPreparation(_ call: PlanetKit.PlanetKitCall) {
-        DispatchQueue.main.async {
-            PlanetKitLog.v("#flutter \(#function)")
-        }
-    }
-    
-    public func peerMicDidMute(_ call: PlanetKitCall) {
-        DispatchQueue.main.async {
-            PlanetKitLog.v("#flutter \(#function)")
-            let event = CallPeerMicMutedEventData(id: call.instanceId)
-            let encodedEvent = self.encode(data: event)
-            self.eventStreamHandler.eventSink?(encodedEvent)
-        }
-    }
-    
-    public func peerMicDidUnmute(_ call: PlanetKitCall) {
-        DispatchQueue.main.async {
-            PlanetKitLog.v("#flutter \(#function)")
-            let event = CallPeerMicUnmutedEventData(id: call.instanceId)
-            let encodedEvent = self.encode(data: event)
-            self.eventStreamHandler.eventSink?(encodedEvent)
-        }
     }
 }

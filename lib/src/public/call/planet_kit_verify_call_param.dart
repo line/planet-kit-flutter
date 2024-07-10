@@ -13,6 +13,7 @@
 // under the License.
 
 import 'package:json_annotation/json_annotation.dart';
+import 'planet_kit_callkit_type.dart';
 import 'planet_kit_cc_param.dart';
 part 'planet_kit_verify_call_param.g.dart';
 
@@ -20,7 +21,8 @@ part 'planet_kit_verify_call_param.g.dart';
 ///
 /// This class encapsulates details necessary for verifying a call, including user and
 /// service identifiers, along with a configuration parameter object.
-@JsonSerializable(explicitToJson: true)
+/// Use [PlanetKitVerifyCallParamBuilder] class to create [PlanetKitVerifyCallParam] instance.
+@JsonSerializable(explicitToJson: true, createFactory: false)
 class PlanetKitVerifyCallParam {
   /// The user ID of the individual initiating the verification.
   final String myUserId;
@@ -31,12 +33,135 @@ class PlanetKitVerifyCallParam {
   /// A [PlanetKitCcParam] instance.
   final PlanetKitCcParam ccParam;
 
-  /// Constructs a [PlanetKitVerifyCallParam] with necessary details for call verification.
-  PlanetKitVerifyCallParam(
+  /// CallKit type for iOS platform.
+  @PlanetKitCallKitTypeConverter()
+  final PlanetKitCallKitType callKitType;
+
+  /// The asset path of the hold tone to be played when the peer holds this session
+  final String? holdTonePath;
+
+  /// The asset path of the ringtone to be played when the call is in the verified state.
+  final String? ringtonePath;
+
+  /// The asset path of the end tone to be played when the call is disconnected.
+  final String? endTonePath;
+
+  /// Whether to allow the call without microphone permission.
+  final bool? allowCallWithoutMic;
+
+  /// Whether to enable audio description updates during the call.
+  final bool? enableAudioDescription;
+
+  /// Interval in milliseconds for audio description updates.
+  final int? audioDescriptionUpdateIntervalMs;
+
+  PlanetKitVerifyCallParam._(
       {required this.myUserId,
       required this.myServiceId,
-      required this.ccParam});
+      required this.ccParam,
+      required this.callKitType,
+      required this.holdTonePath,
+      required this.ringtonePath,
+      required this.endTonePath,
+      required this.allowCallWithoutMic,
+      required this.enableAudioDescription,
+      required this.audioDescriptionUpdateIntervalMs});
 
   /// @nodoc
   Map<String, dynamic> toJson() => _$PlanetKitVerifyCallParamToJson(this);
+}
+
+/// Builder for creating an instance of `PlanetKitVerifyCallParam`.
+class PlanetKitVerifyCallParamBuilder {
+  String? _myUserId;
+  String? _myServiceId;
+  PlanetKitCcParam? _ccParam;
+  PlanetKitCallKitType _callKitType = PlanetKitCallKitType.none;
+  String? _holdTonePath;
+  String? _ringtonePath;
+  String? _endTonePath;
+  bool? _allowCallWithoutMic;
+  bool? _enableAudioDescription;
+  int? _audioDescriptionUpdateIntervalMs;
+
+  /// Sets the user ID of the individual initiating the verification.
+  PlanetKitVerifyCallParamBuilder setMyUserId(String myUserId) {
+    _myUserId = myUserId;
+    return this;
+  }
+
+  /// Sets the service ID associated with the user's service.
+  PlanetKitVerifyCallParamBuilder setMyServiceId(String myServiceId) {
+    _myServiceId = myServiceId;
+    return this;
+  }
+
+  /// Sets the [PlanetKitCcParam] instance.
+  PlanetKitVerifyCallParamBuilder setCcParam(PlanetKitCcParam ccParam) {
+    _ccParam = ccParam;
+    return this;
+  }
+
+  /// Sets CallKit type for iOS platform.
+  PlanetKitVerifyCallParamBuilder setCallKitType(
+      PlanetKitCallKitType callKitType) {
+    _callKitType = callKitType;
+    return this;
+  }
+
+  /// Set the asset path of the tone to be played when the peer holds the call.
+  PlanetKitVerifyCallParamBuilder setHoldTonePath(String holdTonePath) {
+    _holdTonePath = holdTonePath;
+    return this;
+  }
+
+  /// Set the asset path of the tone to be played when the call is in the verified state.
+  PlanetKitVerifyCallParamBuilder setRingonePath(String ringtonePath) {
+    _ringtonePath = ringtonePath;
+    return this;
+  }
+
+  /// Set the asset path of the tone to be played when the call is disconnected.
+  PlanetKitVerifyCallParamBuilder setEndTonePath(String endTonePath) {
+    _endTonePath = endTonePath;
+    return this;
+  }
+
+  /// Sets whether to allow call without mic permission and returns the builder.
+  PlanetKitVerifyCallParamBuilder setAllowCallWithoutMic(bool allow) {
+    _allowCallWithoutMic = allow;
+    return this;
+  }
+
+  /// Sets whether to enable audio description and returns the builder.
+  PlanetKitVerifyCallParamBuilder setEnableAudioDescription(bool enable) {
+    _enableAudioDescription = enable;
+    return this;
+  }
+
+  /// Sets the audio description update interval in milliseconds and returns the builder.
+  PlanetKitVerifyCallParamBuilder setAudioDescriptionUpdateIntervalMs(
+      int updateIntervalMs) {
+    _audioDescriptionUpdateIntervalMs = updateIntervalMs;
+    return this;
+  }
+
+  /// Constructs a [PlanetKitVerifyCallParam] with necessary details for call verification.
+  /// Throws an exception if any required fields are missing.
+  PlanetKitVerifyCallParam build() {
+    if (_myUserId == null || _myServiceId == null || _ccParam == null) {
+      throw Exception('Missing required fields for PlanetKitVerifyCallParam');
+    }
+    return PlanetKitVerifyCallParam._(
+        myUserId: _myUserId!,
+        myServiceId: _myServiceId!,
+        ccParam: _ccParam!,
+        callKitType: _callKitType,
+        holdTonePath: _holdTonePath,
+        ringtonePath: _ringtonePath,
+        endTonePath: _endTonePath,
+        allowCallWithoutMic: _allowCallWithoutMic,
+        enableAudioDescription: _enableAudioDescription,
+        audioDescriptionUpdateIntervalMs: _audioDescriptionUpdateIntervalMs);
+  }
 }

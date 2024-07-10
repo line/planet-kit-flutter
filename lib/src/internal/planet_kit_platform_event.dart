@@ -16,14 +16,12 @@ import 'package:json_annotation/json_annotation.dart';
 import 'planet_kit_platform_event_types.dart';
 part 'planet_kit_platform_event.g.dart';
 
-@JsonSerializable(explicitToJson: true)
-class EventData {
+@JsonSerializable(createToJson: false)
+class Event {
   @EventTypeConverter()
   final EventType type;
   final String id;
 
-  EventData({required this.type, required this.id});
-  Map<String, dynamic> toJson() => _$EventDataToJson(this);
-  factory EventData.fromJson(Map<String, dynamic> json) =>
-      _$EventDataFromJson(json);
+  Event({required this.type, required this.id});
+  factory Event.fromJson(Map<String, dynamic> json) => _$EventFromJson(json);
 }

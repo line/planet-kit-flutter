@@ -52,13 +52,13 @@ typedef struct planetkit_conference_param_t {
     planetkit_str_t                 NONNULL my_id;
     planetkit_str_t                 NONNULL my_service_id;
     planetkit_str_t                 NULLABLE my_country_code;
-    planetkit_str_t                 NULLABLE my_display_name;
+    planetkit_str_t                 NULLABLE my_display_name;   // Maximum size of my_display_name is 128 bytes including null termination
+                                                                // Any trailing part of the string that exceeds the maximum size is discarded.
     planetkit_str_t                 NONNULL room_id;
     planetkit_str_t                 NONNULL room_service_id;
     planetkit_str_t                 NULLABLE app_server_data;   // Maximum size of app_server_data is 4096 bytes including null termination
 
     planetkit_param_bool_e          start_with_video;
-    planetkit_param_bool_e          disable_auto_disconn_on_bad_net;
     planetkit_param_bool_e          enable_statistics;
 
     planetkit_conference_video_param_t    vid_param;
@@ -87,7 +87,7 @@ void planetkit_conference_leave_conference_with_kit_internal_error(planetkit_con
 void planetkit_conference_leave_conference(planetkit_conference_t * NONNULL conference, planetkit_disconnect_reason_e end_reason);
 
 kit_bool_t      planetkit_conference_enable_video(planetkit_conference_t * NONNULL conference, void * NULLABLE result_user, planetkit_result_handler_t NULLABLE result_handler);
-kit_bool_t      planetkit_conference_disable_video(planetkit_conference_t * NONNULL conference, planetkit_media_disable_reason_e reason, void * NULLABLE result_user, planetkit_result_handler_t NULLABLE result_handler);
+kit_bool_t      planetkit_conference_disable_video(planetkit_conference_t * NONNULL conference, void * NULLABLE result_user, planetkit_result_handler_t NULLABLE result_handler);
 
 int32_t         planetkit_conference_get_duration(planetkit_conference_t * NONNULL conference);
 

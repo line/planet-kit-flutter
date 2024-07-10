@@ -19,13 +19,22 @@ export 'package:planet_kit_flutter/src/public/planet_kit_manager.dart';
 export 'package:planet_kit_flutter/src/public/planet_kit_start_fail_reason.dart';
 export 'package:planet_kit_flutter/src/public/planet_kit_disconnect_reason.dart';
 export 'package:planet_kit_flutter/src/public/planet_kit_disconnect_source.dart';
+export 'package:planet_kit_flutter/src/public/planet_kit_user_id.dart';
 
 export 'package:planet_kit_flutter/src/public/audio/planet_kit_audio_sample_type.dart';
 export 'package:planet_kit_flutter/src/public/audio/planet_kit_hooked_audio.dart';
 
 export 'package:planet_kit_flutter/src/public/call/planet_kit_call.dart';
+export 'package:planet_kit_flutter/src/public/call/planet_kit_callkit_type.dart';
 export 'package:planet_kit_flutter/src/public/call/planet_kit_cc_param.dart';
 export 'package:planet_kit_flutter/src/public/call/planet_kit_make_call_param.dart';
 export 'package:planet_kit_flutter/src/public/call/planet_kit_verify_call_param.dart';
 export 'package:planet_kit_flutter/src/public/call/planet_kit_make_call_result.dart';
 export 'package:planet_kit_flutter/src/public/call/planet_kit_verify_call_result.dart';
+export 'package:planet_kit_flutter/src/public/my_media_status/planet_kit_my_media_status.dart';
+
+export 'package:planet_kit_flutter/src/public/conference/planet_kit_conference.dart';
+export 'package:planet_kit_flutter/src/public/conference/planet_kit_conference_join_conference_result.dart';
+export 'package:planet_kit_flutter/src/public/conference/planet_kit_conference_peer.dart';
+export 'package:planet_kit_flutter/src/public/conference/planet_kit_join_conference_param.dart';
+export 'package:planet_kit_flutter/src/public/conference/peer_control/planet_kit_peer_control.dart';

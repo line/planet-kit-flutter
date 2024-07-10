@@ -59,14 +59,8 @@ uint32_t    planetkit_subgroup_get_total_peers_cnt(planetkit_subgroup_t * NONNUL
 /**
  * Data session API set
  */
-kit_bool_t  planetkit_subgroup_make_outbound_data_session(planetkit_subgroup_t *NONNULL subgrp,
-                                                          planetkit_data_session_stream_id_t stream_id, planetkit_data_session_type_e type,
-                                                          void * NULLABLE tlqe_handler_user, planetkit_data_session_too_long_queued_exception_handler_t NULLABLE tlqe_handler,
-                                                          void *NULLABLE result_handler_user, planetkit_data_session_activated_handler_t NULLABLE result_handler);
-
-kit_bool_t  planetkit_subgroup_make_inbound_data_session(planetkit_subgroup_t *NONNULL subgrp, planetkit_data_session_stream_id_t stream_id,
-                                                         void *NULLABLE recv_handler_user, planetkit_data_session_recv_handler_t NONNULL recv_handler,
-                                                         void *NULLABLE result_handler_user, planetkit_data_session_activated_handler_t NULLABLE result_handler);
+kit_bool_t  planetkit_subgroup_make_outbound_data_session(planetkit_subgroup_t *NONNULL subgrp, planetkit_data_session_outbound_create_param_t *NONNULL create_param);
+kit_bool_t  planetkit_subgroup_make_inbound_data_session(planetkit_subgroup_t *NONNULL subgrp, planetkit_data_session_inbound_create_param_t *NONNULL create_param);
 
 kit_bool_t  planetkit_subgroup_unsupport_inbound_data_session(planetkit_subgroup_t *NONNULL subgrp, planetkit_data_session_stream_id_t stream_id);
 

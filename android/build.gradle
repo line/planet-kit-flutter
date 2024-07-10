@@ -2,7 +2,6 @@ group 'com.example.planet_kit_flutter'
 version '1.0-SNAPSHOT'
 
 buildscript {
-    ext.kotlin_version = '1.7.10'
     repositories {
         google()
         mavenCentral()
@@ -10,7 +9,6 @@ buildscript {
 
     dependencies {
         classpath 'com.android.tools.build:gradle:7.3.0'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
 
@@ -79,7 +77,6 @@ rootProject.allprojects {
 }
 
 dependencies {
-    // implementation 'com.linecorp.planetkit:planetkit:5.3.3'
-    implementation(name: 'planetkit-599bae8a0', ext: 'aar')
+    implementation 'com.linecorp.planetkit:planetkit:0.0.101'
     implementation 'com.google.code.gson:gson:2.8.6'
 }

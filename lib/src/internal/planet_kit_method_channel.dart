@@ -14,36 +14,69 @@
 
 import 'dart:async';
 import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:planet_kit_flutter/src/internal/call/params/planet_kit_platform_call_hook_audio_param.dart';
+import 'package:planet_kit_flutter/src/internal/conference/peer/planet_kit_platfom_conference_peer_method_channel.dart';
+import 'package:planet_kit_flutter/src/internal/conference/planet_kit_platform_conference_method_channel.dart';
+import 'package:planet_kit_flutter/src/internal/peer_control/planet_kit_platform_peer_control_method_channel.dart';
 
-import '../public/planet_kit_init_param.dart';
 import '../public/call/planet_kit_make_call_param.dart';
 import '../public/call/planet_kit_verify_call_param.dart';
+import '../public/conference/planet_kit_join_conference_param.dart';
+import '../public/planet_kit_init_param.dart';
 
+import 'call/planet_kit_platform_call_reponses.dart';
+import 'call/planet_kit_platform_call_method_channel.dart';
+import 'conference/planet_kit_platform_conference_responses.dart';
 import 'planet_kit_platform_interface.dart';
 import 'planet_kit_platform_event_manager.dart';
-import 'call/params/planet_kit_platform_call_speaker_out_param.dart';
-import 'call/responses/planet_kit_platform_make_call_response.dart';
-import 'call/responses/planet_kit_platform_verify_call_response.dart';
+import 'my_media_status/planet_kit_platform_my_media_status_method_channel.dart';
 
 /// An implementation of [Platform] that uses method channels.
 class MethodChannelPlanetKit extends Platform {
   /// The method channel used to interact with the native platform.
   @visibleForTesting
   final methodChannel = const MethodChannel('planetkit_sdk');
-
+  late final CallMethodChannel _callMethodChannel;
+  late final MyMediaStatusMethodChannel _myMediaStatusMethodChannel;
+  late final ConferencePeerMethodChannel _conferencePeerMethodChannel;
+  late final ConferenceMethodChannel _conferenceMethodChannel;
+  late final PeerControlMethodChannel _peerControlMethodChannel;
   final EventManager _eventManager = EventManager();
 
   MethodChannelPlanetKit() {
     print("#flutter_method_channel Constructor");
     _eventManager.initializeEventChannel();
+    _callMethodChannel = CallMethodChannel(methodChannel: methodChannel);
+    _myMediaStatusMethodChannel =
+        MyMediaStatusMethodChannel(methodChannel: methodChannel);
+    _conferenceMethodChannel =
+        ConferenceMethodChannel(methodChannel: methodChannel);
+    _conferencePeerMethodChannel =
+        ConferencePeerMethodChannel(methodChannel: methodChannel);
+    _peerControlMethodChannel =
+        PeerControlMethodChannel(methodChannel: methodChannel);
   }
 
   @override
   EventManagerInterface get eventManager => _eventManager;
+
+  @override
+  CallInterface get callInterface => _callMethodChannel;
+
+  @override
+  MyMediaStatusInterface get myMediaStatusInterface =>
+      _myMediaStatusMethodChannel;
+
+  @override
+  ConferenceInterface get conferenceInterface => _conferenceMethodChannel;
+
+  @override
+  ConferencePeerInterface get conferencePeerInterface =>
+      _conferencePeerMethodChannel;
+
+  @override
+  PeerControlInterface get peerControlInterface => _peerControlMethodChannel;
 
   @override
   Future<String?> getPlatformVersion() async {
@@ -83,59 +116,14 @@ class MethodChannelPlanetKit extends Platform {
   }
 
   @override
-  Future<bool> acceptCall(String callId) async {
-    print("#flutter_method_channel acceptCall with callId $callId");
-    return await methodChannel.invokeMethod<bool>('acceptCall', callId) as bool;
-  }
-
-  @override
-  Future<bool> endCall(String callId) async {
-    print("#flutter_method_channel endCall with callId $callId");
-    return await methodChannel.invokeMethod<bool>('endCall', callId) as bool;
-  }
-
-  @override
-  Future<bool> muteMyAudio(String callId) async {
-    print("#flutter_method_channel muteMyAudio with callId $callId");
-    return await methodChannel.invokeMethod<bool>('muteMyAudio', callId)
-        as bool;
-  }
-
-  @override
-  Future<bool> unmuteMyAudio(String callId) async {
-    print("#flutter_method_channel unmuteMyAudio with callId $callId");
-    return await methodChannel.invokeMethod<bool>('unmuteMyAudio', callId)
-        as bool;
-  }
-
-  @override
-  Future<bool> speakerOut(String callId, bool speakerOut) async {
-    print(
-        "#flutter_method_channel speakerOut with callId $callId and speakerOut $speakerOut");
-    final param = CallSpeakerOutParam(callId: callId, speakerOut: speakerOut);
-    return await methodChannel.invokeMethod<bool>('speakerOut', param.toJson())
-        as bool;
-  }
-
-  @override
-  Future<bool> isSpeakerOut(String callId) async {
-    print("#flutter_method_channel isSpeakerOut with callId $callId");
-    return await methodChannel.invokeMethod<bool>('isSpeakerOut', callId)
-        as bool;
-  }
-
-  @override
-  Future<bool> isMyAudioMuted(String callId) async {
-    print("#flutter_method_channel isMyAudioMuted with callId $callId");
-    return await methodChannel.invokeMethod<bool>('isMyAudioMuted', callId)
-        as bool;
-  }
-
-  @override
-  Future<bool> isPeerAudioMuted(String callId) async {
-    print("#flutter_method_channel isPeerAudioMuted with callId $callId");
-    return await methodChannel.invokeMethod<bool>('isPeerAudioMuted', callId)
-        as bool;
+  Future<JoinConferenceResponse> joinConference(
+      PlanetKitJoinConferenceParam param) async {
+    print("#flutter_method_channel joinConference with ${param.toJson()}");
+    final jsonString = await methodChannel.invokeMethod<String>(
+        'joinConference', param.toJson()) as String;
+    final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
+    final response = JoinConferenceResponse.fromJson(jsonMap);
+    return response;
   }
 
   @override
@@ -151,42 +139,5 @@ class MethodChannelPlanetKit extends Platform {
     print("#flutter_method_channel releaseInstance $id");
     return await methodChannel.invokeMethod<bool>('releaseInstance', id)
         as bool;
-  }
-
-  @override
-  Future<bool> enableHookMyAudio(
-      String callId, HookedAudioHandler handler) async {
-    print("#flutter_method_channel enableHookMyAudio with callId $callId");
-    return await methodChannel.invokeMethod<bool>(
-        'enableHookMyAudio', callId) as bool;
-  }
-
-  @override
-  Future<bool> disableHookMyAudio(String callId) async {
-    print(
-        "#flutter_method_channel disableHookMyAudio with callId $callId");
-
-    return await methodChannel.invokeMethod<bool>(
-        'disableHookMyAudio', callId) as bool;
-  }
-
-  @override
-  Future<bool> putHookedMyAudioBack(String callId, String audioId) async {
-    print("#flutter_method_channel putHookedMyAudioBack with callId $callId");
-    return await methodChannel.invokeMethod<bool>('putHookedMyAudioBack',
-            PutHookedAudioBackParam(callId: callId, audioId: audioId).toJson())
-        as bool;
-  }
-
-  @override
-  Future<bool> setHookedAudioData(String audioId, Uint8List data) async {
-    return await methodChannel.invokeMethod<bool>(
-        'setHookedAudioData', {'audioId': audioId, 'data': data}) as bool;
-  }
-
-  @override
-  Future<bool> isHookMyAudioEnabled(String callId) async {
-    return await methodChannel.invokeMethod<bool>(
-        'isHookMyAudioEnabled', callId) as bool;
   }
 }
