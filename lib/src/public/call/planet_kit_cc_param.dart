@@ -13,6 +13,7 @@
 // under the License.
 
 import 'package:json_annotation/json_annotation.dart';
+import 'package:planet_kit_flutter/src/public/planet_kit_types.dart';
 import '../../internal/planet_kit_platform_interface.dart';
 import '../../internal/planet_kit_platform_resource_manager.dart';
 part 'planet_kit_cc_param.g.dart';
@@ -32,18 +33,32 @@ class PlanetKitCcParam {
     final result = await Platform.instance.createCcParam(ccParam);
     if (result == null) {
       print("#cc_param failed to create cc_param");
-      return null;
     }
-    return PlanetKitCcParam._PlanetKitCcParam(id: result);
+    return result;
   }
 
-  /// @nodoc
+  /// The peer ID associated with the cc_param.
+  String? peerId;
+
+  /// The peer service ID associated with the cc_param.
+  String? peerServiceId;
+
+  /// The media type associated with the cc_param.
+  @PlanetKitMediaTypeConverter()
+  PlanetKitMediaType mediaType;
+
+  /// The unique identifier for the cc_param.
   final String id;
-
-  PlanetKitCcParam._PlanetKitCcParam({required this.id}) {
-    NativeResourceManager.instance.add(this, id);
-  }
 
   /// @nodoc
   Map<String, dynamic> toJson() => _$PlanetKitCcParamToJson(this);
+
+  /// @nodoc
+  PlanetKitCcParam(
+      {required this.id,
+      required this.peerId,
+      required this.peerServiceId,
+      required this.mediaType}) {
+    NativeResourceManager.instance.add(this, id);
+  }
 }

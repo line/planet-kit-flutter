@@ -14,17 +14,15 @@
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'planet_kit_cc_param.dart';
+part of 'planet_kit_screen_share_key.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-Map<String, dynamic> _$PlanetKitCcParamToJson(PlanetKitCcParam instance) =>
+Map<String, dynamic> _$ScreenShareKeyToJson(ScreenShareKey instance) =>
     <String, dynamic>{
-      'peerId': instance.peerId,
-      'peerServiceId': instance.peerServiceId,
-      'mediaType':
-          const PlanetKitMediaTypeConverter().toJson(instance.mediaType),
-      'id': instance.id,
+      'broadcastPort': instance.broadcastPort,
+      'broadcastPeerToken': instance.broadcastPeerToken,
+      'broadcastMyToken': instance.broadcastMyToken,
     };

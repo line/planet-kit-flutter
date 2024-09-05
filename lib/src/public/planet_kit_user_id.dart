@@ -18,7 +18,7 @@ part 'planet_kit_user_id.g.dart';
 ///
 /// This class encapsulates both the user's unique identifier and the service identifier,
 /// which together uniquely identify a user within a specific service context.
-@JsonSerializable(explicitToJson: true)
+@JsonSerializable()
 class PlanetKitUserId {
   /// The unique identifier for the user.
   final String userId;
@@ -31,4 +31,8 @@ class PlanetKitUserId {
 
   /// @nodoc
   Map<String, dynamic> toJson() => _$PlanetKitUserIdToJson(this);
+
+  /// @nodoc
+  factory PlanetKitUserId.fromJson(Map<String, dynamic> json) =>
+      _$PlanetKitUserIdFromJson(json);
 }

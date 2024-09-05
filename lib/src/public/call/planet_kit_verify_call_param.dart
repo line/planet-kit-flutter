@@ -13,6 +13,8 @@
 // under the License.
 
 import 'package:json_annotation/json_annotation.dart';
+import '../planet_kit_types.dart';
+import '../screen_share/planet_kit_screen_share_key.dart';
 import 'planet_kit_callkit_type.dart';
 import 'planet_kit_cc_param.dart';
 part 'planet_kit_verify_call_param.g.dart';
@@ -37,7 +39,7 @@ class PlanetKitVerifyCallParam {
   @PlanetKitCallKitTypeConverter()
   final PlanetKitCallKitType callKitType;
 
-  /// The asset path of the hold tone to be played when the peer holds this session
+  /// The asset path of the hold tone to be played when the peer holds this session.
   final String? holdTonePath;
 
   /// The asset path of the ringtone to be played when the call is in the verified state.
@@ -55,17 +57,32 @@ class PlanetKitVerifyCallParam {
   /// Interval in milliseconds for audio description updates.
   final int? audioDescriptionUpdateIntervalMs;
 
-  PlanetKitVerifyCallParam._(
-      {required this.myUserId,
-      required this.myServiceId,
-      required this.ccParam,
-      required this.callKitType,
-      required this.holdTonePath,
-      required this.ringtonePath,
-      required this.endTonePath,
-      required this.allowCallWithoutMic,
-      required this.enableAudioDescription,
-      required this.audioDescriptionUpdateIntervalMs});
+  /// The response on video enabled by peer.
+  @PlanetKitResponseOnEnableVideoConverter()
+  final PlanetKitResponseOnEnableVideo responseOnEnableVideo;
+
+  /// Whether to enable statistics collection.
+  final bool enableStatistics;
+
+  /// The screen share key for the call. iOS only.
+  final ScreenShareKey? screenShareKey;
+
+  /// @nodoc
+  PlanetKitVerifyCallParam._({
+    required this.myUserId,
+    required this.myServiceId,
+    required this.ccParam,
+    required this.callKitType,
+    required this.holdTonePath,
+    required this.ringtonePath,
+    required this.endTonePath,
+    required this.allowCallWithoutMic,
+    required this.enableAudioDescription,
+    required this.audioDescriptionUpdateIntervalMs,
+    required this.responseOnEnableVideo,
+    required this.enableStatistics,
+    required this.screenShareKey,
+  });
 
   /// @nodoc
   Map<String, dynamic> toJson() => _$PlanetKitVerifyCallParamToJson(this);
@@ -83,6 +100,10 @@ class PlanetKitVerifyCallParamBuilder {
   bool? _allowCallWithoutMic;
   bool? _enableAudioDescription;
   int? _audioDescriptionUpdateIntervalMs;
+  PlanetKitResponseOnEnableVideo _responseOnEnableVideo =
+      PlanetKitResponseOnEnableVideo.pause;
+  bool _enableStatistics = false;
+  ScreenShareKey? _screenShareKey;
 
   /// Sets the user ID of the individual initiating the verification.
   PlanetKitVerifyCallParamBuilder setMyUserId(String myUserId) {
@@ -109,19 +130,19 @@ class PlanetKitVerifyCallParamBuilder {
     return this;
   }
 
-  /// Set the asset path of the tone to be played when the peer holds the call.
+  /// Sets the asset path of the tone to be played when the peer holds the call.
   PlanetKitVerifyCallParamBuilder setHoldTonePath(String holdTonePath) {
     _holdTonePath = holdTonePath;
     return this;
   }
 
-  /// Set the asset path of the tone to be played when the call is in the verified state.
-  PlanetKitVerifyCallParamBuilder setRingonePath(String ringtonePath) {
+  /// Sets the asset path of the tone to be played when the call is in the verified state.
+  PlanetKitVerifyCallParamBuilder setRingtonePath(String ringtonePath) {
     _ringtonePath = ringtonePath;
     return this;
   }
 
-  /// Set the asset path of the tone to be played when the call is disconnected.
+  /// Sets the asset path of the tone to be played when the call is disconnected.
   PlanetKitVerifyCallParamBuilder setEndTonePath(String endTonePath) {
     _endTonePath = endTonePath;
     return this;
@@ -146,6 +167,26 @@ class PlanetKitVerifyCallParamBuilder {
     return this;
   }
 
+  /// Sets the response on enabling video.
+  PlanetKitVerifyCallParamBuilder setResponseOnEnableVideo(
+      PlanetKitResponseOnEnableVideo response) {
+    _responseOnEnableVideo = response;
+    return this;
+  }
+
+  /// Sets whether to enable statistics collection and returns the builder.
+  PlanetKitVerifyCallParamBuilder setEnableStatistics(bool enable) {
+    _enableStatistics = enable;
+    return this;
+  }
+
+  /// Sets the screen share key for the call and returns the builder.
+  PlanetKitVerifyCallParamBuilder setScreenShareKey(
+      ScreenShareKey screenShareKey) {
+    _screenShareKey = screenShareKey;
+    return this;
+  }
+
   /// Constructs a [PlanetKitVerifyCallParam] with necessary details for call verification.
   /// Throws an exception if any required fields are missing.
   PlanetKitVerifyCallParam build() {
@@ -162,6 +203,9 @@ class PlanetKitVerifyCallParamBuilder {
         endTonePath: _endTonePath,
         allowCallWithoutMic: _allowCallWithoutMic,
         enableAudioDescription: _enableAudioDescription,
-        audioDescriptionUpdateIntervalMs: _audioDescriptionUpdateIntervalMs);
+        audioDescriptionUpdateIntervalMs: _audioDescriptionUpdateIntervalMs,
+        responseOnEnableVideo: _responseOnEnableVideo,
+        enableStatistics: _enableStatistics,
+        screenShareKey: _screenShareKey);
   }
 }

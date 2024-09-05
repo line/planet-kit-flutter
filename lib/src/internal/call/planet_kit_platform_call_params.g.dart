@@ -96,3 +96,23 @@ Map<String, dynamic> _$EndCallWithErrorParamToJson(
       'callId': instance.callId,
       'userReleasePhrase': instance.userReleasePhrase,
     };
+
+Map<String, dynamic> _$AddVideoViewParamToJson(AddVideoViewParam instance) =>
+    <String, dynamic>{
+      'callId': instance.callId,
+      'viewId': instance.viewId,
+    };
+
+Map<String, dynamic> _$RemoveVideoViewParamToJson(
+        RemoveVideoViewParam instance) =>
+    <String, dynamic>{
+      'callId': instance.callId,
+      'viewId': instance.viewId,
+    };
+
+Map<String, dynamic> _$DisableVideoParamToJson(DisableVideoParam instance) =>
+    <String, dynamic>{
+      'callId': instance.callId,
+      'reason':
+          const PlanetKitMediaDisableReasonConverter().toJson(instance.reason),
+    };

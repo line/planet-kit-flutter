@@ -38,4 +38,10 @@ Map<String, dynamic> _$PlanetKitMakeCallParamToJson(
       'enableAudioDescription': instance.enableAudioDescription,
       'audioDescriptionUpdateIntervalMs':
           instance.audioDescriptionUpdateIntervalMs,
+      'mediaType':
+          const PlanetKitMediaTypeConverter().toJson(instance.mediaType),
+      'responseOnEnableVideo': const PlanetKitResponseOnEnableVideoConverter()
+          .toJson(instance.responseOnEnableVideo),
+      'enableStatistics': instance.enableStatistics,
+      'screenShareKey': instance.screenShareKey?.toJson(),
     };

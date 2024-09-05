@@ -27,19 +27,26 @@ class CallEventTypeConverter implements JsonConverter<CallEventType, int> {
 }
 
 enum CallEventType {
-  error,
-  connected,
-  disconnected,
-  verified,
-  waitConnect,
-  peerMicMuted,
-  peerMicUnmuted,
-  networkDidUnavailable,
-  networkDidReavailable,
-  finishPreparation,
-  peerHold,
-  peerUnhold,
-  muteMyAudioRequestByPeer;
+  connected, // 0
+  disconnected, // 1
+  verified, // 2
+  waitConnect, // 3
+  peerMicMuted, // 4
+  peerMicUnmuted, // 5
+  networkDidUnavailable, // 6
+  networkDidReavailable, // 7
+  finishPreparation, // 8
+  peerHold, // 9
+  peerUnhold, // 10
+  muteMyAudioRequestByPeer, // 11
+  peerVideoDidPause, // 12
+  peerVideoDidResume, // 13
+  videoEnabledByPeer, // 14
+  videoDisabledByPeer, // 15
+  detectedMyVideoNoSource, // 16
+  peerDidStartScreenShare, // 17
+  peerDidStopScreenShare, // 18
+  error; // default case
 
   static CallEventType fromInt(int value) {
     switch (value) {
@@ -67,6 +74,20 @@ enum CallEventType {
         return CallEventType.peerUnhold;
       case 11:
         return CallEventType.muteMyAudioRequestByPeer;
+      case 12:
+        return CallEventType.peerVideoDidPause;
+      case 13:
+        return CallEventType.peerVideoDidResume;
+      case 14:
+        return CallEventType.videoEnabledByPeer;
+      case 15:
+        return CallEventType.videoDisabledByPeer;
+      case 16:
+        return CallEventType.detectedMyVideoNoSource;
+      case 17:
+        return CallEventType.peerDidStartScreenShare;
+      case 18:
+        return CallEventType.peerDidStopScreenShare;
       default:
         return CallEventType.error;
     }

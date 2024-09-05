@@ -15,7 +15,11 @@
 import 'dart:typed_data';
 import 'package:planet_kit_flutter/src/internal/conference/planet_kit_platform_conference_responses.dart';
 import 'package:planet_kit_flutter/src/public/conference/planet_kit_join_conference_param.dart';
+import 'package:planet_kit_flutter/src/public/planet_kit_types.dart';
+import 'package:planet_kit_flutter/src/public/statistics/planet_kit_statistics.dart';
+import 'package:planet_kit_flutter/src/public/video/planet_kit_video_status.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+import '../public/call/planet_kit_cc_param.dart';
 import '../public/conference/planet_kit_conference_peer.dart';
 import '../public/planet_kit_user_id.dart';
 import 'call/planet_kit_platform_call_event.dart';
@@ -73,6 +77,18 @@ abstract class CallInterface {
   Future<bool> requestPeerMute(String callId, bool mute);
   Future<String?> getMyMediaStatus(String callId);
   Future<bool> silencePeerAudio(String callId, bool silent);
+  Future<bool> addMyVideoView(String callId, String viewId);
+  Future<bool> removeMyVideoView(String callId, String viewId);
+  Future<bool> addPeerVideoView(String callId, String viewId);
+  Future<bool> removePeerVideoView(String callId, String viewId);
+  Future<bool> pauseMyVideo(String callId);
+  Future<bool> resumeMyVideo(String callId);
+  Future<bool> enableVideo(String callId);
+  Future<bool> disableVideo(String callId, PlanetKitMediaDisableReason reason);
+  Future<PlanetKitStatistics?> getStatistics(String callId);
+
+  Future<bool> addPeerScreenShareView(String callId, String viewId);
+  Future<bool> removePeerScreenShareView(String callId, String viewId);
 }
 
 abstract class ConferenceInterface {
@@ -98,11 +114,21 @@ abstract class ConferencePeerInterface {
 
 abstract class MyMediaStatusInterface {
   Future<bool> isMyAudioMuted(String myMediaStatusId);
+  Future<PlanetKitVideoStatus?> getMyVideoStatus(String myMediaStatusId);
 }
 
 abstract class PeerControlInterface {
   Future<bool> register(String id);
   Future<bool> unregister(String id);
+}
+
+abstract class CameraInterface {
+  Future<bool> startPreview(String viewId);
+  Future<bool> stopPreview(String viewId);
+  Future<bool> switchPosition();
+  Future<bool> setVirtualBackgroundWithImage(String filePath);
+  Future<bool> setVirtualBackgroundWithBlur(int radius);
+  Future<bool> clearVirtualBackground();
 }
 
 abstract class Platform extends PlatformInterface {
@@ -143,6 +169,9 @@ abstract class Platform extends PlatformInterface {
   PeerControlInterface get peerControlInterface =>
       throw UnimplementedError('PeerControlInterface not available');
 
+  CameraInterface get cameraInterface =>
+      throw UnimplementedError('CameraInterface not available');
+
   Future<String?> getPlatformVersion() {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
@@ -168,7 +197,7 @@ abstract class Platform extends PlatformInterface {
     throw UnimplementedError('releaseInstance() has not been implemented.');
   }
 
-  Future<String?> createCcParam(String ccParam) {
+  Future<PlanetKitCcParam?> createCcParam(String ccParam) {
     throw UnimplementedError('createCcParam() has not been implemented.');
   }
 }

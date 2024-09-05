@@ -16,6 +16,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:planet_kit_flutter/src/public/my_media_status/planet_kit_my_media_status.dart';
+import 'package:planet_kit_flutter/src/public/planet_kit_types.dart';
 
 import '../audio/planet_kit_audio_sample_type.dart';
 import '../planet_kit_disconnect_source.dart';
@@ -25,6 +26,7 @@ import '../../internal/planet_kit_platform_interface.dart';
 import '../../internal/call/planet_kit_platform_call_event.dart';
 import '../../internal/call/planet_kit_platform_call_event_type.dart';
 import '../../internal/planet_kit_platform_resource_manager.dart';
+import '../statistics/planet_kit_statistics.dart';
 
 /// A handler for managing call events within the PlanetKit framework.
 ///
@@ -77,6 +79,29 @@ class PlanetKitCallEventHandler {
   final void Function(PlanetKitCall call, bool mute)?
       onMyAudioMuteRequestedByPeer;
 
+  /// Optional callback triggered when the peer's video is paused.
+  final void Function(PlanetKitCall call, PlanetKitVideoPauseReason reason)?
+      onPeerVideoPaused;
+
+  /// Optional callback triggered when the peer's video is resumed.
+  final void Function(PlanetKitCall call)? onPeerVideoResumed;
+
+  /// Optional callback triggered when the peer enables video.
+  final void Function(PlanetKitCall call)? onVideoEnabledByPeer;
+
+  /// Optional callback triggered when the peer disables video.
+  final void Function(PlanetKitCall call, PlanetKitMediaDisableReason reason)?
+      onVideoDisabledByPeer;
+
+  /// Optional callback triggered when the local user's video source is not detected.
+  final void Function(PlanetKitCall call)? onDetectedMyVideoNoSource;
+
+  /// Optional callback triggered when the peer starts screen share.
+  final void Function(PlanetKitCall call)? onPeerScreenShareStarted;
+
+  /// Optional callback triggered when the peer stops screen share.
+  final void Function(PlanetKitCall call)? onPeerScreenShareStopped;
+
   /// Constructs a [PlanetKitCallEventHandler].
   const PlanetKitCallEventHandler(
       {required this.onWaitConnected,
@@ -90,7 +115,14 @@ class PlanetKitCallEventHandler {
       this.onNetworkUnavailable,
       this.onPeerHold,
       this.onPeerUnhold,
-      this.onMyAudioMuteRequestedByPeer});
+      this.onMyAudioMuteRequestedByPeer,
+      this.onPeerVideoPaused,
+      this.onPeerVideoResumed,
+      this.onVideoEnabledByPeer,
+      this.onVideoDisabledByPeer,
+      this.onDetectedMyVideoNoSource,
+      this.onPeerScreenShareStarted,
+      this.onPeerScreenShareStopped});
 }
 
 /// A handler for hooked audio within the PlanetKit framework.
@@ -135,7 +167,7 @@ class PlanetKitCall implements HookedAudioHandler {
   Future<bool> get isSpeakerOut async =>
       await Platform.instance.callInterface.isSpeakerOut(callId);
 
-  /// whether the call is in hold.
+  /// Whether the call is on hold.
   Future<bool> get isOnHold async =>
       await Platform.instance.callInterface.isOnHold(callId);
 
@@ -151,6 +183,7 @@ class PlanetKitCall implements HookedAudioHandler {
         .endCall(callId, userReleasePhrase);
   }
 
+  /// Ends the current call with an error.
   Future<bool> endCallWithError(String userReleasePhrase) async {
     return await Platform.instance.callInterface
         .endCallWithError(callId, userReleasePhrase);
@@ -166,7 +199,7 @@ class PlanetKitCall implements HookedAudioHandler {
     return await Platform.instance.callInterface.speakerOut(callId, speakerOut);
   }
 
-  /// Call this function when CallKit has activated AVAudioSession on iOS platform.
+  /// Notifies CallKit of audio activation on iOS platform.
   /// For Android Platform, this will have no effect.
   Future<bool> notifyCallKitAudioActivation() async {
     return await Platform.instance.callInterface
@@ -179,25 +212,87 @@ class PlanetKitCall implements HookedAudioHandler {
     return await Platform.instance.callInterface.finishPreparation(callId);
   }
 
-  /// Holds current call.
+  /// Holds the current call.
   Future<bool> hold({String? reason}) async {
     return await Platform.instance.callInterface.hold(callId, reason);
   }
 
-  /// Unholds current call.
+  /// Unholds the current call.
   Future<bool> unhold() async {
     return await Platform.instance.callInterface.unhold(callId);
   }
 
-  // Request mute to the peer in call.
+  /// Requests the peer to mute their audio.
   Future<bool> requestPeerMute(bool mute) async {
     return await Platform.instance.callInterface.requestPeerMute(callId, mute);
   }
 
-  // Silences peer audio to be played on this device.
+  /// Silences the peer's audio on this device.
   Future<bool> silencePeerAudio(bool silent) async {
     return await Platform.instance.callInterface
         .silencePeerAudio(callId, silent);
+  }
+
+  /// Adds the local user's video view.
+  Future<bool> addMyVideoView(String viewId) async {
+    return await Platform.instance.callInterface.addMyVideoView(callId, viewId);
+  }
+
+  /// Removes the local user's video view.
+  Future<bool> removeMyVideoView(String viewId) async {
+    return await Platform.instance.callInterface
+        .removeMyVideoView(callId, viewId);
+  }
+
+  /// Adds the peer's video view.
+  Future<bool> addPeerVideoView(String viewId) async {
+    return await Platform.instance.callInterface
+        .addPeerVideoView(callId, viewId);
+  }
+
+  /// Removes the peer's video view.
+  Future<bool> removePeerVideoView(String viewId) async {
+    return await Platform.instance.callInterface
+        .removePeerVideoView(callId, viewId);
+  }
+
+  /// Adds the peer's screen share view.
+  Future<bool> addPeerScreenShareView(String viewId) async {
+    return await Platform.instance.callInterface
+        .addPeerScreenShareView(callId, viewId);
+  }
+
+  /// Removes the peer's screen share view.
+  Future<bool> removePeerScreenShareView(String viewId) async {
+    return await Platform.instance.callInterface
+        .removePeerScreenShareView(callId, viewId);
+  }
+
+  /// Pauses the local user's video.
+  Future<bool> pauseMyVideo() async {
+    return await Platform.instance.callInterface.pauseMyVideo(callId);
+  }
+
+  /// Resumes the local user's video.
+  Future<bool> resumeMyVideo() async {
+    return await Platform.instance.callInterface.resumeMyVideo(callId);
+  }
+
+  /// Enables a video call.
+  Future<bool> enableVideo() async {
+    return await Platform.instance.callInterface.enableVideo(callId);
+  }
+
+  /// Disables a video call.
+  Future<bool> disableVideo(
+      {PlanetKitMediaDisableReason reason =
+          PlanetKitMediaDisableReason.user}) async {
+    return await Platform.instance.callInterface.disableVideo(callId, reason);
+  }
+
+  /// Retrieves call statistics.
+  Future<PlanetKitStatistics?> getStatistics() async {
+    return await Platform.instance.callInterface.getStatistics(callId);
   }
 
   void _onCallEvent(CallEvent event) {
@@ -233,9 +328,33 @@ class PlanetKitCall implements HookedAudioHandler {
       _eventHandler?.onPeerUnhold?.call(this);
     } else if (type == CallEventType.muteMyAudioRequestByPeer) {
       _handleMuteMyAudioRequestByPeerEvent(event);
+    } else if (type == CallEventType.peerVideoDidPause) {
+      _handlePeerVideoDidPauseEvent(event);
+    } else if (type == CallEventType.peerVideoDidResume) {
+      _eventHandler?.onPeerVideoResumed?.call(this);
+    } else if (type == CallEventType.videoEnabledByPeer) {
+      _eventHandler?.onVideoEnabledByPeer?.call(this);
+    } else if (type == CallEventType.videoDisabledByPeer) {
+      _handleVideoDisabledByPeerEvent(event);
+    } else if (type == CallEventType.detectedMyVideoNoSource) {
+      _eventHandler?.onDetectedMyVideoNoSource?.call(this);
+    } else if (type == CallEventType.peerDidStartScreenShare) {
+      _eventHandler?.onPeerScreenShareStarted?.call(this);
+    } else if (type == CallEventType.peerDidStopScreenShare) {
+      _eventHandler?.onPeerScreenShareStopped?.call(this);
     } else {
       print("#planet_kit_call event unknown");
     }
+  }
+
+  void _handlePeerVideoDidPauseEvent(CallEvent event) {
+    final pauseEvent = event as PeerVideoDidPauseEvent;
+    _eventHandler?.onPeerVideoPaused?.call(this, pauseEvent.reason);
+  }
+
+  void _handleVideoDisabledByPeerEvent(CallEvent event) {
+    final disableEvent = event as VideoDisabledByPeerEvent;
+    _eventHandler?.onVideoDisabledByPeer?.call(this, disableEvent.reason);
   }
 
   void _handleConnectedEvent(CallEvent event) {

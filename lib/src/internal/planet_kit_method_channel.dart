@@ -16,10 +16,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:planet_kit_flutter/src/internal/camera/planet_kit_platform_camera_method_channel.dart';
 import 'package:planet_kit_flutter/src/internal/conference/peer/planet_kit_platfom_conference_peer_method_channel.dart';
 import 'package:planet_kit_flutter/src/internal/conference/planet_kit_platform_conference_method_channel.dart';
 import 'package:planet_kit_flutter/src/internal/peer_control/planet_kit_platform_peer_control_method_channel.dart';
 
+import '../public/call/planet_kit_cc_param.dart';
 import '../public/call/planet_kit_make_call_param.dart';
 import '../public/call/planet_kit_verify_call_param.dart';
 import '../public/conference/planet_kit_join_conference_param.dart';
@@ -42,6 +44,7 @@ class MethodChannelPlanetKit extends Platform {
   late final ConferencePeerMethodChannel _conferencePeerMethodChannel;
   late final ConferenceMethodChannel _conferenceMethodChannel;
   late final PeerControlMethodChannel _peerControlMethodChannel;
+  late final CameraInterface _cameraInterface;
   final EventManager _eventManager = EventManager();
 
   MethodChannelPlanetKit() {
@@ -56,6 +59,7 @@ class MethodChannelPlanetKit extends Platform {
         ConferencePeerMethodChannel(methodChannel: methodChannel);
     _peerControlMethodChannel =
         PeerControlMethodChannel(methodChannel: methodChannel);
+    _cameraInterface = CameraMethodChannel(methodChannel: methodChannel);
   }
 
   @override
@@ -77,6 +81,9 @@ class MethodChannelPlanetKit extends Platform {
 
   @override
   PeerControlInterface get peerControlInterface => _peerControlMethodChannel;
+
+  @override
+  CameraInterface get cameraInterface => _cameraInterface;
 
   @override
   Future<String?> getPlatformVersion() async {
@@ -127,11 +134,24 @@ class MethodChannelPlanetKit extends Platform {
   }
 
   @override
-  Future<String?> createCcParam(String ccParam) async {
+  Future<PlanetKitCcParam?> createCcParam(String ccParam) async {
     print("#flutter_method_channel createCcParam $ccParam");
-    final response =
+    final jsonString =
         await methodChannel.invokeMethod<String?>('createCcParam', ccParam);
-    return response;
+
+    if (jsonString == null) {
+      print("#flutter_method_channel createCcParam response null");
+      return null;
+    }
+
+    final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
+    final response = CreateCCParamResponse.fromJson(jsonMap);
+
+    return PlanetKitCcParam(
+        id: response.id,
+        peerId: response.peerId,
+        peerServiceId: response.peerServiceId,
+        mediaType: response.mediaType);
   }
 
   @override

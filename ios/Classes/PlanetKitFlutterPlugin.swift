@@ -13,7 +13,6 @@
 // under the License.
 
 import Flutter
-import UIKit
 import PlanetKit
 
 protocol PluginInstance {
@@ -57,6 +56,10 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
         PlanetKitFlutterPeerControlPlugin(nativeInstances: nativeInstances, eventStreamHandler: eventStreamHandler)
     }()
     
+    lazy var cameraPlugin: PlanetKitFlutterCameraPlugin = {
+        PlanetKitFlutterCameraPlugin()
+    }()
+    
     public static func register(with registrar: FlutterPluginRegistrar) {
         NSLog("\(#function)")
         let messenger = registrar.messenger()
@@ -65,8 +68,13 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
         registrar.addMethodCallDelegate(instance, channel: channel)
         instance.registrar = registrar
 
-        FlutterEventChannel(name: "planetkit_event", binaryMessenger: messenger).setStreamHandler(instance.eventStreamHandler)        
+        FlutterEventChannel(name: "planetkit_event", binaryMessenger: messenger).setStreamHandler(instance.eventStreamHandler)
         FlutterEventChannel(name: "planetkit_hooked_audio", binaryMessenger: messenger).setStreamHandler(instance.hookedAudioStreamHandler)
+        
+        let factory = PlanetKitVideoViewFactory(messenger: registrar.messenger())
+        registrar.register(factory, withId: "planet_kit_video_view")
+        
+        instance.listenForOrientationChange()
     }
     
     // TODO: separate handler by features
@@ -85,77 +93,117 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
         case "joinConference":
             joinConference(call: call, result: result)
             break
-        case "acceptCall":
-            callPlugin.acceptCall(call: call, result: result)
-        case "endCall":
-            callPlugin.endCall(call: call, result: result)
-            break
-        case "endCallWithError":
-            callPlugin.endCallWithError(call: call, result: result)
-            break
-        case "muteMyAudio":
-            callPlugin.muteMyAudio(call: call, result: result)
-            break
-        case "speakerOut":
-            callPlugin.speakerOut(call: call, result: result)
-            break
-        case "isSpeakerOut":
-            callPlugin.isSpeakerOut(call: call, result: result)
-            break
-        case "isMyAudioMuted":
-            callPlugin.isMyAudioMuted(call: call, result: result)
-            break
-        case "isPeerAudioMuted":
-            callPlugin.isPeerAudioMuted(call: call, result: result)
-            break
         case "releaseInstance":
             releaseInstance(call: call, result: result)
             break
         case "createCcParam":
             createCcParam(call: call, result: result)
             break
-        case "enableHookMyAudio":
+            
+        case "call_enableHookMyAudio":
             hookedAudioPlugin.enableHookMyAudio(call: call, result: result)
             break
-        case "disableHookMyAudio":
+        case "call_disableHookMyAudio":
             hookedAudioPlugin.disableHookMyAudio(call: call, result: result)
             break
-        case "putHookedMyAudioBack":
+        case "call_putHookedMyAudioBack":
             hookedAudioPlugin.putHookedMyAudioBack(call: call, result: result)
             break
-        case "isHookMyAudioEnabled":
+        case "call_isHookMyAudioEnabled":
             hookedAudioPlugin.isHookMyAudioEnabled(call: call, result: result)
             break
-        case "setHookedAudioData":
+        case "call_setHookedAudioData":
             hookedAudioPlugin.setHookedAudioData(call: call, result: result)
             break
-        case "notifyCallKitAudioActivation":
+            
+            // MARK: call
+        case "call_acceptCall":
+            callPlugin.acceptCall(call: call, result: result)
+        case "call_endCall":
+            callPlugin.endCall(call: call, result: result)
+            break
+        case "call_endCallWithError":
+            callPlugin.endCallWithError(call: call, result: result)
+            break
+        case "call_muteMyAudio":
+            callPlugin.muteMyAudio(call: call, result: result)
+            break
+        case "call_speakerOut":
+            callPlugin.speakerOut(call: call, result: result)
+            break
+        case "call_isSpeakerOut":
+            callPlugin.isSpeakerOut(call: call, result: result)
+            break
+        case "call_isMyAudioMuted":
+            callPlugin.isMyAudioMuted(call: call, result: result)
+            break
+        case "call_isPeerAudioMuted":
+            callPlugin.isPeerAudioMuted(call: call, result: result)
+            break
+        case "call_notifyCallKitAudioActivation":
             callPlugin.notifyCallKitAudioActivation(call: call, result: result)
             break
-        case "finishPreparation":
+        case "call_finishPreparation":
             callPlugin.finishPreparation(call: call, result: result)
             break
-        case "holdCall":
+        case "call_holdCall":
             callPlugin.hold(call: call, result: result)
             break
-        case "unholdCall":
+        case "call_unholdCall":
             callPlugin.unhold(call: call, result: result)
             break
-        case "isOnHold":
+        case "call_isOnHold":
             callPlugin.isOnHold(call: call, result: result)
             break
-        case "requestPeerMute":
+        case "call_requestPeerMute":
             callPlugin.requestPeerMute(call: call, result: result)
             break
-        case "getMyMediaStatus":
+        case "call_getMyMediaStatus":
             callPlugin.getMyMediaStatus(call: call, delegate: myMediaStatusPlugin, result: result)
             break
-        case "silencePeerAudio":
+        case "call_silencePeerAudio":
             callPlugin.silencePeerAudio(call: call, result: result)
             break
-        case "isMyAudioMutedMyMediaStatus":
+        case "call_addMyVideoView":
+            callPlugin.addMyVideoView(call: call, result: result)
+            break
+        case "call_removeMyVideoView":
+            callPlugin.removeMyVideoView(call: call, result: result)
+            break
+        case "call_addPeerVideoView":
+            callPlugin.addPeerVideoView(call: call, result: result)
+            break
+        case "call_removePeerVideoView":
+            callPlugin.removePeerVideoView(call: call, result: result)
+            break
+        case "call_pauseMyVideo":
+            callPlugin.pauseMyVideo(call: call, result: result)
+            break
+        case "call_resumeMyVideo":
+            callPlugin.resumeMyVideo(call: call, result: result)
+            break
+        case "call_enableVideo":
+            callPlugin.enableVideo(call: call, result: result)
+            break
+        case "call_disableVideo":
+            callPlugin.disableVideo(call: call, result: result)
+            break
+        case "call_getStatistics":
+            callPlugin.getStatistics(call: call, result: result)
+            break
+        case "call_addPeerScreenShareView":
+            callPlugin.addPeerScreenShareView(call: call, result: result)
+            break
+        case "call_removePeerScreenShareView":
+            callPlugin.removePeerScreenShareView(call: call, result: result)
+            break
+            
+            // MARK: my media status
+        case "myMediaStatus_isMyAudioMuted":
             myMediaStatusPlugin.isMyAudioMutedMyMediaStatus(call: call, result: result)
             break
+            
+            // MARK: conference
         case "conference_leaveConference":
             conferencePlugin.leaveConference(call: call, result: result)
             break
@@ -204,12 +252,35 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
         case "conference_createPeerControl":
             conferencePlugin.createPeerControl(call: call, delegate: peerControlPlugin, result: result)
             break
+            // MARK: peer control
+
         case "peerControl_register":
             peerControlPlugin.register(call: call, result: result)
             break
         case "peerControl_unregister":
             peerControlPlugin.unregister(call: call, result: result)
             break
+            
+            // MARK: camera
+        case "camera_startPreview":
+            cameraPlugin.startPreview(call: call, result: result)
+            break
+        case "camera_stopPreview":
+            cameraPlugin.stopPreview(call: call, result: result)
+            break
+        case "camera_switchPosition":
+            cameraPlugin.switchPosition(call: call, result: result)
+            break
+        case "camera_setVirtualBackgroundWithImage":
+            cameraPlugin.setVirtualBackgroundWithImage(call: call, result: result)
+            break
+        case "camera_setVirtualBackgroundWithBlur":
+            cameraPlugin.setVirtualBackgroundWithBlur(call: call, result: result)
+            break
+        case "camera_clearVirtualBackground":
+            cameraPlugin.clearVirtualBackground(call: call, result: result)
+            break
+            
         default:
             NSLog("#flutter unknown call method \(call.method)")
             result(FlutterMethodNotImplemented)
@@ -253,7 +324,8 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
         let makeCallParam = PlanetKitCallParam(myUserId: myPlanetKitUserId, peerUserId: peerPlanetKitUserId, delegate: callPlugin, accessToken: param.accessToken)
         
         makeCallParam.useResponderPreparation = param.useResponderPreparation
-        
+        makeCallParam.mediaType = param.mediaType
+
         var settings = PlanetKitMakeCallSettingBuilder()
         
         if let callKitType = param.callKitType {
@@ -292,6 +364,14 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
             settings = settings.withAudioDescriptionUpdateIntervalKey(interval: interval)
         }
         
+        if let screenShareKey = param.screenShareKey {
+            PlanetKitLog.v("#flutter \(#function) screenShareKey: \(screenShareKey)")
+            settings = settings.withEnableScreenShareKey(broadcastPort: UInt16(screenShareKey.broadcastPort), broadcastPeerToken: screenShareKey.broadcastPeerToken, broadcastMyToken: screenShareKey.broadcastMyToken)
+        }
+        
+        settings = settings.withResponseOnEnableVideo(response: param.responseOnEnableVideo)
+        settings = settings.withEnableStatisticsKey(enable: param.enableStatistics)
+
         
         let makeCallResult = PlanetKitManager.shared.makeCall(param: makeCallParam, settings: settings.build())
         
@@ -358,6 +438,14 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
             let interval = TimeInterval(audioDescriptionUpdateIntervalMs) / 1000.0
             settings = settings.withAudioDescriptionUpdateIntervalKey(interval: interval)
         }
+        
+        if let screenShareKey = param.screenShareKey {
+            PlanetKitLog.v("#flutter \(#function) screenShareKey: \(screenShareKey)")
+            settings = settings.withEnableScreenShareKey(broadcastPort: UInt16(screenShareKey.broadcastPort), broadcastPeerToken: screenShareKey.broadcastPeerToken, broadcastMyToken: screenShareKey.broadcastMyToken)
+        }
+        
+        settings = settings.withResponseOnEnableVideo(response: param.responseOnEnableVideo)
+        settings = settings.withEnableStatisticsKey(enable: param.enableStatistics)
 
         
         let verifyCallResult = PlanetKitManager.shared.verifyCall(myUserId: myPlanetKitUserId, ccParam: ccParam, settings: settings.build(), delegate: callPlugin)
@@ -449,6 +537,13 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
         }
         
         nativeInstances.add(key: ccParam.instanceId, instance: ccParam)
-        result(ccParam.instanceId)
+        
+        let response = CreateCcParamResponse(id: ccParam.instanceId, peerId: ccParam.peerId, peerServiceId: ccParam.serviceId, mediaType: ccParam.mediaType)
+        
+        let encodedResponse = PlanetKitFlutterPlugin.encode(data: response)
+
+        PlanetKitLog.v("#flutter \(#function) response: \(encodedResponse)")
+        result(encodedResponse)
     }
 }
+

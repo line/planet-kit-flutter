@@ -65,7 +65,7 @@ class ConferenceMethodChannel implements ConferenceInterface {
   @override
   Future<bool> notifyCallKitAudioActivation(String id) async {
     print("#flutter_method_channel notifyCallKitAudioActivation with id $id");
-        if (ioPlatform.Platform.isIOS) {
+    if (ioPlatform.Platform.isIOS) {
       return await methodChannel.invokeMethod<bool>(
           'notifyCallKitAudioActivation', id) as bool;
     } else {

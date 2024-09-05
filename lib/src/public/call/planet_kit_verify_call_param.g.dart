@@ -35,4 +35,8 @@ Map<String, dynamic> _$PlanetKitVerifyCallParamToJson(
       'enableAudioDescription': instance.enableAudioDescription,
       'audioDescriptionUpdateIntervalMs':
           instance.audioDescriptionUpdateIntervalMs,
+      'responseOnEnableVideo': const PlanetKitResponseOnEnableVideoConverter()
+          .toJson(instance.responseOnEnableVideo),
+      'enableStatistics': instance.enableStatistics,
+      'screenShareKey': instance.screenShareKey?.toJson(),
     };

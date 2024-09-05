@@ -26,6 +26,8 @@ enum MyMediaStatusEventType: Int, Codable {
     case micMute = 0
     case micUnmute = 1
     case updateAudioDescription = 2
+    case updateVideoStatus = 3
+    case updateScreenShareState = 4
 }
 
 protocol MyMediaStatusEvent: Event {
@@ -75,6 +77,52 @@ struct UpdateAudioDescriptionEvent: MyMediaStatusEvent {
     }
 }
 
+struct UpdateScreenShareStateEvent: MyMediaStatusEvent {
+    let type: EventType
+    let id: String
+    let subType: MyMediaStatusEventType
+    
+    let state: PlanetKitScreenShareState
+    init(id: String, state: PlanetKitScreenShareState) {
+        type = .myMediaStatus
+        subType = .updateScreenShareState
+
+        self.id = id
+        self.state = state
+    }
+}
+
+extension PlanetKitVideoState: Encodable {}
+extension PlanetKitVideoPauseReason: Encodable {}
+
+extension PlanetKitVideoStatus: Encodable {
+    enum CodingKeys: String, CodingKey {
+        case state
+        case pauseReason
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(state, forKey: .state)
+        try container.encode(pauseReason, forKey: .pauseReason)
+    }
+}
+
+struct UpdateVideoStatus: MyMediaStatusEvent {
+    let type: EventType
+    let id: String
+    let subType: MyMediaStatusEventType
+    
+    let status: PlanetKitVideoStatus
+    init(id: String, status: PlanetKitVideoStatus) {
+        type = .myMediaStatus
+        subType = .updateVideoStatus
+
+        self.id = id
+        self.status = status
+    }
+}
+
 class PlanetKitFlutterMyMediaStatusPlugin {
     let nativeInstances: PlanetKitFlutterNativeInstances
     let eventStreamHandler: PlanetKitFlutterStreamHandler
@@ -95,6 +143,22 @@ class PlanetKitFlutterMyMediaStatusPlugin {
         }
         
         result(myMediaStatus.isMyAudioMuted)
+    }
+    
+    func getMyVideoStatus(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+
+        let myMediaStatusId = call.arguments as! String
+        guard let myMediaStatus = nativeInstances.get(key: myMediaStatusId) as? PlanetKitMyMediaStatus else {
+            PlanetKitLog.e("#flutter \(#function) call not found \(myMediaStatusId)")
+            result(nil)
+            return
+        }
+        
+        let myVideoStatus = myMediaStatus.videoStatus
+        let encodedData = PlanetKitFlutterPlugin.encode(data: myVideoStatus)
+        
+        result(encodedData)
     }
 }
 
@@ -121,6 +185,24 @@ extension PlanetKitFlutterMyMediaStatusPlugin: PlanetKitMyMediaStatusDelegate {
         DispatchQueue.main.async {
             PlanetKitLog.v("#flutter \(#function)")
             let event = UpdateAudioDescriptionEvent(id: myMediaStatus.instanceId, averageVolumeLevel: Int(description.averageVolumeLevel))
+            let encodedEvent = PlanetKitFlutterPlugin.encode(data: event)
+            self.eventStreamHandler.eventSink?(encodedEvent)
+        }
+    }
+    
+    public func didUpdateVideoStatus(_ myMediaStatus: PlanetKitMyMediaStatus, status: PlanetKitVideoStatus) {
+        DispatchQueue.main.async {
+            PlanetKitLog.v("#flutter \(#function)")
+            let event = UpdateVideoStatus(id: myMediaStatus.instanceId, status: status)
+            let encodedEvent = PlanetKitFlutterPlugin.encode(data: event)
+            self.eventStreamHandler.eventSink?(encodedEvent)
+        }
+    }
+    
+    public func didUpdateScreenShareState(_ myMediaStatus: PlanetKit.PlanetKitMyMediaStatus, state: PlanetKit.PlanetKitScreenShareState) {
+        DispatchQueue.main.async {
+            PlanetKitLog.v("#flutter \(#function)")
+            let event = UpdateScreenShareStateEvent(id: myMediaStatus.instanceId, state: state)
             let encodedEvent = PlanetKitFlutterPlugin.encode(data: event)
             self.eventStreamHandler.eventSink?(encodedEvent)
         }

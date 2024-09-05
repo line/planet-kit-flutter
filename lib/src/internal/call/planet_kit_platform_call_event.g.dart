@@ -90,3 +90,39 @@ MyAudioMuteRequestByPeerEvent _$MyAudioMuteRequestByPeerEventFromJson(
       const CallEventTypeConverter().fromJson((json['subType'] as num).toInt()),
       json['mute'] as bool,
     );
+
+PeerVideoDidPauseEvent _$PeerVideoDidPauseEventFromJson(
+        Map<String, dynamic> json) =>
+    PeerVideoDidPauseEvent(
+      const EventTypeConverter().fromJson((json['type'] as num).toInt()),
+      json['id'] as String,
+      const CallEventTypeConverter().fromJson((json['subType'] as num).toInt()),
+      const PlanetKitVideoPauseReasonConverter()
+          .fromJson((json['reason'] as num).toInt()),
+    );
+
+VideoDisabledByPeerEvent _$VideoDisabledByPeerEventFromJson(
+        Map<String, dynamic> json) =>
+    VideoDisabledByPeerEvent(
+      const EventTypeConverter().fromJson((json['type'] as num).toInt()),
+      json['id'] as String,
+      const CallEventTypeConverter().fromJson((json['subType'] as num).toInt()),
+      const PlanetKitMediaDisableReasonConverter()
+          .fromJson((json['reason'] as num).toInt()),
+    );
+
+PeerDidStartScreenShareEvent _$PeerDidStartScreenShareEventFromJson(
+        Map<String, dynamic> json) =>
+    PeerDidStartScreenShareEvent(
+      const EventTypeConverter().fromJson((json['type'] as num).toInt()),
+      json['id'] as String,
+      const CallEventTypeConverter().fromJson((json['subType'] as num).toInt()),
+    );
+
+PeerDidStopScreenShareEvent _$PeerDidStopScreenShareEventFromJson(
+        Map<String, dynamic> json) =>
+    PeerDidStopScreenShareEvent(
+      const EventTypeConverter().fromJson((json['type'] as num).toInt()),
+      json['id'] as String,
+      const CallEventTypeConverter().fromJson((json['subType'] as num).toInt()),
+    );

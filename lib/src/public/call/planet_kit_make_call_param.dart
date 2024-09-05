@@ -13,6 +13,9 @@
 // under the License.
 
 import 'package:json_annotation/json_annotation.dart';
+import 'package:planet_kit_flutter/planet_kit_flutter.dart';
+import 'package:planet_kit_flutter/src/public/planet_kit_types.dart';
+import '../screen_share/planet_kit_screen_share_key.dart';
 import 'planet_kit_callkit_type.dart';
 part 'planet_kit_make_call_param.g.dart';
 
@@ -46,7 +49,7 @@ class PlanetKitMakeCallParam {
   @PlanetKitCallKitTypeConverter()
   final PlanetKitCallKitType callKitType;
 
-  /// The asset path of the hold tone to be played when the peer holds this session
+  /// The asset path of the hold tone to be played when the peer holds this session.
   final String? holdTonePath;
 
   /// The asset path of the ringback tone to be played when the call is in the wait answer state.
@@ -64,20 +67,40 @@ class PlanetKitMakeCallParam {
   /// Interval in milliseconds for audio description updates.
   final int? audioDescriptionUpdateIntervalMs;
 
-  PlanetKitMakeCallParam._(
-      {required this.myUserId,
-      required this.myServiceId,
-      required this.peerUserId,
-      required this.peerServiceId,
-      required this.accessToken,
-      required this.useResponderPreparation,
-      required this.callKitType,
-      required this.holdTonePath,
-      required this.ringbackTonePath,
-      required this.endTonePath,
-      required this.allowCallWithoutMic,
-      required this.enableAudioDescription,
-      required this.audioDescriptionUpdateIntervalMs});
+  /// The media type for the call.
+  @PlanetKitMediaTypeConverter()
+  final PlanetKitMediaType mediaType;
+
+  /// The response on video enabled by peer.
+  @PlanetKitResponseOnEnableVideoConverter()
+  final PlanetKitResponseOnEnableVideo responseOnEnableVideo;
+
+  /// Whether to enable statistics collection.
+  final bool enableStatistics;
+
+  /// The screen share key for the call. iOS only.
+  final ScreenShareKey? screenShareKey;
+
+  /// @nodoc
+  PlanetKitMakeCallParam._({
+    required this.myUserId,
+    required this.myServiceId,
+    required this.peerUserId,
+    required this.peerServiceId,
+    required this.accessToken,
+    required this.useResponderPreparation,
+    required this.callKitType,
+    required this.holdTonePath,
+    required this.ringbackTonePath,
+    required this.endTonePath,
+    required this.allowCallWithoutMic,
+    required this.enableAudioDescription,
+    required this.audioDescriptionUpdateIntervalMs,
+    required this.mediaType,
+    required this.responseOnEnableVideo,
+    required this.enableStatistics,
+    required this.screenShareKey,
+  });
 
   /// @nodoc
   Map<String, dynamic> toJson() => _$PlanetKitMakeCallParamToJson(this);
@@ -98,6 +121,11 @@ class PlanetKitMakeCallParamBuilder {
   bool? _allowCallWithoutMic;
   bool? _enableAudioDescription;
   int? _audioDescriptionUpdateIntervalMs;
+  PlanetKitMediaType _mediaType = PlanetKitMediaType.audio;
+  PlanetKitResponseOnEnableVideo _responseOnEnableVideo =
+      PlanetKitResponseOnEnableVideo.pause;
+  bool _enableStatistics = false;
+  ScreenShareKey? _screenShareKey;
 
   /// Sets the user ID of the caller and returns the builder.
   PlanetKitMakeCallParamBuilder setMyUserId(String myUserId) {
@@ -181,6 +209,32 @@ class PlanetKitMakeCallParamBuilder {
     return this;
   }
 
+  /// Sets the media type for the call and returns the builder.
+  PlanetKitMakeCallParamBuilder setMediaType(PlanetKitMediaType mediaType) {
+    _mediaType = mediaType;
+    return this;
+  }
+
+  /// Sets the response on enabling video and returns the builder.
+  PlanetKitMakeCallParamBuilder setResponseOnEnableVideo(
+      PlanetKitResponseOnEnableVideo response) {
+    _responseOnEnableVideo = response;
+    return this;
+  }
+
+  /// Sets whether to enable statistics collection and returns the builder.
+  PlanetKitMakeCallParamBuilder setEnableStatistics(bool enable) {
+    _enableStatistics = enable;
+    return this;
+  }
+
+  /// Sets the screen share key for the call and returns the builder.
+  PlanetKitMakeCallParamBuilder setScreenShareKey(
+      ScreenShareKey screenShareKey) {
+    _screenShareKey = screenShareKey;
+    return this;
+  }
+
   /// Constructs a [PlanetKitMakeCallParam] with necessary details for making a call.
   /// Throws an exception if any required fields are missing.
   PlanetKitMakeCallParam build() {
@@ -190,7 +244,7 @@ class PlanetKitMakeCallParamBuilder {
         _peerServiceId == null ||
         _accessToken == null) {
       throw Exception('Missing required fields for PlanetKitMakeCallParam');
-      //TODO remove exception, return nil instead.s
+      //TODO remove exception, return nil instead.
     }
     return PlanetKitMakeCallParam._(
         myUserId: _myUserId!,
@@ -205,6 +259,10 @@ class PlanetKitMakeCallParamBuilder {
         endTonePath: _endTonePath,
         allowCallWithoutMic: _allowCallWithoutMic,
         enableAudioDescription: _enableAudioDescription,
-        audioDescriptionUpdateIntervalMs: _audioDescriptionUpdateIntervalMs);
+        audioDescriptionUpdateIntervalMs: _audioDescriptionUpdateIntervalMs,
+        mediaType: _mediaType,
+        responseOnEnableVideo: _responseOnEnableVideo,
+        enableStatistics: _enableStatistics,
+        screenShareKey: _screenShareKey);
   }
 }

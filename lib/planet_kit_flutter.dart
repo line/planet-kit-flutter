@@ -20,6 +20,7 @@ export 'package:planet_kit_flutter/src/public/planet_kit_start_fail_reason.dart'
 export 'package:planet_kit_flutter/src/public/planet_kit_disconnect_reason.dart';
 export 'package:planet_kit_flutter/src/public/planet_kit_disconnect_source.dart';
 export 'package:planet_kit_flutter/src/public/planet_kit_user_id.dart';
+export 'package:planet_kit_flutter/src/public/planet_kit_types.dart';
 
 export 'package:planet_kit_flutter/src/public/audio/planet_kit_audio_sample_type.dart';
 export 'package:planet_kit_flutter/src/public/audio/planet_kit_hooked_audio.dart';
@@ -38,3 +39,11 @@ export 'package:planet_kit_flutter/src/public/conference/planet_kit_conference_j
 export 'package:planet_kit_flutter/src/public/conference/planet_kit_conference_peer.dart';
 export 'package:planet_kit_flutter/src/public/conference/planet_kit_join_conference_param.dart';
 export 'package:planet_kit_flutter/src/public/conference/peer_control/planet_kit_peer_control.dart';
+
+export 'package:planet_kit_flutter/src/public/video/planet_kit_camera.dart';
+export 'package:planet_kit_flutter/src/public/video/planet_kit_video_view.dart';
+export 'package:planet_kit_flutter/src/public/video/planet_kit_video_status.dart';
+
+export 'package:planet_kit_flutter/src/public/statistics/planet_kit_statistics.dart';
+
+export 'package:planet_kit_flutter/src/public/screen_share/planet_kit_screen_share_key.dart';

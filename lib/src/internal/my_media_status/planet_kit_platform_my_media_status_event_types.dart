@@ -32,7 +32,9 @@ enum MyMediaStatusEventType {
   error,
   mute,
   unmute,
-  audioDescriptionUpdate;
+  audioDescriptionUpdate,
+  videoStatusUpdate,
+  screenShareStateUpdate;
 
   /// @nodoc
   static MyMediaStatusEventType fromInt(int value) {
@@ -43,6 +45,10 @@ enum MyMediaStatusEventType {
         return MyMediaStatusEventType.unmute;
       case 2:
         return MyMediaStatusEventType.audioDescriptionUpdate;
+      case 3:
+        return MyMediaStatusEventType.videoStatusUpdate;
+      case 4:
+        return MyMediaStatusEventType.screenShareStateUpdate;
       default:
         return MyMediaStatusEventType.error;
     }

@@ -31,6 +31,8 @@ extension PlanetKitStartFailReason: Codable {}
 
 extension PlanetKitCallKitType: Codable {}
 
+extension PlanetKitScreenShareState: Encodable {}
+
 // MARK: events
 // NOTE: enum value must be in-sync with android and flutter
 extension PlanetKitDisconnectReason: Codable {}

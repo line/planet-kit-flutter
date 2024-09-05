@@ -14,6 +14,7 @@
 
 import 'package:json_annotation/json_annotation.dart';
 import '../../public/planet_kit_start_fail_reason.dart';
+import '../../public/planet_kit_types.dart';
 part 'planet_kit_platform_call_reponses.g.dart';
 
 @JsonSerializable(createToJson: false)
@@ -40,4 +41,23 @@ class VerifyCallResponse {
 
   factory VerifyCallResponse.fromJson(Map<String, dynamic> json) =>
       _$VerifyCallResponseFromJson(json);
+}
+
+@JsonSerializable(createToJson: false)
+class CreateCCParamResponse {
+  final String id;
+  final String? peerId;
+  final String? peerServiceId;
+
+  @PlanetKitMediaTypeConverter()
+  final PlanetKitMediaType mediaType;
+
+  CreateCCParamResponse(
+      {required this.id,
+      required this.peerId,
+      required this.peerServiceId,
+      required this.mediaType});
+
+  factory CreateCCParamResponse.fromJson(Map<String, dynamic> json) =>
+      _$CreateCCParamResponseFromJson(json);
 }

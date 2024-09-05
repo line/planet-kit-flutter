@@ -13,6 +13,7 @@
 // under the License.
 
 import 'package:json_annotation/json_annotation.dart';
+import '../../public/planet_kit_types.dart';
 import 'planet_kit_platform_call_event_type.dart';
 import '../planet_kit_platform_event.dart';
 import '../planet_kit_platform_event_types.dart';
@@ -40,6 +41,14 @@ class CallEventFactory {
       return PeerHoldEvent.fromJson(data);
     } else if (type == CallEventType.muteMyAudioRequestByPeer) {
       return MyAudioMuteRequestByPeerEvent.fromJson(data);
+    } else if (type == CallEventType.peerVideoDidPause) {
+      return PeerVideoDidPauseEvent.fromJson(data);
+    } else if (type == CallEventType.videoDisabledByPeer) {
+      return VideoDisabledByPeerEvent.fromJson(data);
+    } else if (type == CallEventType.peerDidStartScreenShare) {
+      return PeerDidStartScreenShareEvent.fromJson(data);
+    } else if (type == CallEventType.peerDidStopScreenShare) {
+      return PeerDidStopScreenShareEvent.fromJson(data);
     } else {
       return event;
     }
@@ -134,4 +143,41 @@ class MyAudioMuteRequestByPeerEvent extends CallEvent {
 
   factory MyAudioMuteRequestByPeerEvent.fromJson(Map<String, dynamic> json) =>
       _$MyAudioMuteRequestByPeerEventFromJson(json);
+}
+
+@JsonSerializable(createToJson: false)
+class PeerVideoDidPauseEvent extends CallEvent {
+  @PlanetKitVideoPauseReasonConverter()
+  final PlanetKitVideoPauseReason reason;
+
+  PeerVideoDidPauseEvent(super.type, super.id, super.subType, this.reason);
+
+  factory PeerVideoDidPauseEvent.fromJson(Map<String, dynamic> json) =>
+      _$PeerVideoDidPauseEventFromJson(json);
+}
+
+@JsonSerializable(createToJson: false)
+class VideoDisabledByPeerEvent extends CallEvent {
+  @PlanetKitMediaDisableReasonConverter()
+  final PlanetKitMediaDisableReason reason;
+  VideoDisabledByPeerEvent(super.type, super.id, super.subType, this.reason);
+
+  factory VideoDisabledByPeerEvent.fromJson(Map<String, dynamic> json) =>
+      _$VideoDisabledByPeerEventFromJson(json);
+}
+
+@JsonSerializable(createToJson: false)
+class PeerDidStartScreenShareEvent extends CallEvent {
+  PeerDidStartScreenShareEvent(super.type, super.id, super.subType);
+
+  factory PeerDidStartScreenShareEvent.fromJson(Map<String, dynamic> json) =>
+      _$PeerDidStartScreenShareEventFromJson(json);
+}
+
+@JsonSerializable(createToJson: false)
+class PeerDidStopScreenShareEvent extends CallEvent {
+  PeerDidStopScreenShareEvent(super.type, super.id, super.subType);
+
+  factory PeerDidStopScreenShareEvent.fromJson(Map<String, dynamic> json) =>
+      _$PeerDidStopScreenShareEventFromJson(json);
 }

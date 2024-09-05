@@ -13,6 +13,8 @@
 // under the License.
 
 import 'package:json_annotation/json_annotation.dart';
+
+import '../../public/planet_kit_types.dart';
 part 'planet_kit_platform_call_params.g.dart';
 
 @JsonSerializable(explicitToJson: true, createFactory: false)
@@ -96,4 +98,35 @@ class EndCallWithErrorParam {
   EndCallWithErrorParam(
       {required this.callId, required this.userReleasePhrase});
   Map<String, dynamic> toJson() => _$EndCallWithErrorParamToJson(this);
+}
+
+// New params to be added
+
+@JsonSerializable(explicitToJson: true, createFactory: false)
+class AddVideoViewParam {
+  final String callId;
+  final String viewId;
+
+  AddVideoViewParam({required this.callId, required this.viewId});
+  Map<String, dynamic> toJson() => _$AddVideoViewParamToJson(this);
+}
+
+@JsonSerializable(explicitToJson: true, createFactory: false)
+class RemoveVideoViewParam {
+  final String callId;
+  final String viewId;
+
+  RemoveVideoViewParam({required this.callId, required this.viewId});
+  Map<String, dynamic> toJson() => _$RemoveVideoViewParamToJson(this);
+}
+
+@JsonSerializable(explicitToJson: true, createFactory: false)
+class DisableVideoParam {
+  final String callId;
+
+  @PlanetKitMediaDisableReasonConverter()
+  final PlanetKitMediaDisableReason reason;
+
+  DisableVideoParam({required this.callId, required this.reason});
+  Map<String, dynamic> toJson() => _$DisableVideoParamToJson(this);
 }
