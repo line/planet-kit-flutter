@@ -27,6 +27,8 @@ class PlanetKitFlutterConferencePlugin {
     let nativeInstances: PlanetKitFlutterNativeInstances
     let eventStreamHandler: PlanetKitFlutterStreamHandler
     var myStatusDelegates: [String : Weak<PlanetKitMyMediaStatusDelegate>] = [:]
+    
+    private var myVideoDelegates: [String : VideoOutputDelegates] = [:]
 
     init(nativeInstances: PlanetKitFlutterNativeInstances, eventStreamHandler: PlanetKitFlutterStreamHandler) {
         self.nativeInstances = nativeInstances
@@ -270,9 +272,171 @@ class PlanetKitFlutterConferencePlugin {
         nativeInstances.add(key: peerControl.instanceId, instance: peerControl)
         result(peerControl.instanceId)
     }
+    
+    func addMyVideoView(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: ConferenceParams.AddVideoViewParam.self)
+
+        guard let conference = nativeInstances.get(key: param.conferenceId) as? PlanetKitConference else {
+            PlanetKitLog.e("#flutter \(#function) call not found \(param.conferenceId)")
+            result(false)
+            return
+        }
+        
+        guard let view = PlanetKitFlutterVideoViews.shared.getView(id: param.viewId) else {
+            PlanetKitLog.e("#flutter \(#function) view not found \(param.viewId)")
+            result(false)
+            return
+        }
+        
+        // TODO: remove stopPreview() call in PlanetKit 5.5
+        if myVideoDelegates[conference.instanceId] == nil {
+            let delegates = VideoOutputDelegates()
+            myVideoDelegates[conference.instanceId] = delegates
+            conference.myVideoReceiver = delegates
+            conference.startPreview()
+        }
+        
+        myVideoDelegates[conference.instanceId]?.add(delegate: view.delegate)
+        
+        result(true)
+    }
+    
+    func removeMyVideoView(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: ConferenceParams.RemoveVideoViewParam.self)
+        
+        guard let conference = nativeInstances.get(key: param.conferenceId) as? PlanetKitConference else {
+            PlanetKitLog.e("#flutter \(#function) call not found \(param.conferenceId)")
+            result(false)
+            return
+        }
+        
+        guard let view = PlanetKitFlutterVideoViews.shared.getView(id: param.viewId) else {
+            PlanetKitLog.e("#flutter \(#function) view not found \(param.viewId)")
+            result(false)
+            return
+        }
+        
+        
+        guard let delegates = myVideoDelegates[conference.instanceId] else {
+            PlanetKitLog.e("#flutter \(#function) delegates not found \(param.viewId)")
+            result(false)
+            return
+        }
+        
+        delegates.remove(delegate: view.delegate)
+        
+        // TODO: remove stopPreview() call in PlanetKit 5.5
+        if delegates.count == 0 {
+            myVideoDelegates.removeValue(forKey: conference.instanceId)
+            conference.stopPreview()
+            conference.myVideoReceiver = nil
+        }
+
+        result(true)
+    }
+    
+    
+    func enableVideo(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        
+        let id = call.arguments as! String
+        guard let conference = nativeInstances.get(key: id) as? PlanetKitConference else {
+            PlanetKitLog.e("#flutter \(#function) conference not found \(id)")
+            result(false)
+            return
+        }
+        
+        conference.enableVideo() { success in
+            PlanetKitLog.v("#flutter \(#function) result: \(success)")
+            result(success)
+            return
+        }
+    }
+    
+    func disableVideo(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        
+        let id = call.arguments as! String
+        guard let conference = nativeInstances.get(key: id) as? PlanetKitConference else {
+            PlanetKitLog.e("#flutter \(#function) conference not found \(id)")
+            result(false)
+            return
+        }
+        
+        conference.disableVideo() { success in
+            PlanetKitLog.v("#flutter \(#function) result: \(success)")
+            result(success)
+            return
+        }
+    }
+    
+    func pauseMyVideo(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        
+        let id = call.arguments as! String
+        guard let conference = nativeInstances.get(key: id) as? PlanetKitConference else {
+            PlanetKitLog.e("#flutter \(#function) call not found \(id)")
+            result(false)
+            return
+        }
+        
+        conference.pauseMyVideo() { success in
+            if success {
+                // TOBEDEL: This code will be deleted in PlanetKit 5.5.
+                // pause resume api will control the camera device in the future.
+                conference.stopPreview()
+            }
+            result(success)
+        }
+    }
+    
+    func resumeMyVideo(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        
+        let id = call.arguments as! String
+        guard let conference = nativeInstances.get(key: id) as? PlanetKitConference else {
+            PlanetKitLog.e("#flutter \(#function) call not found \(id)")
+            result(false)
+            return
+        }
+        
+        conference.resumeMyVideo() { success in
+            if success {
+                // TOBEDEL: This code will be deleted in PlanetKit 5.5.
+                // pause resume api will control the camera device in the future.
+                conference.startPreview()
+            }
+            result(success)
+        }
+    }
 }
 
 extension PlanetKitFlutterConferencePlugin: PlanetKitConferenceDelegate {
+    // for screen share, process it inside the plugin for user convenience.
+    public func didStartMyBroadcast(_ conference: PlanetKit.PlanetKitConference) {
+        PlanetKitLog.v("#flutter \(#function)")
+        conference.startMyScreenShare(subgroupName: nil) { success in
+            if !success {
+                conference.stopMyBroadcast()
+            }
+        }
+    }
+
+    public func didFinishMyBroadcast(_ conference: PlanetKit.PlanetKitConference) {
+        PlanetKitLog.v("#flutter \(#function)")
+        conference.stopMyScreenShare() { success in
+        }
+    }
+
+    public func didErrorMyBroadcast(_ conference: PlanetKit.PlanetKitConference, error: PlanetKit.PlanetKitScreenShare.BroadcastError) {
+        PlanetKitLog.v("#flutter \(#function)")
+        conference.stopMyScreenShare() { success in
+        }
+    }
+    
+    
     func didConnect(_ conference: PlanetKit.PlanetKitConference, connected: PlanetKit.PlanetKitConferenceConnectedParam) {
         DispatchQueue.main.async {
             PlanetKitLog.v("#flutter \(#function)")
@@ -387,5 +551,28 @@ extension PlanetKitFlutterConferencePlugin: PlanetKitConferenceDelegate {
             let encodedEvent = PlanetKitFlutterPlugin.encode(data: event)
             self.eventStreamHandler.eventSink?(encodedEvent)
         }
+    }
+}
+
+// Statistics
+extension PlanetKitFlutterConferencePlugin {
+    func getStatistics(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        
+        let conferenceId = call.arguments as! String
+        guard let conference = nativeInstances.get(key: conferenceId) as? PlanetKitConference else {
+            PlanetKitLog.e("#flutter \(#function) call not found \(conferenceId)")
+            result(nil)
+            return
+        }
+        
+        guard let statistics = conference.statistics else {
+            result(nil)
+            return
+        }
+        
+        let encodedStatistics = PlanetKitFlutterPlugin.encode(data: statistics)
+        
+        result(encodedStatistics)
     }
 }

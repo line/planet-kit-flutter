@@ -45,3 +45,23 @@ UpdateAudioDescriptionEvent _$UpdateAudioDescriptionEventFromJson(
           .fromJson((json['subType'] as num).toInt()),
       (json['averageVolumeLevel'] as num).toInt(),
     );
+
+UpdateVideoEvent _$UpdateVideoEventFromJson(Map<String, dynamic> json) =>
+    UpdateVideoEvent(
+      const EventTypeConverter().fromJson((json['type'] as num).toInt()),
+      json['id'] as String,
+      const PeerControlEventTypeConverter()
+          .fromJson((json['subType'] as num).toInt()),
+      PlanetKitVideoStatus.fromJson(json['status'] as Map<String, dynamic>),
+    );
+
+UpdateScreenShareEvent _$UpdateScreenShareEventFromJson(
+        Map<String, dynamic> json) =>
+    UpdateScreenShareEvent(
+      const EventTypeConverter().fromJson((json['type'] as num).toInt()),
+      json['id'] as String,
+      const PeerControlEventTypeConverter()
+          .fromJson((json['subType'] as num).toInt()),
+      const PlanetKitScreenShareStateConverter()
+          .fromJson((json['state'] as num).toInt()),
+    );

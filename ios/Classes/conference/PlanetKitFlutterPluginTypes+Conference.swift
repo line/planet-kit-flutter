@@ -63,11 +63,25 @@ struct ConferenceParams {
         let allowConferenceWithoutMic: Bool?
         let enableAudioDescription: Bool?
         let audioDescriptionUpdateIntervalMs: Int?
+        let mediaType: PlanetKitMediaType
+        let enableStatistics: Bool
+        
+        let screenShareKey: ScreenShareKey?
     }
     
     struct CreatePeerControlParam: Decodable {
         let conferenceId: String
         let peerId: String
+    }
+    
+    struct AddVideoViewParam: Decodable {
+        let conferenceId: String
+        let viewId: String
+    }
+    
+    struct RemoveVideoViewParam: Decodable {
+        let conferenceId: String
+        let viewId: String
     }
 }
 

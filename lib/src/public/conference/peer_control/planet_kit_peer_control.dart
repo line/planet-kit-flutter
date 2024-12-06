@@ -13,10 +13,14 @@
 // under the License.
 
 import 'dart:async';
+import 'package:planet_kit_flutter/src/public/video/planet_kit_video_resolution.dart';
+import 'package:planet_kit_flutter/src/public/video/planet_kit_video_status.dart';
+
 import '../../../internal/peer_control/planet_kit_platform_peer_control_event.dart';
 import '../../../internal/peer_control/planet_kit_platform_peer_control_event_types.dart';
 import '../../../internal/planet_kit_platform_interface.dart';
 import '../../../internal/planet_kit_platform_resource_manager.dart';
+import '../../planet_kit_types.dart';
 
 /// Event handler to process peer events such as microphone mute/unmute and hold/unhold.
 class PlanetKitPeerControlHandler {
@@ -39,14 +43,25 @@ class PlanetKitPeerControlHandler {
   final void Function(PlanetKitPeerControl control, int averageVolumeLevel)?
       onAudioDescriptionUpdate;
 
+  /// Called when there is an update on the peer's video status.
+  final void Function(
+          PlanetKitPeerControl control, PlanetKitVideoStatus videoStatus)?
+      onVideoUpdate;
+
+  /// Called when there is an update on the peer's screen share state.
+  final void Function(PlanetKitPeerControl control,
+      PlanetKitScreenShareState screenShareState)? onScreenShareUpdate;
+
   /// Constructor for [PlanetKitPeerControlHandler].
   PlanetKitPeerControlHandler(
-      {required this.onMicMute,
-      required this.onMicUnmute,
-      required this.onHold,
-      required this.onUnhold,
-      required this.onDisconnect,
-      required this.onAudioDescriptionUpdate});
+      {this.onMicMute,
+      this.onMicUnmute,
+      this.onHold,
+      this.onUnhold,
+      this.onDisconnect,
+      this.onAudioDescriptionUpdate,
+      this.onVideoUpdate,
+      this.onScreenShareUpdate});
 }
 
 /// Interface to manage a specific peer within a conference session.
@@ -82,10 +97,39 @@ class PlanetKitPeerControl {
     return result;
   }
 
+  /// Starts video for the peer with the specified [viewId] and [maxResolution].
+  Future<bool> startVideo(String viewId,
+      {PlanetKitVideoResolution maxResolution =
+          PlanetKitVideoResolution.recommended}) async {
+    final result = await Platform.instance.peerControlInterface
+        .startVideo(id, viewId, maxResolution);
+    return result;
+  }
+
+  /// Stops video for the peer with the specified [viewId].
+  Future<bool> stopVideo(String viewId) async {
+    final result =
+        await Platform.instance.peerControlInterface.stopVideo(id, viewId);
+    return result;
+  }
+
+  /// Stops screen share for the peer with the specified [viewId].
+  Future<bool> startScreenShare(String viewId) async {
+    final result = await Platform.instance.peerControlInterface
+        .startScreenShare(id, viewId);
+    return result;
+  }
+
+  /// Stops screen share for the peer with the specified [viewId].
+  Future<bool> stopScreenShare(String viewId) async {
+    final result = await Platform.instance.peerControlInterface
+        .stopScreenShare(id, viewId);
+    return result;
+  }
+
   /// @nodoc
   void _onPeerControlEvent(PeerControlEvent event) {
     if (event.id != this.id) {
-      print("#flutter_kit_peer_control event not for current instance");
       return;
     }
     if (event.subType == PeerControlEventType.micMute) {
@@ -100,6 +144,10 @@ class PlanetKitPeerControl {
       _handler?.onDisconnect?.call(this);
     } else if (event.subType == PeerControlEventType.audioDescriptionUpdate) {
       _handleAudioDescriptionUpdate(event);
+    } else if (event.subType == PeerControlEventType.videoUpdate) {
+      _handleVideoUpdate(event);
+    } else if (event.subType == PeerControlEventType.screenShareUpdate) {
+      _handleScreenShareUpdate(event);
     }
   }
 
@@ -113,5 +161,17 @@ class PlanetKitPeerControl {
   void _handleAudioDescriptionUpdate(PeerControlEvent peerControlEvent) {
     final event = peerControlEvent as UpdateAudioDescriptionEvent;
     _handler?.onAudioDescriptionUpdate?.call(this, event.averageVolumeLevel);
+  }
+
+  /// @nodoc
+  void _handleVideoUpdate(PeerControlEvent peerControlEvent) {
+    final event = peerControlEvent as UpdateVideoEvent;
+    _handler?.onVideoUpdate?.call(this, event.status);
+  }
+
+  /// @nodoc
+  void _handleScreenShareUpdate(PeerControlEvent peerControlEvent) {
+    final event = peerControlEvent as UpdateScreenShareEvent;
+    _handler?.onScreenShareUpdate?.call(this, event.state);
   }
 }

@@ -33,6 +33,10 @@ Map<String, dynamic> _$PlanetKitJoinConferenceParamToJson(
       'enableAudioDescription': instance.enableAudioDescription,
       'audioDescriptionUpdateIntervalMs':
           instance.audioDescriptionUpdateIntervalMs,
+      'mediaType':
+          const PlanetKitMediaTypeConverter().toJson(instance.mediaType),
       'callKitType':
           const PlanetKitCallKitTypeConverter().toJson(instance.callKitType),
+      'enableStatistics': instance.enableStatistics,
+      'screenShareKey': instance.screenShareKey?.toJson(),
     };

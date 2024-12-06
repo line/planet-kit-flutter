@@ -67,3 +67,17 @@ Map<String, dynamic> _$CreatePeerControlParamToJson(
       'conferenceId': instance.conferenceId,
       'peerId': instance.peerId,
     };
+
+Map<String, dynamic> _$AddMyVideoViewParamToJson(
+        AddMyVideoViewParam instance) =>
+    <String, dynamic>{
+      'conferenceId': instance.conferenceId,
+      'viewId': instance.viewId,
+    };
+
+Map<String, dynamic> _$RemoveMyVideoViewParamToJson(
+        RemoveMyVideoViewParam instance) =>
+    <String, dynamic>{
+      'conferenceId': instance.conferenceId,
+      'viewId': instance.viewId,
+    };

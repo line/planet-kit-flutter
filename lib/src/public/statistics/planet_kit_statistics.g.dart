@@ -31,6 +31,13 @@ PlanetKitStatistics _$PlanetKitStatisticsFromJson(Map<String, dynamic> json) =>
       peerVideos: (json['peerVideos'] as List<dynamic>)
           .map((e) => PeerVideo.fromJson(e as Map<String, dynamic>))
           .toList(),
+      myScreenShare: json['myScreenShare'] == null
+          ? null
+          : MyScreenShare.fromJson(
+              json['myScreenShare'] as Map<String, dynamic>),
+      peerScreenShares: (json['peerScreenShares'] as List<dynamic>)
+          .map((e) => PeerScreenShare.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
 
 MyAudio _$MyAudioFromJson(Map<String, dynamic> json) => MyAudio(
@@ -47,6 +54,7 @@ MyVideo _$MyVideoFromJson(Map<String, dynamic> json) => MyVideo(
     );
 
 PeerVideo _$PeerVideoFromJson(Map<String, dynamic> json) => PeerVideo(
+      peerId: PlanetKitUserId.fromJson(json['peerId'] as Map<String, dynamic>),
       subGroupName: json['subGroupName'] as String?,
       network: Network.fromJson(json['network'] as Map<String, dynamic>),
       video: Video.fromJson(json['video'] as Map<String, dynamic>),

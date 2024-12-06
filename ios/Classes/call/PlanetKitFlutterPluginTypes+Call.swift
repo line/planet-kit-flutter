@@ -433,30 +433,31 @@ struct PutHookedAudioBackParam: Codable {
     let audioId: String
 }
 
-
-struct MuteMyAudioParam: Codable {
-    let callId: String
-    let mute: Bool
-}
-
-struct RequestPeerMuteParam: Codable {
-    let callId: String
-    let mute: Bool
-}
-
-struct SilencePeerAudioParam: Codable {
-    let callId: String
-    let silent: Bool
-}
-
-
-// MARK: video param
-struct AddVideoViewParam: Decodable {
-    let callId: String
-    let viewId: String
-}
-
-struct RemoveVideoViewParam: Decodable {
-    let callId: String
-    let viewId: String
+struct CallParams {
+    struct MuteMyAudioParam: Codable {
+        let callId: String
+        let mute: Bool
+    }
+    
+    struct RequestPeerMuteParam: Codable {
+        let callId: String
+        let mute: Bool
+    }
+    
+    struct SilencePeerAudioParam: Codable {
+        let callId: String
+        let silent: Bool
+    }
+    
+    
+    // MARK: video param
+    struct AddVideoViewParam: Decodable {
+        let callId: String
+        let viewId: String
+    }
+    
+    struct RemoveVideoViewParam: Decodable {
+        let callId: String
+        let viewId: String
+    }
 }

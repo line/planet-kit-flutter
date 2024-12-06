@@ -22,6 +22,7 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import '../public/call/planet_kit_cc_param.dart';
 import '../public/conference/planet_kit_conference_peer.dart';
 import '../public/planet_kit_user_id.dart';
+import '../public/video/planet_kit_video_resolution.dart';
 import 'call/planet_kit_platform_call_event.dart';
 import 'call/planet_kit_platform_call_reponses.dart';
 import 'conference/planet_kit_platform_conference_event.dart';
@@ -105,11 +106,20 @@ abstract class ConferenceInterface {
   Future<bool> unhold(String id);
   Future<String?> getMyMediaStatus(String id);
   Future<String?> createPeerControl(String conferenceId, String peerId);
+  Future<bool> addMyVideoView(String conferenceId, String viewId);
+  Future<bool> removeMyVideoView(String conferenceId, String viewId);
+  Future<bool> enableVideo(String id);
+  Future<bool> disableVideo(String id);
+  Future<bool> pauseMyVideo(String id);
+  Future<bool> resumeMyVideo(String id);
+  Future<PlanetKitStatistics?> getStatistics(String id);
 }
 
 abstract class ConferencePeerInterface {
-  Future<PlanetKitHoldStatus> getHoldStatus(String id);
+  Future<PlanetKitHoldStatus?> getHoldStatus(String id);
   Future<bool> isMuted(String id);
+  Future<PlanetKitVideoStatus?> getVideoStatus(String id);
+  Future<PlanetKitScreenShareState?> getScreenShareState(String id);
 }
 
 abstract class MyMediaStatusInterface {
@@ -120,6 +130,11 @@ abstract class MyMediaStatusInterface {
 abstract class PeerControlInterface {
   Future<bool> register(String id);
   Future<bool> unregister(String id);
+  Future<bool> startVideo(
+      String id, String viewId, PlanetKitVideoResolution resolution);
+  Future<bool> stopVideo(String id, String viewId);
+  Future<bool> startScreenShare(String id, String viewId);
+  Future<bool> stopScreenShare(String id, String viewId);
 }
 
 abstract class CameraInterface {

@@ -44,7 +44,7 @@ class PlanetKitFlutterConferencePeerPlugin {
         
         guard let peer = nativeInstances.get(key: id) as? PlanetKitConferencePeer else {
             PlanetKitLog.e("#flutter \(#function) call not found \(id)")
-            result(false)
+            result(nil)
             return
         }
         
@@ -65,5 +65,42 @@ class PlanetKitFlutterConferencePeerPlugin {
         }
         
         result(peer.isMuted)
+    }
+    
+    func getVideoStatus(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        let id = call.arguments as! String
+        
+        guard let peer = nativeInstances.get(key: id) as? PlanetKitConferencePeer else {
+            PlanetKitLog.e("#flutter \(#function) call not found \(id)")
+            result(nil)
+            return
+        }
+        
+        guard let videoStatus = try? peer.videoStatus(subgroupName: nil) else {
+            PlanetKitLog.e("#flutter \(#function) videoStatus is nil")
+            result(nil)
+            return
+        }
+        
+        let encodedResponse = PlanetKitFlutterPlugin.encode(data: videoStatus)
+        result(encodedResponse)
+    }
+    
+    func getScreenShareState(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        let id = call.arguments as! String
+        
+        guard let peer = nativeInstances.get(key: id) as? PlanetKitConferencePeer else {
+            PlanetKitLog.e("#flutter \(#function) call not found \(id)")
+            result(nil)
+            return
+        }
+        
+        guard let screenShareState = try? peer.screenShareStatus(subgroupName: nil).state else {
+            PlanetKitLog.e("#flutter \(#function) screenShareState is nil")
+            result(nil)
+            return
+        }
+        
+        result(screenShareState.rawValue)
     }
 }

@@ -13,9 +13,11 @@
 // under the License.
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io' as ioPlatform;
 
 import 'package:flutter/services.dart';
+import 'package:planet_kit_flutter/src/public/statistics/planet_kit_statistics.dart';
 import '../../public/planet_kit_user_id.dart';
 import '../planet_kit_platform_interface.dart';
 import 'planet_kit_platform_conference_params.dart';
@@ -67,7 +69,7 @@ class ConferenceMethodChannel implements ConferenceInterface {
     print("#flutter_method_channel notifyCallKitAudioActivation with id $id");
     if (ioPlatform.Platform.isIOS) {
       return await methodChannel.invokeMethod<bool>(
-          'notifyCallKitAudioActivation', id) as bool;
+          'conference_notifyCallKitAudioActivation', id) as bool;
     } else {
       return false;
     }
@@ -129,5 +131,67 @@ class ConferenceMethodChannel implements ConferenceInterface {
     final param = RequestPeersMuteParam(id: id, mute: mute);
     return await methodChannel.invokeMethod<bool>(
         'conference_requestPeersMute', param.toJson()) as bool;
+  }
+
+  @override
+  Future<bool> addMyVideoView(String conferenceId, String viewId) async {
+    print(
+        "#flutter_method_channel addMyVideoView with id $conferenceId $viewId");
+    final param =
+        AddMyVideoViewParam(conferenceId: conferenceId, viewId: viewId);
+    return await methodChannel.invokeMethod<bool>(
+        'conference_addMyVideoView', param.toJson()) as bool;
+  }
+
+  @override
+  Future<bool> removeMyVideoView(String conferenceId, String viewId) async {
+    print(
+        "#flutter_method_channel removeMyVideoView with id $conferenceId $viewId");
+    final param =
+        RemoveMyVideoViewParam(conferenceId: conferenceId, viewId: viewId);
+    return await methodChannel.invokeMethod<bool>(
+        'conference_removeMyVideoView', param.toJson()) as bool;
+  }
+
+  @override
+  Future<bool> enableVideo(String id) async {
+    print("#flutter_method_channel enableVideo with id $id");
+    return await methodChannel.invokeMethod<bool>('conference_enableVideo', id)
+        as bool;
+  }
+
+  @override
+  Future<bool> disableVideo(String id) async {
+    print("#flutter_method_channel disableVideo with id $id");
+    return await methodChannel.invokeMethod<bool>('conference_disableVideo', id)
+        as bool;
+  }
+
+  @override
+  Future<bool> pauseMyVideo(String id) async {
+    print("#flutter_method_channel pauseMyVideo with id $id");
+    return await methodChannel.invokeMethod<bool>('conference_pauseMyVideo', id)
+        as bool;
+  }
+
+  @override
+  Future<bool> resumeMyVideo(String id) async {
+    print("#flutter_method_channel resumeMyVideo with id $id");
+    return await methodChannel.invokeMethod<bool>(
+        'conference_resumeMyVideo', id) as bool;
+  }
+
+  @override
+  Future<PlanetKitStatistics?> getStatistics(String id) async {
+    final jsonString = await methodChannel.invokeMethod<String?>(
+        'conference_getStatistics', id) as String?;
+
+    if (jsonString == null) {
+      return null;
+    }
+
+    final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
+    final response = PlanetKitStatistics.fromJson(jsonMap);
+    return response;
   }
 }

@@ -153,7 +153,7 @@ extension PlanetKitStatistics.Video: Encodable {
 
 extension PlanetKitUserId: Encodable {
     enum CodingKeys: String, CodingKey {
-        case id
+        case id = "userId"
         case serviceId
     }
 

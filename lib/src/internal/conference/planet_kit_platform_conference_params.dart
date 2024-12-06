@@ -76,3 +76,19 @@ class CreatePeerControlParam {
   CreatePeerControlParam({required this.conferenceId, required this.peerId});
   Map<String, dynamic> toJson() => _$CreatePeerControlParamToJson(this);
 }
+
+@JsonSerializable(explicitToJson: true, createFactory: false)
+class AddMyVideoViewParam {
+  final String conferenceId;
+  final String viewId;
+  AddMyVideoViewParam({required this.conferenceId, required this.viewId});
+  Map<String, dynamic> toJson() => _$AddMyVideoViewParamToJson(this);
+}
+
+@JsonSerializable(explicitToJson: true, createFactory: false)
+class RemoveMyVideoViewParam {
+  final String conferenceId;
+  final String viewId;
+  RemoveMyVideoViewParam({required this.conferenceId, required this.viewId});
+  Map<String, dynamic> toJson() => _$RemoveMyVideoViewParamToJson(this);
+}

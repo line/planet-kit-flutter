@@ -15,6 +15,8 @@
 import 'package:json_annotation/json_annotation.dart';
 
 import '../call/planet_kit_callkit_type.dart';
+import '../planet_kit_types.dart';
+import '../screen_share/planet_kit_screen_share_key.dart';
 part 'planet_kit_join_conference_param.g.dart';
 
 /// Configuration parameters for joining a group call with PlanetKit.
@@ -47,9 +49,19 @@ class PlanetKitJoinConferenceParam {
   /// Interval in milliseconds for audio description updates.
   final int? audioDescriptionUpdateIntervalMs;
 
+  /// The media type for the conference.
+  @PlanetKitMediaTypeConverter()
+  final PlanetKitMediaType mediaType;
+
   /// CallKit type for iOS platform.
   @PlanetKitCallKitTypeConverter()
   final PlanetKitCallKitType callKitType;
+
+  /// Whether to enable statistics collection.
+  final bool enableStatistics;
+
+  /// The screen share key for the call. iOS only.
+  final ScreenShareKey? screenShareKey;
 
   /// @nodoc
   PlanetKitJoinConferenceParam._(
@@ -62,7 +74,10 @@ class PlanetKitJoinConferenceParam {
       required this.allowConferenceWithoutMic,
       required this.enableAudioDescription,
       required this.audioDescriptionUpdateIntervalMs,
-      required this.callKitType});
+      required this.mediaType,
+      required this.callKitType,
+      required this.enableStatistics,
+      required this.screenShareKey});
 
   /// @nodoc
   Map<String, dynamic> toJson() => _$PlanetKitJoinConferenceParamToJson(this);
@@ -79,7 +94,10 @@ class PlanetKitJoinConferenceParamBuilder {
   bool? _allowConferenceWithoutMic;
   bool? _enableAudioDescription;
   int? _audioDescriptionUpdateIntervalMs;
+  PlanetKitMediaType _mediaType = PlanetKitMediaType.audio;
   PlanetKitCallKitType _callKitType = PlanetKitCallKitType.none;
+  bool _enableStatistics = false;
+  ScreenShareKey? _screenShareKey;
 
   /// Sets the user ID and returns the builder.
   PlanetKitJoinConferenceParamBuilder setMyUserId(String myUserId) {
@@ -143,6 +161,26 @@ class PlanetKitJoinConferenceParamBuilder {
     return this;
   }
 
+  /// Sets the media type for the conference and returns the builder.
+  PlanetKitJoinConferenceParamBuilder setMediaType(
+      PlanetKitMediaType mediaType) {
+    _mediaType = mediaType;
+    return this;
+  }
+
+  /// Sets whether to enable statistics collection and returns the builder.
+  PlanetKitJoinConferenceParamBuilder setEnableStatistics(bool enable) {
+    _enableStatistics = enable;
+    return this;
+  }
+
+  /// Sets the screen share key for the conference and returns the builder.
+  PlanetKitJoinConferenceParamBuilder setScreenShareKey(
+      ScreenShareKey screenShareKey) {
+    _screenShareKey = screenShareKey;
+    return this;
+  }
+
   /// Builds and returns a [PlanetKitJoinConferenceParam] instance.
   ///
   /// Throws an exception if any required fields are not set.
@@ -166,6 +204,9 @@ class PlanetKitJoinConferenceParamBuilder {
         allowConferenceWithoutMic: _allowConferenceWithoutMic,
         enableAudioDescription: _enableAudioDescription,
         audioDescriptionUpdateIntervalMs: _audioDescriptionUpdateIntervalMs,
-        callKitType: _callKitType);
+        mediaType: _mediaType,
+        callKitType: _callKitType,
+        enableStatistics: _enableStatistics,
+        screenShareKey: _screenShareKey);
   }
 }

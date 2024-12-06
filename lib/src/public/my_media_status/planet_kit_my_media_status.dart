@@ -64,6 +64,13 @@ class PlanetKitMyMediaStatus {
       await Platform.instance.myMediaStatusInterface
           .isMyAudioMuted(myMediaStatusId);
 
+  /// Retrieves the current video status for the user.
+  ///
+  /// Returns `null` if the video status cannot be retrieved.
+  Future<PlanetKitVideoStatus?> get myVideoStatus async =>
+      await Platform.instance.myMediaStatusInterface
+          .getMyVideoStatus(myMediaStatusId);
+
   /// @nodoc
   PlanetKitMyMediaStatus({required this.myMediaStatusId}) {
     NativeResourceManager.instance.add(this, myMediaStatusId);
@@ -80,7 +87,6 @@ class PlanetKitMyMediaStatus {
 
   void _onMyMediaStatusEvent(MyMediaStatusEvent event) {
     if (event.id != this.myMediaStatusId) {
-      print("#flutter_kit_my_media_status event not for current instance");
       return;
     }
     final type = event.subType;

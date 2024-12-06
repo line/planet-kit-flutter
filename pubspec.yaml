@@ -1,6 +1,6 @@
 name: planet_kit_flutter
 description: "Flutter plugin for PlanetKit."
-version: 0.8.0
+version: 0.9.0
 homepage: https://docs.lineplanet.me/
 
 environment:

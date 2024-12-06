@@ -34,7 +34,9 @@ enum PeerControlEventType {
   hold,
   unhold,
   disconnect,
-  audioDescriptionUpdate;
+  audioDescriptionUpdate,
+  videoUpdate,
+  screenShareUpdate;
 
   /// @nodoc
   static PeerControlEventType fromInt(int value) {
@@ -51,6 +53,10 @@ enum PeerControlEventType {
         return PeerControlEventType.disconnect;
       case 5:
         return PeerControlEventType.audioDescriptionUpdate;
+      case 6:
+        return PeerControlEventType.videoUpdate;
+      case 7:
+        return PeerControlEventType.screenShareUpdate;
       default:
         return PeerControlEventType.error;
     }

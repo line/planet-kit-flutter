@@ -22,6 +22,7 @@ import '../my_media_status/planet_kit_my_media_status.dart';
 import '../planet_kit_disconnect_reason.dart';
 import '../planet_kit_disconnect_source.dart';
 import '../planet_kit_user_id.dart';
+import '../statistics/planet_kit_statistics.dart';
 import 'peer_control/planet_kit_peer_control.dart';
 import 'planet_kit_conference_peer.dart';
 
@@ -201,6 +202,38 @@ class PlanetKitConference {
         .silencePeersAudio(id, silent);
   }
 
+  /// Adds the local user's video view.
+  Future<bool> addMyVideoView(String viewId) async {
+    return await Platform.instance.conferenceInterface
+        .addMyVideoView(id, viewId);
+  }
+
+  /// Removes the local user's video view.
+  Future<bool> removeMyVideoView(String viewId) async {
+    return await Platform.instance.conferenceInterface
+        .removeMyVideoView(id, viewId);
+  }
+
+  /// Enables video in conference.
+  Future<bool> enableVideo() async {
+    return await Platform.instance.conferenceInterface.enableVideo(id);
+  }
+
+  /// Disables video in conference.
+  Future<bool> disableVideo() async {
+    return await Platform.instance.conferenceInterface.disableVideo(id);
+  }
+
+  /// Pauses the local user's video.
+  Future<bool> pauseMyVideo() async {
+    return await Platform.instance.conferenceInterface.pauseMyVideo(id);
+  }
+
+  /// Resumes the local user's video.
+  Future<bool> resumeMyVideo() async {
+    return await Platform.instance.conferenceInterface.resumeMyVideo(id);
+  }
+
   /// Creates a [PlanetKitPeerControl] interface for a specific peer in the conference.
   Future<PlanetKitPeerControl?> createPeerControl(
       PlanetKitConferencePeer peer) async {
@@ -213,9 +246,13 @@ class PlanetKitConference {
     return peerControl;
   }
 
+  /// Retrieves conference statistics.
+  Future<PlanetKitStatistics?> getStatistics() async {
+    return await Platform.instance.conferenceInterface.getStatistics(id);
+  }
+
   void _onEvent(ConferenceEvent event) {
     if (event.id != this.id) {
-      print("#flutter_kit_conference event not for current instance");
       return;
     }
 

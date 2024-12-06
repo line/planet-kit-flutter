@@ -11,7 +11,6 @@
 // WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 // License for the specific language governing permissions and limitations
 // under the License.
-
 import 'package:json_annotation/json_annotation.dart';
 
 import '../planet_kit_user_id.dart';
@@ -33,12 +32,21 @@ class PlanetKitStatistics {
   /// The video statistics for the peers.
   final List<PeerVideo> peerVideos;
 
+  /// The screen share statistics for the local user.
+  final MyScreenShare? myScreenShare;
+
+  /// The screen share statistics for the peers.
+  final List<PeerScreenShare> peerScreenShares;
+
   /// @nodoc
-  PlanetKitStatistics(
-      {required this.myAudio,
-      required this.peersAudio,
-      this.myVideo,
-      required this.peerVideos});
+  PlanetKitStatistics({
+    required this.myAudio,
+    required this.peersAudio,
+    this.myVideo,
+    required this.peerVideos,
+    this.myScreenShare,
+    required this.peerScreenShares,
+  });
 
   /// @nodoc
   factory PlanetKitStatistics.fromJson(Map<String, dynamic> json) =>
@@ -93,8 +101,8 @@ class MyVideo {
 /// Represents the video statistics for a peer.
 @JsonSerializable(createToJson: false)
 class PeerVideo {
-  // TODO: modify PlanetKitUserId to be serializable in both platforms
-  // final PlanetKitUserId? peerId;
+  /// The ID of the peer.
+  final PlanetKitUserId peerId;
 
   /// The subgroup name of the peer.
   final String? subGroupName;
@@ -107,7 +115,7 @@ class PeerVideo {
 
   /// @nodoc
   PeerVideo({
-    // required this.peerId,
+    required this.peerId,
     this.subGroupName,
     required this.network,
     required this.video,

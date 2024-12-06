@@ -13,7 +13,9 @@
 // under the License.
 
 import 'package:flutter/services.dart';
+import 'package:planet_kit_flutter/src/internal/peer_control/planet_kit_platform_peer_control_params.dart';
 import 'package:planet_kit_flutter/src/internal/planet_kit_platform_interface.dart';
+import 'package:planet_kit_flutter/src/public/video/planet_kit_video_resolution.dart';
 
 class PeerControlMethodChannel implements PeerControlInterface {
   final MethodChannel methodChannel;
@@ -34,5 +36,42 @@ class PeerControlMethodChannel implements PeerControlInterface {
 
     return await methodChannel.invokeMethod<bool>("peerControl_unregister", id)
         as bool;
+  }
+
+  @override
+  Future<bool> startVideo(
+      String id, String viewId, PlanetKitVideoResolution maxResolution) async {
+    print(
+        "#flutter_method_channel startVideo with id $id viewid: $id $maxResolution");
+    final param =
+        StartVideoParam(id: id, viewId: viewId, maxResolution: maxResolution);
+
+    return await methodChannel.invokeMethod<bool>(
+        'peerControl_startVideo', param.toJson()) as bool;
+  }
+
+  @override
+  Future<bool> stopVideo(String id, String viewId) async {
+    print("#flutter_method_channel stopVideo with id $id viewid: $id");
+    final param = StopVideoParam(id: id, viewId: viewId);
+
+    return await methodChannel.invokeMethod<bool>(
+        'peerControl_stopVideo', param.toJson()) as bool;
+  }
+
+  @override
+  Future<bool> startScreenShare(String id, String viewId) async {
+    print("#flutter_method_channel startScreenShare with id $id viewid: $id");
+    final param = StartScreenShareParam(id: id, viewId: viewId);
+    return await methodChannel.invokeMethod<bool>(
+        'peerControl_startScreenShare', param.toJson()) as bool;
+  }
+
+  @override
+  Future<bool> stopScreenShare(String id, String viewId) async {
+    print("#flutter_method_channel stopScreenShare with id $id viewid: $id");
+    final param = StopScreenShareParam(id: id, viewId: viewId);
+    return await methodChannel.invokeMethod<bool>(
+        'peerControl_stopScreenShare', param.toJson()) as bool;
   }
 }

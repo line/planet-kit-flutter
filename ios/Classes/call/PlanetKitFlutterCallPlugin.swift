@@ -22,7 +22,7 @@ extension PlanetKitCall: PluginInstance {
     }
 }
 
-fileprivate class VideoOutputDelegates: PlanetKitVideoOutputDelegate {
+class VideoOutputDelegates: PlanetKitVideoOutputDelegate {
     private var delegates: [Weak<PlanetKitVideoOutputDelegate>] = []
     private let lock = NSLock()
     
@@ -133,7 +133,7 @@ class PlanetKitFlutterCallPlugin {
     func muteMyAudio(call: FlutterMethodCall, result: @escaping FlutterResult) {
         PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
         
-        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: MuteMyAudioParam.self)
+        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: CallParams.MuteMyAudioParam.self)
         
         guard let call = nativeInstances.get(key: param.callId) as? PlanetKitCall else {
             PlanetKitLog.e("#flutter \(#function) call not found \(param.callId)")
@@ -299,7 +299,7 @@ class PlanetKitFlutterCallPlugin {
     func requestPeerMute(call: FlutterMethodCall, result: @escaping FlutterResult) {
         PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
         
-        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: RequestPeerMuteParam.self)
+        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: CallParams.RequestPeerMuteParam.self)
         
         guard let call = nativeInstances.get(key: param.callId) as? PlanetKitCall else {
             PlanetKitLog.e("#flutter \(#function) call not found \(param.callId)")
@@ -318,7 +318,7 @@ class PlanetKitFlutterCallPlugin {
     func silencePeerAudio(call: FlutterMethodCall, result: @escaping FlutterResult) {
         PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
         
-        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: SilencePeerAudioParam.self)
+        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: CallParams.SilencePeerAudioParam.self)
         
         guard let call = nativeInstances.get(key: param.callId) as? PlanetKitCall else {
             PlanetKitLog.e("#flutter \(#function) call not found \(param.callId)")
@@ -644,7 +644,7 @@ extension PlanetKitFlutterCallPlugin {
     func addMyVideoView(call: FlutterMethodCall, result: @escaping FlutterResult) {
         PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
         
-        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: AddVideoViewParam.self)
+        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: CallParams.AddVideoViewParam.self)
         
         guard let call = nativeInstances.get(key: param.callId) as? PlanetKitCall else {
             PlanetKitLog.e("#flutter \(#function) call not found \(param.callId)")
@@ -674,7 +674,7 @@ extension PlanetKitFlutterCallPlugin {
     func addPeerVideoView(call: FlutterMethodCall, result: @escaping FlutterResult) {
         PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
         
-        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: AddVideoViewParam.self)
+        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: CallParams.AddVideoViewParam.self)
         
         guard let call = nativeInstances.get(key: param.callId) as? PlanetKitCall else {
             PlanetKitLog.e("#flutter \(#function) call not found \(param.callId)")
@@ -700,7 +700,7 @@ extension PlanetKitFlutterCallPlugin {
     
     func removeMyVideoView(call: FlutterMethodCall, result: @escaping FlutterResult) {
         PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
-        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: RemoveVideoViewParam.self)
+        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: CallParams.RemoveVideoViewParam.self)
         
         guard let call = nativeInstances.get(key: param.callId) as? PlanetKitCall else {
             PlanetKitLog.e("#flutter \(#function) call not found \(param.callId)")
@@ -735,7 +735,7 @@ extension PlanetKitFlutterCallPlugin {
     
     func removePeerVideoView(call: FlutterMethodCall, result: @escaping FlutterResult) {
         PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
-        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: RemoveVideoViewParam.self)
+        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: CallParams.RemoveVideoViewParam.self)
         
         guard let call = nativeInstances.get(key: param.callId) as? PlanetKitCall else {
             PlanetKitLog.e("#flutter \(#function) call not found \(param.callId)")
@@ -795,7 +795,7 @@ extension PlanetKitFlutterCallPlugin {
     func addPeerScreenShareView(call: FlutterMethodCall, result: @escaping FlutterResult) {
         PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
         
-        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: AddVideoViewParam.self)
+        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: CallParams.AddVideoViewParam.self)
         
         guard let call = nativeInstances.get(key: param.callId) as? PlanetKitCall else {
             PlanetKitLog.e("#flutter \(#function) call not found \(param.callId)")
@@ -818,7 +818,7 @@ extension PlanetKitFlutterCallPlugin {
     func removePeerScreenShareView(call: FlutterMethodCall, result: @escaping FlutterResult) {
         PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
         
-        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: RemoveVideoViewParam.self)
+        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: CallParams.RemoveVideoViewParam.self)
         
         guard let call = nativeInstances.get(key: param.callId) as? PlanetKitCall else {
             PlanetKitLog.e("#flutter \(#function) call not found \(param.callId)")

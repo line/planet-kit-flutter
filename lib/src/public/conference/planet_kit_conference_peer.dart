@@ -12,6 +12,7 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 import 'package:json_annotation/json_annotation.dart';
+import 'package:planet_kit_flutter/planet_kit_flutter.dart';
 
 import '../../internal/planet_kit_platform_interface.dart';
 import '../../internal/planet_kit_platform_resource_manager.dart';
@@ -57,6 +58,20 @@ class PlanetKitConferencePeer {
   /// Retrieves the hold status of the peer.
   ///
   /// Returns a [PlanetKitHoldStatus] indicating whether the peer is on hold and the reason for it.
-  Future<PlanetKitHoldStatus> get holdStatus async =>
+  Future<PlanetKitHoldStatus?> get holdStatus async =>
       await Platform.instance.conferencePeerInterface.getHoldStatus(id);
+
+  /// Retrieves the video status of the peer.
+  ///
+  /// This asynchronous getter returns a [PlanetKitVideoStatus] object, which contains
+  /// information about the current state of the video and the reason for any video pause.
+  Future<PlanetKitVideoStatus?> get videoStatus async =>
+      await Platform.instance.conferencePeerInterface.getVideoStatus(id);
+
+  /// Retrieves the screen share state of the peer.
+  ///
+  /// This asynchronous getter returns a [PlanetKitScreenShareState] object, which contains
+  /// information about the current state of the screen share.
+  Future<PlanetKitScreenShareState?> get screenShareState async =>
+      await Platform.instance.conferencePeerInterface.getScreenShareState(id);
 }

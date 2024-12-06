@@ -202,6 +202,10 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
         case "myMediaStatus_isMyAudioMuted":
             myMediaStatusPlugin.isMyAudioMutedMyMediaStatus(call: call, result: result)
             break
+        case "myMediaStatus_getMyVideoStatus":
+            myMediaStatusPlugin.getMyVideoStatus(call: call, result: result)
+            break
+            
             
             // MARK: conference
         case "conference_leaveConference":
@@ -243,22 +247,64 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
         case "conference_isPeersAudioSilenced":
             conferencePlugin.isPeersAudioSilenced(call: call, result: result)
             break
+        case "conference_createPeerControl":
+            conferencePlugin.createPeerControl(call: call, delegate: peerControlPlugin, result: result)
+            break
+        case "conference_addMyVideoView":
+            conferencePlugin.addMyVideoView(call: call, result: result)
+            break
+        case "conference_removeMyVideoView":
+            conferencePlugin.removeMyVideoView(call: call, result: result)
+            break
+        case "conference_enableVideo":
+            conferencePlugin.enableVideo(call: call, result: result)
+            break
+        case "conference_disableVideo":
+            conferencePlugin.disableVideo(call: call, result: result)
+            break
+        case "conference_pauseMyVideo":
+            conferencePlugin.pauseMyVideo(call: call, result: result)
+            break
+        case "conference_resumeMyVideo":
+            conferencePlugin.resumeMyVideo(call: call, result: result)
+            break
+        case "conference_getStatistics":
+            conferencePlugin.getStatistics(call: call, result: result)
+            break
+            
+            // MARK: conference peer
+        case "conferencePeer_getVideoStatus":
+            conferencePeerPlugin.getVideoStatus(call: call, result: result)
+            break
         case "conferencePeer_getHoldStatus":
             conferencePeerPlugin.getHoldStatus(call: call, result: result)
             break
         case "conferencePeer_isMuted":
             conferencePeerPlugin.isMuted(call: call, result: result)
             break
-        case "conference_createPeerControl":
-            conferencePlugin.createPeerControl(call: call, delegate: peerControlPlugin, result: result)
+        case "conferencePeer_getScreenShareState":
+            conferencePeerPlugin.getScreenShareState(call: call, result: result)
             break
-            // MARK: peer control
 
+            
+            // MARK: peer control
         case "peerControl_register":
             peerControlPlugin.register(call: call, result: result)
             break
         case "peerControl_unregister":
             peerControlPlugin.unregister(call: call, result: result)
+            break
+        case "peerControl_startVideo":
+            peerControlPlugin.startVideo(call: call, result: result)
+            break
+        case "peerControl_stopVideo":
+            peerControlPlugin.stopVideo(call: call, result: result)
+            break
+        case "peerControl_startScreenShare":
+            peerControlPlugin.startScreenShare(call: call, result: result)
+            break
+        case "peerControl_stopScreenShare":
+            peerControlPlugin.stopScreenShare(call: call, result: result)
             break
             
             // MARK: camera
@@ -469,6 +515,8 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
         
         let joinConferenceParam = PlanetKitConferenceParam(myUserId: myPlanetKitUserId, roomId: param.roomId, roomServiceId: param.roomServiceId, displayName: nil, delegate: conferencePlugin, accessToken: param.accessToken)
         
+        joinConferenceParam.mediaType = param.mediaType
+
         var settings = PlanetKitJoinConferenceSettingBuilder()
 
         if let endTonePath = param.endTonePath, let key = registrar?.lookupKey(forAsset: endTonePath), let url = Bundle.main.url(forResource: key, withExtension: nil), let resultSettings = try? settings.withSetEndToneKey(fileResourceUrl: url) {
@@ -491,6 +539,13 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
             let interval = TimeInterval(audioDescriptionUpdateIntervalMs) / 1000.0
             settings = settings.withAudioDescriptionUpdateIntervalKey(interval: interval)
         }
+        
+        if let screenShareKey = param.screenShareKey {
+            PlanetKitLog.v("#flutter \(#function) screenShareKey: \(screenShareKey)")
+            settings = settings.withEnableScreenShareKey(broadcastPort: UInt16(screenShareKey.broadcastPort), broadcastPeerToken: screenShareKey.broadcastPeerToken, broadcastMyToken: screenShareKey.broadcastMyToken)
+        }
+        
+        settings = settings.withEnableStatisticsKey(enable: param.enableStatistics)
         
         let joinConferenceResult = PlanetKitManager.shared.joinConference(param: joinConferenceParam, settings: settings.build())
         

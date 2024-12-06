@@ -16,6 +16,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
+import 'package:planet_kit_flutter/src/public/planet_kit_types.dart';
+import 'package:planet_kit_flutter/src/public/video/planet_kit_video_status.dart';
 import '../../../public/conference/planet_kit_conference_peer.dart';
 import '../../planet_kit_platform_interface.dart';
 
@@ -25,10 +27,16 @@ class ConferencePeerMethodChannel implements ConferencePeerInterface {
   ConferencePeerMethodChannel({required this.methodChannel});
 
   @override
-  Future<PlanetKitHoldStatus> getHoldStatus(String id) async {
+  Future<PlanetKitHoldStatus?> getHoldStatus(String id) async {
     print("#flutter_method_channel getHoldStatus with $id");
-    final jsonString = await methodChannel.invokeMethod<String>(
-        'conferencePeer_getHoldStatus', id) as String;
+    final jsonString = await methodChannel.invokeMethod<String?>(
+        'conferencePeer_getHoldStatus', id);
+
+    if (jsonString == null) {
+      print("#flutter_method_channel getHoldStatus response null");
+      return null;
+    }
+
     final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
     return PlanetKitHoldStatus.fromJson(jsonMap);
   }
@@ -39,5 +47,34 @@ class ConferencePeerMethodChannel implements ConferencePeerInterface {
     final isMuted = await methodChannel.invokeMethod<bool>(
         'conferencePeer_isMuted', id) as bool;
     return isMuted;
+  }
+
+  @override
+  Future<PlanetKitVideoStatus?> getVideoStatus(String id) async {
+    print("#flutter_method_channel getVideoStatus with $id");
+    final jsonString = await methodChannel.invokeMethod<String?>(
+        'conferencePeer_getVideoStatus', id);
+
+    if (jsonString == null) {
+      print("#flutter_method_channel getMyVideoStatus response null");
+      return null;
+    }
+
+    final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
+    return PlanetKitVideoStatus.fromJson(jsonMap);
+  }
+
+  @override
+  Future<PlanetKitScreenShareState?> getScreenShareState(String id) async {
+    print("#flutter_method_channel getVideoStatus with $id");
+    final state = await methodChannel.invokeMethod<int?>(
+        'conferencePeer_getScreenShareState', id);
+
+    if (state == null) {
+      print("#flutter_method_channel getScreenShareState response null");
+      return null;
+    }
+
+    return PlanetKitScreenShareState.fromInt(state);
   }
 }

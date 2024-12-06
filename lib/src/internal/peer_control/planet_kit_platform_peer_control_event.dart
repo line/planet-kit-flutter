@@ -13,6 +13,8 @@
 // under the License.
 
 import 'package:json_annotation/json_annotation.dart';
+import 'package:planet_kit_flutter/src/public/planet_kit_types.dart';
+import 'package:planet_kit_flutter/src/public/video/planet_kit_video_status.dart';
 import '../planet_kit_platform_event.dart';
 import '../planet_kit_platform_event_types.dart';
 import 'planet_kit_platform_peer_control_event_types.dart';
@@ -28,6 +30,10 @@ class PeerControlEventFactory {
       return HoldEvent.fromJson(data);
     } else if (type == PeerControlEventType.audioDescriptionUpdate) {
       return UpdateAudioDescriptionEvent.fromJson(data);
+    } else if (type == PeerControlEventType.videoUpdate) {
+      return UpdateVideoEvent.fromJson(data);
+    } else if (type == PeerControlEventType.screenShareUpdate) {
+      return UpdateScreenShareEvent.fromJson(data);
     } else {
       return event;
     }
@@ -65,4 +71,25 @@ class UpdateAudioDescriptionEvent extends PeerControlEvent {
 
   factory UpdateAudioDescriptionEvent.fromJson(Map<String, dynamic> json) =>
       _$UpdateAudioDescriptionEventFromJson(json);
+}
+
+@JsonSerializable(createToJson: false)
+class UpdateVideoEvent extends PeerControlEvent {
+  final PlanetKitVideoStatus status;
+
+  UpdateVideoEvent(super.type, super.id, super.subType, this.status);
+
+  factory UpdateVideoEvent.fromJson(Map<String, dynamic> json) =>
+      _$UpdateVideoEventFromJson(json);
+}
+
+@JsonSerializable(createToJson: false)
+class UpdateScreenShareEvent extends PeerControlEvent {
+  @PlanetKitScreenShareStateConverter()
+  final PlanetKitScreenShareState state;
+
+  UpdateScreenShareEvent(super.type, super.id, super.subType, this.state);
+
+  factory UpdateScreenShareEvent.fromJson(Map<String, dynamic> json) =>
+      _$UpdateScreenShareEventFromJson(json);
 }
