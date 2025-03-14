@@ -96,9 +96,6 @@ enum PlanetKitStartFailReason {
   /// The 'Manifest.permission.RECORD_AUDIO' permission is required to access the microphone.
   kitNoPermissionRecordAudio,
 
-  /// The initialization data size for the call is invalid.
-  kitCallInitDataInvalidSize,
-
   /// The user ID of the initiator is blank.
   kitMyUserIdBlank,
 
@@ -195,41 +192,39 @@ enum PlanetKitStartFailReason {
 
       // android
       case PlanetKitStartFailReason.kitNoPermissionRecordAudio:
-        return 3013;
-      case PlanetKitStartFailReason.kitCallInitDataInvalidSize:
-        return 3014;
+        return 3000;
       case PlanetKitStartFailReason.kitMyUserIdBlank:
-        return 3015;
+        return 3002;
       case PlanetKitStartFailReason.kitMyServiceIdBlank:
-        return 3016;
+        return 3003;
       case PlanetKitStartFailReason.kitPeerUserIdBlank:
-        return 3017;
+        return 3004;
       case PlanetKitStartFailReason.kitPeerServiceIdBlank:
-        return 3018;
+        return 3005;
       case PlanetKitStartFailReason.kitInvalidStateToMakeCall:
-        return 3019;
+        return 3006;
       case PlanetKitStartFailReason.kitCannotCreateNewSession:
-        return 3020;
+        return 3007;
       case PlanetKitStartFailReason.kitInvalidStateToJoinConference:
-        return 3021;
+        return 3008;
       case PlanetKitStartFailReason.kitRoomIdBlank:
-        return 3022;
+        return 3009;
       case PlanetKitStartFailReason.kitRoomServiceIdBlank:
-        return 3023;
+        return 3010;
       case PlanetKitStartFailReason.kitNoPermissionReadPhoneState:
-        return 3024;
+        return 3011;
       case PlanetKitStartFailReason.kitInternalUnknownExceptionAtVerifyCall:
-        return 3025;
+        return 3994;
       case PlanetKitStartFailReason.kitInternalJNIEnv:
-        return 3026;
+        return 3995;
       case PlanetKitStartFailReason.kitInternalJNIHandleNullptr:
-        return 3027;
+        return 3996;
       case PlanetKitStartFailReason.kitInternalJNIObjNullptr:
-        return 3028;
+        return 3997;
       case PlanetKitStartFailReason.kitInternalJNIClassNullptr:
-        return 3029;
+        return 3998;
       case PlanetKitStartFailReason.kitInternalUndefined:
-        return 3030;
+        return 3999;
       default:
         return -1;
     }
@@ -280,41 +275,39 @@ enum PlanetKitStartFailReason {
       case 2999:
         return PlanetKitStartFailReason.kitInternalInitializationError;
       // android
-      case 3013:
+      case 3000:
         return PlanetKitStartFailReason.kitNoPermissionRecordAudio;
-      case 3014:
-        return PlanetKitStartFailReason.kitCallInitDataInvalidSize;
-      case 3015:
+      case 3002:
         return PlanetKitStartFailReason.kitMyUserIdBlank;
-      case 3016:
+      case 3003:
         return PlanetKitStartFailReason.kitMyServiceIdBlank;
-      case 3017:
+      case 3004:
         return PlanetKitStartFailReason.kitPeerUserIdBlank;
-      case 3018:
+      case 3005:
         return PlanetKitStartFailReason.kitPeerServiceIdBlank;
-      case 3019:
+      case 3006:
         return PlanetKitStartFailReason.kitInvalidStateToMakeCall;
-      case 3020:
+      case 3007:
         return PlanetKitStartFailReason.kitCannotCreateNewSession;
-      case 3021:
+      case 3008:
         return PlanetKitStartFailReason.kitInvalidStateToJoinConference;
-      case 3022:
+      case 3009:
         return PlanetKitStartFailReason.kitRoomIdBlank;
-      case 3023:
+      case 3010:
         return PlanetKitStartFailReason.kitRoomServiceIdBlank;
-      case 3024:
+      case 3011:
         return PlanetKitStartFailReason.kitNoPermissionReadPhoneState;
-      case 3025:
+      case 3994:
         return PlanetKitStartFailReason.kitInternalUnknownExceptionAtVerifyCall;
-      case 3026:
+      case 3995:
         return PlanetKitStartFailReason.kitInternalJNIEnv;
-      case 3027:
+      case 3996:
         return PlanetKitStartFailReason.kitInternalJNIHandleNullptr;
-      case 3028:
+      case 3997:
         return PlanetKitStartFailReason.kitInternalJNIObjNullptr;
-      case 3029:
+      case 3998:
         return PlanetKitStartFailReason.kitInternalJNIClassNullptr;
-      case 3030:
+      case 3999:
         return PlanetKitStartFailReason.kitInternalUndefined;
       default:
         return PlanetKitStartFailReason.none;

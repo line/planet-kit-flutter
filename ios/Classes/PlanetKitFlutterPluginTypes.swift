@@ -37,12 +37,14 @@ extension PlanetKitScreenShareState: Encodable {}
 // NOTE: enum value must be in-sync with android and flutter
 extension PlanetKitDisconnectReason: Codable {}
 extension PlanetKitDisconnectSource: Codable {}
+extension PlanetKitInitialMyVideoState: Decodable { }
 
 enum EventType: Int, Encodable {
     case call = 0
     case myMediaStatus = 1
     case conference = 2
     case peerControl = 3
+    case camera = 4
 }
 
 

@@ -35,6 +35,7 @@ DisconnectedEvent _$DisconnectedEventFromJson(Map<String, dynamic> json) =>
           .fromJson((json['disconnectReason'] as num).toInt()),
       const PlanetKitDisconnectSourceConverter()
           .fromJson((json['disconnectSource'] as num).toInt()),
+      json['userCode'] as String?,
       json['byRemote'] as bool,
     );
 
@@ -125,4 +126,13 @@ PeerDidStopScreenShareEvent _$PeerDidStopScreenShareEventFromJson(
       const EventTypeConverter().fromJson((json['type'] as num).toInt()),
       json['id'] as String,
       const CallEventTypeConverter().fromJson((json['subType'] as num).toInt()),
+    );
+
+PeerAudioDescriptionUpdateEvent _$PeerAudioDescriptionUpdateEventFromJson(
+        Map<String, dynamic> json) =>
+    PeerAudioDescriptionUpdateEvent(
+      const EventTypeConverter().fromJson((json['type'] as num).toInt()),
+      json['id'] as String,
+      const CallEventTypeConverter().fromJson((json['subType'] as num).toInt()),
+      (json['averageVolumeLevel'] as num).toInt(),
     );

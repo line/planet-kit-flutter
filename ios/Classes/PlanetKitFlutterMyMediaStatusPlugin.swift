@@ -183,7 +183,6 @@ extension PlanetKitFlutterMyMediaStatusPlugin: PlanetKitMyMediaStatusDelegate {
 
     public func didUpdateAudioDescription(_ myMediaStatus: PlanetKitMyMediaStatus, description: PlanetKitMyAudioDescription) {
         DispatchQueue.main.async {
-            PlanetKitLog.v("#flutter \(#function)")
             let event = UpdateAudioDescriptionEvent(id: myMediaStatus.instanceId, averageVolumeLevel: Int(description.averageVolumeLevel))
             let encodedEvent = PlanetKitFlutterPlugin.encode(data: event)
             self.eventStreamHandler.eventSink?(encodedEvent)

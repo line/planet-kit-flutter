@@ -13,7 +13,6 @@
 // under the License.
 
 import 'package:json_annotation/json_annotation.dart';
-import 'package:planet_kit_flutter/planet_kit_flutter.dart';
 import 'package:planet_kit_flutter/src/public/planet_kit_types.dart';
 import '../screen_share/planet_kit_screen_share_key.dart';
 import 'planet_kit_callkit_type.dart';
@@ -33,11 +32,19 @@ class PlanetKitMakeCallParam {
   /// The service ID of the caller's service.
   final String myServiceId;
 
+  /// The country code of the caller in upper case as defined in ISO 3166-1 alpha-2.
+  /// Set country code only if your service supports multi-zone.
+  final String? myCountryCode;
+
   /// The user ID of the call receiver.
   final String peerUserId;
 
   /// The service ID of the call receiver's service.
   final String peerServiceId;
+
+  /// The country code of the caller in upper case as defined in ISO 3166-1 alpha-2.
+  /// Set country code only if your service supports multi-zone.
+  final String? peerCountryCode;
 
   /// The access token to authenticate the call request.
   final String accessToken;
@@ -61,6 +68,9 @@ class PlanetKitMakeCallParam {
   /// Whether to allow the call without microphone permission.
   final bool? allowCallWithoutMic;
 
+  /// Whether to allow the call without microphone permission. Android only.
+  final bool? allowCallWithoutMicPermission;
+
   /// Whether to enable audio description updates during the call.
   final bool? enableAudioDescription;
 
@@ -81,26 +91,33 @@ class PlanetKitMakeCallParam {
   /// The screen share key for the call. iOS only.
   final ScreenShareKey? screenShareKey;
 
+  /// The initial state of the user's video.
+  @PlanetKitInitialMyVideoStateConverter()
+  final PlanetKitInitialMyVideoState initialMyVideoState;
+
   /// @nodoc
-  PlanetKitMakeCallParam._({
-    required this.myUserId,
-    required this.myServiceId,
-    required this.peerUserId,
-    required this.peerServiceId,
-    required this.accessToken,
-    required this.useResponderPreparation,
-    required this.callKitType,
-    required this.holdTonePath,
-    required this.ringbackTonePath,
-    required this.endTonePath,
-    required this.allowCallWithoutMic,
-    required this.enableAudioDescription,
-    required this.audioDescriptionUpdateIntervalMs,
-    required this.mediaType,
-    required this.responseOnEnableVideo,
-    required this.enableStatistics,
-    required this.screenShareKey,
-  });
+  PlanetKitMakeCallParam._(
+      {required this.myUserId,
+      required this.myServiceId,
+      required this.myCountryCode,
+      required this.peerUserId,
+      required this.peerServiceId,
+      required this.peerCountryCode,
+      required this.accessToken,
+      required this.useResponderPreparation,
+      required this.callKitType,
+      required this.holdTonePath,
+      required this.ringbackTonePath,
+      required this.endTonePath,
+      required this.allowCallWithoutMic,
+      required this.allowCallWithoutMicPermission,
+      required this.enableAudioDescription,
+      required this.audioDescriptionUpdateIntervalMs,
+      required this.mediaType,
+      required this.responseOnEnableVideo,
+      required this.enableStatistics,
+      required this.screenShareKey,
+      required this.initialMyVideoState});
 
   /// @nodoc
   Map<String, dynamic> toJson() => _$PlanetKitMakeCallParamToJson(this);
@@ -110,8 +127,10 @@ class PlanetKitMakeCallParam {
 class PlanetKitMakeCallParamBuilder {
   String? _myUserId;
   String? _myServiceId;
+  String? _myCountryCode;
   String? _peerUserId;
   String? _peerServiceId;
+  String? _peerCountryCode;
   String? _accessToken;
   bool _useResponderPreparation = false;
   PlanetKitCallKitType _callKitType = PlanetKitCallKitType.none;
@@ -119,6 +138,7 @@ class PlanetKitMakeCallParamBuilder {
   String? _ringbackTonePath;
   String? _endTonePath;
   bool? _allowCallWithoutMic;
+  bool? _allowCallWithoutMicPermission;
   bool? _enableAudioDescription;
   int? _audioDescriptionUpdateIntervalMs;
   PlanetKitMediaType _mediaType = PlanetKitMediaType.audio;
@@ -126,6 +146,8 @@ class PlanetKitMakeCallParamBuilder {
       PlanetKitResponseOnEnableVideo.pause;
   bool _enableStatistics = false;
   ScreenShareKey? _screenShareKey;
+  PlanetKitInitialMyVideoState _initialMyVideoState =
+      PlanetKitInitialMyVideoState.resume;
 
   /// Sets the user ID of the caller and returns the builder.
   PlanetKitMakeCallParamBuilder setMyUserId(String myUserId) {
@@ -139,6 +161,12 @@ class PlanetKitMakeCallParamBuilder {
     return this;
   }
 
+  /// Sets the country code of the caller and returns the builder.
+  PlanetKitMakeCallParamBuilder setMyCountryCode(String myCountryCode) {
+    _myCountryCode = myCountryCode;
+    return this;
+  }
+
   /// Sets the user ID of the call receiver and returns the builder.
   PlanetKitMakeCallParamBuilder setPeerUserId(String peerUserId) {
     _peerUserId = peerUserId;
@@ -148,6 +176,12 @@ class PlanetKitMakeCallParamBuilder {
   /// Sets the service ID of the call receiver and returns the builder.
   PlanetKitMakeCallParamBuilder setPeerServiceId(String peerServiceId) {
     _peerServiceId = peerServiceId;
+    return this;
+  }
+
+  /// Sets the country code of the call receiver and returns the builder.
+  PlanetKitMakeCallParamBuilder setPeerCountryCode(String peerCountryCode) {
+    _peerCountryCode = peerCountryCode;
     return this;
   }
 
@@ -186,6 +220,12 @@ class PlanetKitMakeCallParamBuilder {
   /// Sets whether to allow call without mic permission and returns the builder.
   PlanetKitMakeCallParamBuilder setAllowCallWithoutMic(bool allow) {
     _allowCallWithoutMic = allow;
+    return this;
+  }
+
+  /// Sets whether to allow call without mic permission. Android only.
+  PlanetKitMakeCallParamBuilder setAllowCallWithoutMicPermission(bool allow) {
+    _allowCallWithoutMicPermission = allow;
     return this;
   }
 
@@ -235,6 +275,13 @@ class PlanetKitMakeCallParamBuilder {
     return this;
   }
 
+  /// Sets the initial state of the user's video and returns the builder.
+  PlanetKitMakeCallParamBuilder setInitialMyVideoState(
+      PlanetKitInitialMyVideoState initialState) {
+    _initialMyVideoState = initialState;
+    return this;
+  }
+
   /// Constructs a [PlanetKitMakeCallParam] with necessary details for making a call.
   /// Throws an exception if any required fields are missing.
   PlanetKitMakeCallParam build() {
@@ -249,8 +296,10 @@ class PlanetKitMakeCallParamBuilder {
     return PlanetKitMakeCallParam._(
         myUserId: _myUserId!,
         myServiceId: _myServiceId!,
+        myCountryCode: _myCountryCode,
         peerUserId: _peerUserId!,
         peerServiceId: _peerServiceId!,
+        peerCountryCode: _peerCountryCode,
         accessToken: _accessToken!,
         useResponderPreparation: _useResponderPreparation,
         callKitType: _callKitType,
@@ -258,11 +307,13 @@ class PlanetKitMakeCallParamBuilder {
         ringbackTonePath: _ringbackTonePath,
         endTonePath: _endTonePath,
         allowCallWithoutMic: _allowCallWithoutMic,
+        allowCallWithoutMicPermission: _allowCallWithoutMicPermission,
         enableAudioDescription: _enableAudioDescription,
         audioDescriptionUpdateIntervalMs: _audioDescriptionUpdateIntervalMs,
         mediaType: _mediaType,
         responseOnEnableVideo: _responseOnEnableVideo,
         enableStatistics: _enableStatistics,
-        screenShareKey: _screenShareKey);
+        screenShareKey: _screenShareKey,
+        initialMyVideoState: _initialMyVideoState);
   }
 }

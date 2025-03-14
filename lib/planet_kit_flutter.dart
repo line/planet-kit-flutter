@@ -43,6 +43,7 @@ export 'package:planet_kit_flutter/src/public/conference/peer_control/planet_kit
 export 'package:planet_kit_flutter/src/public/video/planet_kit_camera.dart';
 export 'package:planet_kit_flutter/src/public/video/planet_kit_video_view.dart';
 export 'package:planet_kit_flutter/src/public/video/planet_kit_video_status.dart';
+export 'package:planet_kit_flutter/src/public/video/planet_kit_video_resolution.dart';
 
 export 'package:planet_kit_flutter/src/public/statistics/planet_kit_statistics.dart';
 

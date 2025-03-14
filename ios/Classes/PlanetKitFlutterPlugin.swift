@@ -27,6 +27,7 @@ extension PlanetKitCCParam: PluginInstance {
 
 
 public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
+    static let planetKitFlutterVersion = "1.0.0"
     var registrar: FlutterPluginRegistrar?
     let eventStreamHandler = PlanetKitFlutterStreamHandler()
     let hookedAudioStreamHandler = PlanetKitFlutterStreamHandler()
@@ -57,7 +58,11 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
     }()
     
     lazy var cameraPlugin: PlanetKitFlutterCameraPlugin = {
-        PlanetKitFlutterCameraPlugin()
+        PlanetKitFlutterCameraPlugin(eventStreamHandler: eventStreamHandler)
+    }()
+
+    lazy var videoViewPlugin: PlanetKitFlutterVideoViewPlugin = {
+        PlanetKitFlutterVideoViewPlugin()
     }()
     
     public static func register(with registrar: FlutterPluginRegistrar) {
@@ -98,6 +103,9 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
             break
         case "createCcParam":
             createCcParam(call: call, result: result)
+            break
+        case "setServerUrl":
+            setServerUrl(call: call, result: result)
             break
             
         case "call_enableHookMyAudio":
@@ -327,10 +335,17 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
             cameraPlugin.clearVirtualBackground(call: call, result: result)
             break
             
+        case "videoView_disposeVideoView":
+            videoViewPlugin.disposeVideoView(call: call, result: result)
+            break
         default:
             NSLog("#flutter unknown call method \(call.method)")
             result(FlutterMethodNotImplemented)
         }
+    }
+    
+    deinit {
+        cameraPlugin.removeCameraDelegate()
     }
     
     private func initializePlanetKit(call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -354,8 +369,11 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
             PlanetKitLog.v("#flutter \(#function) plugin serverUrl: \(serverUrl)")
         }
         
+        UserDefaults.standard.setValue(PlanetKitFlutterPlugin.planetKitFlutterVersion, forKey: "com.linecorp.planetkit.flutter.version")
+        
         PlanetKitManager.shared.initialize(initialSettings: settingsBuilder.build())
         
+        cameraPlugin.addCameraDelegate()
         PlanetKitLog.v("#flutter \(#function) args: \(args) complete")
         result(true)
     }
@@ -365,13 +383,27 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
 
         let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: MakeCallParam.self)
 
-        let myPlanetKitUserId = PlanetKitUserId(id: param.myUserId, serviceId: param.myServiceId)
-        let peerPlanetKitUserId = PlanetKitUserId(id: param.peerUserId, serviceId: param.peerServiceId)
+        
+        let myPlanetKitUserId: PlanetKitUserId = {
+            guard let planetKitUserId = PlanetKitUserId(id: param.myUserId, serviceId: param.myServiceId, country: param.myCountryCode) else {
+                return PlanetKitUserId(id: param.myUserId, serviceId: param.myServiceId);
+            }
+            return planetKitUserId
+        }()
+        
+        let peerPlanetKitUserId: PlanetKitUserId = {
+            guard let planetKitUserId = PlanetKitUserId(id: param.peerUserId, serviceId: param.peerServiceId, country: param.peerCountryCode) else {
+                return PlanetKitUserId(id: param.peerUserId, serviceId: param.peerServiceId);
+            }
+            return planetKitUserId
+        }()
+        
         let makeCallParam = PlanetKitCallParam(myUserId: myPlanetKitUserId, peerUserId: peerPlanetKitUserId, delegate: callPlugin, accessToken: param.accessToken)
         
         makeCallParam.useResponderPreparation = param.useResponderPreparation
         makeCallParam.mediaType = param.mediaType
-
+        makeCallParam.initialMyVideoState = param.initialMyVideoState
+        
         var settings = PlanetKitMakeCallSettingBuilder()
         
         if let callKitType = param.callKitType {
@@ -424,7 +456,14 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
         
         if makeCallResult.reason == .none, let planetKitCall = makeCallResult.call {
             nativeInstances.add(key: planetKitCall.instanceId, instance: planetKitCall)
+            
+            if let enableAudioDescription = param.enableAudioDescription {
+                PlanetKitLog.v("#flutter \(#function) enableAudioDescription: \(enableAudioDescription)")
+                settings = settings.withEnableAudioDescriptionKey(enable: enableAudioDescription)
+                callPlugin.setPeerAudioDescriptionDelegate(call: planetKitCall)
+            }
         }
+        
                 
         let response = MakeCallResponse(callId: makeCallResult.call?.instanceId, failReason: makeCallResult.reason)
         let encodedResponse = PlanetKitFlutterPlugin.encode(data: response)
@@ -498,6 +537,11 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
         
         if verifyCallResult.reason == .none, let planetKitCall = verifyCallResult.call {
             nativeInstances.add(key: planetKitCall.instanceId, instance: planetKitCall)
+            if let enableAudioDescription = param.enableAudioDescription {
+                PlanetKitLog.v("#flutter \(#function) enableAudioDescription: \(enableAudioDescription)")
+                settings = settings.withEnableAudioDescriptionKey(enable: enableAudioDescription)
+                callPlugin.setPeerAudioDescriptionDelegate(call: planetKitCall)
+            }
         }
         
         let response = VerifyCallResponse(callId: verifyCallResult.call?.instanceId, failReason: verifyCallResult.reason)
@@ -516,7 +560,8 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
         let joinConferenceParam = PlanetKitConferenceParam(myUserId: myPlanetKitUserId, roomId: param.roomId, roomServiceId: param.roomServiceId, displayName: nil, delegate: conferencePlugin, accessToken: param.accessToken)
         
         joinConferenceParam.mediaType = param.mediaType
-
+        joinConferenceParam.initialMyVideoState = param.initialMyVideoState
+        
         var settings = PlanetKitJoinConferenceSettingBuilder()
 
         if let endTonePath = param.endTonePath, let key = registrar?.lookupKey(forAsset: endTonePath), let url = Bundle.main.url(forResource: key, withExtension: nil), let resultSettings = try? settings.withSetEndToneKey(fileResourceUrl: url) {
@@ -569,10 +614,9 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
     
     static func encode<T: Encodable>(data: T) -> String {
         let responseJsonData = try! JSONEncoder().encode(data)
-        PlanetKitLog.v("#flutter \(responseJsonData)")
         return String(data: responseJsonData, encoding: .utf8)!
     }
-    
+
     func releaseInstance(call: FlutterMethodCall, result: @escaping FlutterResult) {
         PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
 
@@ -599,6 +643,17 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
 
         PlanetKitLog.v("#flutter \(#function) response: \(encodedResponse)")
         result(encodedResponse)
+    }
+    
+    func setServerUrl(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        
+        let serverUrl = call.arguments as! String
+        let initialSettings = PlanetKitInitialSettingBuilder().withSetKitServerKey(serverUrl: serverUrl).build()
+        
+        PlanetKitManager.shared.update(initialSettings: initialSettings)
+
+        result(true)
     }
 }
 

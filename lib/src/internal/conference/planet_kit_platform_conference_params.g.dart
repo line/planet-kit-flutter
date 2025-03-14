@@ -81,3 +81,10 @@ Map<String, dynamic> _$RemoveMyVideoViewParamToJson(
       'conferenceId': instance.conferenceId,
       'viewId': instance.viewId,
     };
+
+Map<String, dynamic> _$EnableVideoParamToJson(EnableVideoParam instance) =>
+    <String, dynamic>{
+      'conferenceId': instance.conferenceId,
+      'initialMyVideoState': const PlanetKitInitialMyVideoStateConverter()
+          .toJson(instance.initialMyVideoState),
+    };

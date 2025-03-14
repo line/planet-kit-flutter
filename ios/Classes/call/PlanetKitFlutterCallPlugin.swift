@@ -22,68 +22,22 @@ extension PlanetKitCall: PluginInstance {
     }
 }
 
-class VideoOutputDelegates: PlanetKitVideoOutputDelegate {
-    private var delegates: [Weak<PlanetKitVideoOutputDelegate>] = []
-    private let lock = NSLock()
-    
-    var count: Int {
-        lock.lock()
-        defer {
-            lock.unlock()
-        }
-        return delegates.count
-    }
-    
-    func add(delegate: PlanetKitVideoOutputDelegate) {
-        lock.lock()
-        defer {
-            lock.unlock()
-        }
-        delegates.append(Weak<PlanetKitVideoOutputDelegate>(value: delegate))
-    }
-    
-    func remove(delegate: PlanetKitVideoOutputDelegate) {
-        lock.lock()
-        defer {
-            lock.unlock()
-        }
-        delegates.removeAll(where: {$0 === delegate})
-    }
-    
-    func videoOutput(_ videoBuffer: PlanetKitVideoBuffer) {
-        lock.lock()
-        defer {
-            lock.unlock()
-        }
-        
-        for delegate in delegates {
-            delegate.value?.videoOutput(videoBuffer)
-        }
-    }
-}
-
-
 class PlanetKitFlutterCallPlugin {
     
     private let nativeInstances: PlanetKitFlutterNativeInstances
     private let eventStreamHandler: PlanetKitFlutterStreamHandler
     private var myStatusDelegates: [String : Weak<PlanetKitMyMediaStatusDelegate>] = [:]
-    
-    private var myVideoDelegates: [String : VideoOutputDelegates] = [:]
-    private var peerVideoDelegates: [String : VideoOutputDelegates] = [:]
+    private var peerAudioDescriptionDelegates: [String : PeerAudioDescriptionDelegate] = [:]
     
     init(nativeInstances: PlanetKitFlutterNativeInstances, eventStreamHandler: PlanetKitFlutterStreamHandler) {
         self.nativeInstances = nativeInstances
         self.eventStreamHandler = eventStreamHandler
     }
     
-    
-    
-    
     func acceptCall(call: FlutterMethodCall, result: @escaping FlutterResult) {
         PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
         
-        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: AcceptCallParam.self)
+        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: CallParams.AcceptCallParam.self)
         
         guard let call = nativeInstances.get(key: param.callId) as? PlanetKitCall else {
             PlanetKitLog.e("#flutter \(#function) call not found \(param.callId) \(param.useResponderPreparation)")
@@ -91,14 +45,14 @@ class PlanetKitFlutterCallPlugin {
             return
         }
         
-        call.acceptCall(startMessage: nil, useResponderPreparation: param.useResponderPreparation)
+        call.acceptCall(startMessage: nil, useResponderPreparation: param.useResponderPreparation, initialMyVideoState: param.initialMyVideoState)
         result(true)
     }
     
     func endCall(call: FlutterMethodCall, result: @escaping FlutterResult) {
         PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
         
-        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: EndCallParam.self)
+        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: CallParams.EndCallParam.self)
         
         guard let call = nativeInstances.get(key: param.callId) as? PlanetKitCall else {
             PlanetKitLog.e("#flutter \(#function) call not found \(param.callId)")
@@ -118,7 +72,7 @@ class PlanetKitFlutterCallPlugin {
     func endCallWithError(call: FlutterMethodCall, result: @escaping FlutterResult) {
         PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
         
-        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: EndCallWithErrorParam.self)
+        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: CallParams.EndCallWithErrorParam.self)
         
         guard let call = nativeInstances.get(key: param.callId) as? PlanetKitCall else {
             PlanetKitLog.e("#flutter \(#function) call not found \(param.callId)")
@@ -152,7 +106,7 @@ class PlanetKitFlutterCallPlugin {
     func speakerOut(call: FlutterMethodCall, result: @escaping FlutterResult) {
         PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
         
-        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: SpeakerOutParam.self)
+        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: CallParams.SpeakerOutParam.self)
         
         let callId = param.callId
         guard let call = nativeInstances.get(key: callId) as? PlanetKitCall else {
@@ -192,7 +146,6 @@ class PlanetKitFlutterCallPlugin {
     }
     
     func isSpeakerOut(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
         
         let callId = call.arguments as! String
         guard let call = nativeInstances.get(key: callId) as? PlanetKitCall else {
@@ -248,7 +201,7 @@ class PlanetKitFlutterCallPlugin {
     func hold(call: FlutterMethodCall, result: @escaping FlutterResult) {
         PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
         
-        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: HoldCallParam.self)
+        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: CallParams.HoldCallParam.self)
         
         let callId = param.callId
         guard let call = nativeInstances.get(key: callId) as? PlanetKitCall else {
@@ -404,19 +357,23 @@ extension PlanetKitFlutterCallPlugin: PlanetKitCallDelegate {
     }
     
     public func didDisconnect(_ call: PlanetKit.PlanetKitCall, disconnected: PlanetKit.PlanetKitDisconnectedParam) {
-        DispatchQueue.main.async {
+        DispatchQueue.main.async { [weak self] in
+            guard let `self` = self else { return }
             PlanetKitLog.v("#flutter \(#function) \(disconnected.reason)")
-            let event = DisconnectedCallEvent(id: call.instanceId, disconnectReason: disconnected.reason, disconnectSource: disconnected.source, byRemote: disconnected.byRemote)
+            let event = DisconnectedCallEvent(id: call.instanceId, disconnectReason: disconnected.reason, disconnectSource: disconnected.source, userCode: disconnected.userCode, byRemote: disconnected.byRemote)
             let encodedEvent = PlanetKitFlutterPlugin.encode(data: event)
-            self.eventStreamHandler.eventSink?(encodedEvent)
+            eventStreamHandler.eventSink?(encodedEvent)
             
-            if let removed = self.myStatusDelegates.removeValue(forKey: call.instanceId), let delegate = removed.value {
+            if let removed = myStatusDelegates.removeValue(forKey: call.instanceId), let delegate = removed.value {
                 call.myMediaStatus.removeHandler(delegate) { success in
                     if !success {
                         PlanetKitLog.e("#flutter \(#function) failed to remove handler")
                     }
                 }
             }
+            
+            peerAudioDescriptionDelegates.removeValue(forKey: call.instanceId)
+            nativeInstances.remove(key: call.myMediaStatus.instanceId)
         }
     }
     
@@ -572,14 +529,16 @@ extension PlanetKitFlutterCallPlugin {
     func enableVideo(call: FlutterMethodCall, result: @escaping FlutterResult) {
         PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
         
-        let callId = call.arguments as! String
+        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: CallParams.EnableVideoParam.self)
+        
+        let callId = param.callId
         guard let call = nativeInstances.get(key: callId) as? PlanetKitCall else {
             PlanetKitLog.e("#flutter \(#function) call not found \(callId)")
             result(false)
             return
         }
         
-        call.enableVideo() { success in
+        call.enableVideo(initialMyVideoState: param.initialMyVideoState) { success in
             result(success)
         }
     }
@@ -587,7 +546,7 @@ extension PlanetKitFlutterCallPlugin {
     func disableVideo(call: FlutterMethodCall, result: @escaping FlutterResult) {
         PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
         
-        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: DisableVideoParam.self)
+        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: CallParams.DisableVideoParam.self)
         
         let callId = param.callId
         guard let call = nativeInstances.get(key: callId) as? PlanetKitCall else {
@@ -612,11 +571,6 @@ extension PlanetKitFlutterCallPlugin {
         }
         
         call.pauseMyVideo() { success in
-            if success {
-                // TOBEDEL: This code will be deleted in PlanetKit 5.5.
-                // pause resume api will control the camera device in the future.
-                call.stopPreview()
-            }
             result(success)
         }
     }
@@ -632,11 +586,6 @@ extension PlanetKitFlutterCallPlugin {
         }
         
         call.resumeMyVideo() { success in
-            if success {
-                // TOBEDEL: This code will be deleted in PlanetKit 5.5.
-                // pause resume api will control the camera device in the future.
-                call.startPreview()
-            }
             result(success)
         }
     }
@@ -658,15 +607,8 @@ extension PlanetKitFlutterCallPlugin {
             return
         }
         
-        // TODO: remove startPreview() call in PlanetKit 5.5
-        if myVideoDelegates[call.instanceId] == nil {
-            let delegates = VideoOutputDelegates()
-            myVideoDelegates[call.instanceId] = delegates
-            call.myVideoReceiver = delegates
-            call.startPreview()
-        }
-        myVideoDelegates[call.instanceId]?.add(delegate: view.delegate)
-
+        call.myVideoStream.addReceiver(view.delegate)
+        PlanetKitFlutterVideoViews.shared.retain(id: param.viewId)
         
         result(true)
     }
@@ -688,13 +630,9 @@ extension PlanetKitFlutterCallPlugin {
             return
         }
         
-        if peerVideoDelegates[call.instanceId] == nil {
-            let delegates = VideoOutputDelegates()
-            peerVideoDelegates[call.instanceId] = delegates
-            call.peerVideoReceiver = delegates
-        }
-        peerVideoDelegates[call.instanceId]?.add(delegate: view.delegate)
-        
+        call.peerVideoStream.addReceiver(view.delegate)
+        PlanetKitFlutterVideoViews.shared.retain(id: param.viewId)
+
         result(true)
     }
     
@@ -715,20 +653,8 @@ extension PlanetKitFlutterCallPlugin {
         }
         
         
-        guard let delegates = myVideoDelegates[call.instanceId] else {
-            PlanetKitLog.e("#flutter \(#function) delegates not found \(param.viewId)")
-            result(false)
-            return
-        }
-        
-        delegates.remove(delegate: view.delegate)
-        
-        // TODO: remove stopPreview() call in PlanetKit 5.5
-        if delegates.count == 0 {
-            myVideoDelegates.removeValue(forKey: call.instanceId)
-            call.stopPreview()
-            call.myVideoReceiver = nil
-        }
+        call.myVideoStream.removeReceiver(view.delegate)
+        PlanetKitFlutterVideoViews.shared.release(id: param.viewId)
 
         result(true)
     }
@@ -749,20 +675,9 @@ extension PlanetKitFlutterCallPlugin {
             return
         }
         
+        call.peerVideoStream.removeReceiver(view.delegate)
+        PlanetKitFlutterVideoViews.shared.release(id: param.viewId)
         
-        guard let delegates = peerVideoDelegates[call.instanceId] else {
-            PlanetKitLog.e("#flutter \(#function) delegates not found \(param.viewId)")
-            result(false)
-            return
-        }
-        
-        delegates.remove(delegate: view.delegate)
-        
-        if delegates.count == 0 {
-            peerVideoDelegates.removeValue(forKey: call.instanceId)
-            call.peerVideoReceiver = nil
-        }
-
         result(true)
     }
 }
@@ -790,6 +705,32 @@ extension PlanetKitFlutterCallPlugin {
     }
 }
 
+class PeerAudioDescriptionDelegate: PlanetKitPeerAudioDescriptionDelegate {
+    let callId: String
+    let eventStreamHandler: PlanetKitFlutterStreamHandler
+    
+    init(callId: String, eventStreamHandler: PlanetKitFlutterStreamHandler) {
+        self.callId = callId
+        self.eventStreamHandler = eventStreamHandler
+    }
+    
+    func peerAudioDescriptionsDidUpdate(_ descriptions: [PlanetKit.PlanetKitPeerAudioDescription], averageVolumeLevel: Int8) {
+        DispatchQueue.main.async { [weak self] in
+            guard let `self` = self else { return }
+            let event = PeerAudioDescriptionUpdateEvent(id: callId, averageVolumeLevel: Int(averageVolumeLevel))
+            let encodedEvent = PlanetKitFlutterPlugin.encode(data: event)
+            eventStreamHandler.eventSink?(encodedEvent)
+        }
+    }
+}
+
+extension PlanetKitFlutterCallPlugin {
+    func setPeerAudioDescriptionDelegate(call: PlanetKitCall ) {
+        let delegate = PeerAudioDescriptionDelegate(callId: call.instanceId, eventStreamHandler: eventStreamHandler)
+        peerAudioDescriptionDelegates[call.instanceId] = delegate
+        call.peerAudioDescriptionReceiver = delegate
+    }
+}
 // Screen share
 extension PlanetKitFlutterCallPlugin {
     func addPeerScreenShareView(call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -809,9 +750,10 @@ extension PlanetKitFlutterCallPlugin {
             return
         }
         
-        // note: Implementation is difference from video view because
-        // PlanetKitCall.addPeerScreenShareView support adding multiple views
+        
         call.addPeerScreenShareView(delegate: view.delegate)
+        PlanetKitFlutterVideoViews.shared.retain(id: param.viewId)
+
         result(true)
     }
     
@@ -832,9 +774,10 @@ extension PlanetKitFlutterCallPlugin {
             return
         }
         
-        // note: Implementation is difference from video view because
-        // PlanetKitCall.addPeerScreenShareView support adding multiple views
+        
         call.removePeerScreenShareView(delegate: view.delegate)
+        PlanetKitFlutterVideoViews.shared.release(id: param.viewId)
+
         result(true)
     }
 }

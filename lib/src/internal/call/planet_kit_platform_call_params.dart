@@ -21,9 +21,13 @@ part 'planet_kit_platform_call_params.g.dart';
 class AcceptCallParam {
   final String callId;
   final bool useResponderPreparation;
+  @PlanetKitInitialMyVideoStateConverter()
+  final PlanetKitInitialMyVideoState initialMyVideoState;
 
   AcceptCallParam(
-      {required this.callId, required this.useResponderPreparation});
+      {required this.callId,
+      required this.useResponderPreparation,
+      required this.initialMyVideoState});
   Map<String, dynamic> toJson() => _$AcceptCallParamToJson(this);
 }
 
@@ -129,4 +133,15 @@ class DisableVideoParam {
 
   DisableVideoParam({required this.callId, required this.reason});
   Map<String, dynamic> toJson() => _$DisableVideoParamToJson(this);
+}
+
+@JsonSerializable(explicitToJson: true, createFactory: false)
+class EnableVideoParam {
+  final String callId;
+
+  @PlanetKitInitialMyVideoStateConverter()
+  final PlanetKitInitialMyVideoState initialMyVideoState;
+
+  EnableVideoParam({required this.callId, required this.initialMyVideoState});
+  Map<String, dynamic> toJson() => _$EnableVideoParamToJson(this);
 }

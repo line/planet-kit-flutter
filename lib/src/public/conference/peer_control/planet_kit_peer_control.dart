@@ -93,7 +93,7 @@ class PlanetKitPeerControl {
     if (result) {
       _handler = null;
     }
-
+    _subscription?.cancel();
     return result;
   }
 
@@ -142,6 +142,8 @@ class PlanetKitPeerControl {
       _handler?.onUnhold?.call(this);
     } else if (event.subType == PeerControlEventType.disconnect) {
       _handler?.onDisconnect?.call(this);
+      _handler = null;
+      _subscription?.cancel();
     } else if (event.subType == PeerControlEventType.audioDescriptionUpdate) {
       _handleAudioDescriptionUpdate(event);
     } else if (event.subType == PeerControlEventType.videoUpdate) {

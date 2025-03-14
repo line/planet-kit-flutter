@@ -67,6 +67,7 @@ struct ConferenceParams {
         let enableStatistics: Bool
         
         let screenShareKey: ScreenShareKey?
+        let initialMyVideoState: PlanetKitInitialMyVideoState
     }
     
     struct CreatePeerControlParam: Decodable {
@@ -82,6 +83,11 @@ struct ConferenceParams {
     struct RemoveVideoViewParam: Decodable {
         let conferenceId: String
         let viewId: String
+    }
+    
+    struct EnableVideoParam: Decodable {
+        let conferenceId: String
+        let initialMyVideoState: PlanetKitInitialMyVideoState
     }
 }
 
@@ -131,12 +137,14 @@ struct ConferenceEvents {
         let subType: ConferenceEventType = .disconnected
         let disconnectReason: PlanetKitDisconnectReason
         let disconnectSource: PlanetKitDisconnectSource
+        let userCode: String?
         let byRemote: Bool
         
-        init(id: String, disconnectReason: PlanetKitDisconnectReason, disconnectSource: PlanetKitDisconnectSource, byRemote: Bool) {
+        init(id: String, disconnectReason: PlanetKitDisconnectReason, disconnectSource: PlanetKitDisconnectSource, userCode: String?, byRemote: Bool) {
             self.id = id
             self.disconnectReason = disconnectReason
             self.disconnectSource = disconnectSource
+            self.userCode = userCode
             self.byRemote = byRemote
         }
     }
@@ -178,6 +186,16 @@ struct ConferenceEvents {
         init(id: String, willDisconnectSec: Int) {
             self.id = id
             self.willDisconnectSec = willDisconnectSec
+        }
+    }
+    
+    struct NetworkDidReavailableEvent: ConferenceEvent {
+        let type: EventType = .conference
+        let id: String
+        let subType: ConferenceEventType = .networkReavailable
+        
+        init(id: String) {
+            self.id = id
         }
     }
     

@@ -43,8 +43,12 @@ class PlanetKitCallEventHandler {
   ///
   /// This callback has detailed parameters including [PlanetKitDisconnectReason] for the disconnect reason,
   /// [PlanetKitDisconnectSource] for the disconnect source, and [byRemote] as a flag indicating whether the disconnection was initiated by the remote peer.
-  final void Function(PlanetKitCall call, PlanetKitDisconnectReason reason,
-      PlanetKitDisconnectSource source, bool byRemote) onDisconnected;
+  final void Function(
+      PlanetKitCall call,
+      PlanetKitDisconnectReason reason,
+      PlanetKitDisconnectSource source,
+      String? userCode,
+      bool byRemote) onDisconnected;
 
   /// Callback triggered when the incoming call is verified.
   final void Function(PlanetKitCall call, bool peerUseResponderPreparation)
@@ -102,6 +106,12 @@ class PlanetKitCallEventHandler {
   /// Optional callback triggered when the peer stops screen share.
   final void Function(PlanetKitCall call)? onPeerScreenShareStopped;
 
+  /// Optional callback that is invoked with audio description updates during a call.
+  /// It provides the peer's average volume level.
+  /// The update interval can be configured through [PlanetKitMakeCallParam] and [PlanetKitVerifyCallParam].
+  final void Function(PlanetKitCall call, int averageVolumeLevel)?
+      onPeerAudioDescriptionUpdated;
+
   /// Constructs a [PlanetKitCallEventHandler].
   const PlanetKitCallEventHandler(
       {required this.onWaitConnected,
@@ -122,7 +132,8 @@ class PlanetKitCallEventHandler {
       this.onVideoDisabledByPeer,
       this.onDetectedMyVideoNoSource,
       this.onPeerScreenShareStarted,
-      this.onPeerScreenShareStopped});
+      this.onPeerScreenShareStopped,
+      this.onPeerAudioDescriptionUpdated});
 }
 
 /// A handler for hooked audio within the PlanetKit framework.
@@ -140,7 +151,7 @@ class PlanetKitCallHookedAudioHandler {
 ///
 /// This class is used to manage the call session.
 class PlanetKitCall implements HookedAudioHandler {
-  final PlanetKitCallEventHandler? _eventHandler;
+  PlanetKitCallEventHandler? _eventHandler;
   PlanetKitCallHookedAudioHandler? _hookedAudioHandler;
   StreamSubscription<CallEvent>? _subscription;
   PlanetKitMyMediaStatus myMediaStatus;
@@ -172,9 +183,12 @@ class PlanetKitCall implements HookedAudioHandler {
       await Platform.instance.callInterface.isOnHold(callId);
 
   /// Accepts the incoming call.
-  Future<bool> acceptCall({bool useResponderPreparation = false}) async {
+  Future<bool> acceptCall(
+      {bool useResponderPreparation = false,
+      PlanetKitInitialMyVideoState initialMyVideoState =
+          PlanetKitInitialMyVideoState.resume}) async {
     return await Platform.instance.callInterface
-        .acceptCall(callId, useResponderPreparation);
+        .acceptCall(callId, useResponderPreparation, initialMyVideoState);
   }
 
   /// Ends the current call.
@@ -279,8 +293,11 @@ class PlanetKitCall implements HookedAudioHandler {
   }
 
   /// Enables a video call.
-  Future<bool> enableVideo() async {
-    return await Platform.instance.callInterface.enableVideo(callId);
+  Future<bool> enableVideo(
+      {PlanetKitInitialMyVideoState initialMyVideoState =
+          PlanetKitInitialMyVideoState.resume}) async {
+    return await Platform.instance.callInterface
+        .enableVideo(callId, initialMyVideoState);
   }
 
   /// Disables a video call.
@@ -301,8 +318,11 @@ class PlanetKitCall implements HookedAudioHandler {
       return;
     }
 
-    print("#flutter_kit_call event: $event");
     final type = event.subType;
+
+    if (type != CallEventType.peerAudioDescriptionUpdate) {
+      print("#flutter_kit_call event: $event");
+    }
 
     if (type == CallEventType.connected) {
       _handleConnectedEvent(event);
@@ -342,6 +362,8 @@ class PlanetKitCall implements HookedAudioHandler {
       _eventHandler?.onPeerScreenShareStarted?.call(this);
     } else if (type == CallEventType.peerDidStopScreenShare) {
       _eventHandler?.onPeerScreenShareStopped?.call(this);
+    } else if (type == CallEventType.peerAudioDescriptionUpdate) {
+      _handlePeerAudioDescriptionUpdateEvent(event);
     } else {
       print("#planet_kit_call event unknown");
     }
@@ -368,8 +390,14 @@ class PlanetKitCall implements HookedAudioHandler {
   void _handleDisconnectedEvent(CallEvent event) {
     final disconnectedEvent = event as DisconnectedEvent;
     _subscription?.cancel();
-    _eventHandler?.onDisconnected(this, disconnectedEvent.disconnectReason,
-        disconnectedEvent.disconnectSource, disconnectedEvent.byRemote);
+    _eventHandler?.onDisconnected(
+        this,
+        disconnectedEvent.disconnectReason,
+        disconnectedEvent.disconnectSource,
+        disconnectedEvent.userCode,
+        disconnectedEvent.byRemote);
+    _eventHandler = null;
+    myMediaStatus.dispose();
   }
 
   void _handlerVerifiedEvent(CallEvent event) {
@@ -401,6 +429,13 @@ class PlanetKitCall implements HookedAudioHandler {
         event as MyAudioMuteRequestByPeerEvent;
     _eventHandler?.onMyAudioMuteRequestedByPeer
         ?.call(this, myAudioMuteRequestByPeerEvent.mute);
+  }
+
+  void _handlePeerAudioDescriptionUpdateEvent(CallEvent event) {
+    final peerAudioDescriptionUpdateEvent =
+        event as PeerAudioDescriptionUpdateEvent;
+    _eventHandler?.onPeerAudioDescriptionUpdated
+        ?.call(this, peerAudioDescriptionUpdateEvent.averageVolumeLevel);
   }
 
   /// @nodoc

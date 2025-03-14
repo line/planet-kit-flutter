@@ -16,6 +16,8 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:planet_kit_flutter/src/internal/planet_kit_platform_interface.dart'
+    as P;
 
 /// A builder class for creating [PlanetKitVideoView] instances.
 class PlanetKitVideoViewBuilder {
@@ -48,9 +50,6 @@ class PlanetKitVideoView extends StatefulWidget {
   /// Constructs a [PlanetKitVideoView] with the specified [scaleType].
   PlanetKitVideoView({super.key, required this.scaleType});
 
-  /// The unique identifier for the video view.
-  String? id;
-
   /// A stream that emits the view ID when the platform view is created.
   Stream<String> get onCreate => _onCreateController.stream;
 
@@ -68,6 +67,9 @@ class PlanetKitVideoView extends StatefulWidget {
 
 /// The state for the [PlanetKitVideoView] widget.
 class PlanetKitVideoViewState extends State<PlanetKitVideoView> {
+  /// The unique identifier for the video view.
+  String? viewId;
+
   @override
   Widget build(BuildContext context) {
     final creationParams = <String, dynamic>{
@@ -98,8 +100,11 @@ class PlanetKitVideoViewState extends State<PlanetKitVideoView> {
 
   @override
   void dispose() {
-    if (widget.id != null) {
-      widget._onDisposeController.add(widget.id!);
+    if (viewId != null) {
+      if (Platform.isIOS) {
+        P.Platform.instance.videoViewInterface.disposeVideoView(viewId!);
+      }
+      widget._onDisposeController.add(viewId!);
     }
 
     widget._onCreateController.close();
@@ -109,7 +114,7 @@ class PlanetKitVideoViewState extends State<PlanetKitVideoView> {
 
   void _onPlatformViewCreated(int id) {
     final stringId = id.toString();
-    widget.id = stringId;
+    viewId = stringId;
     widget._onCreateController.add(stringId);
   }
 }

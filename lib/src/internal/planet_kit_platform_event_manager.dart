@@ -16,6 +16,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
+import 'package:planet_kit_flutter/src/internal/camera/planet_kit_platform_camera_event.dart';
 import 'package:planet_kit_flutter/src/internal/peer_control/planet_kit_platform_peer_control_event.dart';
 import 'conference/planet_kit_platform_conference_event.dart';
 import 'call/planet_kit_platform_call_event.dart';
@@ -59,6 +60,9 @@ class EventManager implements EventManagerInterface {
     } else if (eventData.type == EventType.peerControl) {
       final eventData = PeerControlEventFactory.fromJson(jsonMap);
       _peerControlEventController.add(eventData);
+    } else if (eventData.type == EventType.camera) {
+      final eventData = CameraEventFactory.fromJson(jsonMap);
+      _cameraEventController.add(eventData);
     }
   }
 
@@ -94,6 +98,8 @@ class EventManager implements EventManagerInterface {
   void dispose() {
     _callEventController.close();
     _myMediaStatusEventController.close();
+    _conferenceEventController.close();
+    _peerControlEventController.close();
   }
 
   @override
@@ -113,4 +119,9 @@ class EventManager implements EventManagerInterface {
       _peerControlEventController.stream;
   final StreamController<PeerControlEvent> _peerControlEventController =
       StreamController<PeerControlEvent>.broadcast();
+
+  @override
+  Stream<CameraEvent> get onCameraEvent => _cameraEventController.stream;
+  final StreamController<CameraEvent> _cameraEventController =
+      StreamController<CameraEvent>.broadcast();
 }

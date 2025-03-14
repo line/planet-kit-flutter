@@ -38,6 +38,7 @@ DisconnectedEvent _$DisconnectedEventFromJson(Map<String, dynamic> json) =>
           .fromJson((json['disconnectReason'] as num).toInt()),
       const PlanetKitDisconnectSourceConverter()
           .fromJson((json['disconnectSource'] as num).toInt()),
+      json['userCode'] as String?,
       json['byRemote'] as bool,
     );
 

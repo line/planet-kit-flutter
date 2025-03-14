@@ -2,13 +2,18 @@ group 'com.example.planet_kit_flutter'
 version '1.0-SNAPSHOT'
 
 buildscript {
+    ext.kotlin_version = "1.8.22"
     repositories {
         google()
         mavenCentral()
+        maven {
+            url "https://oss.sonatype.org/content/repositories/snapshots/"
+        }
     }
 
     dependencies {
         classpath 'com.android.tools.build:gradle:7.3.0'
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version")
     }
 }
 
@@ -16,6 +21,9 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        maven {
+            url "https://oss.sonatype.org/content/repositories/snapshots/"
+        }
     }
 }
 
@@ -69,14 +77,16 @@ rootProject.allprojects {
     repositories {
         google()
         jcenter()
-
-        flatDir {
-            dirs project(':planet_kit_flutter').file('libs')
+        maven {
+            url "https://oss.sonatype.org/content/repositories/snapshots/"
         }
     }
 }
 
 dependencies {
-    implementation 'com.linecorp.planetkit:planetkit:0.0.101'
+    implementation 'com.linecorp.planetkit:planetkit:5.5.2'
     implementation 'com.google.code.gson:gson:2.8.6'
+    implementation ('com.linecorp.planetkit:plugin-virtualbackground:1.0.0') {
+        exclude group: 'com.linecorp.planetkit', module: 'planetkit'
+    }
 }

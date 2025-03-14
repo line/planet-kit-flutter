@@ -49,6 +49,8 @@ class CallEventFactory {
       return PeerDidStartScreenShareEvent.fromJson(data);
     } else if (type == CallEventType.peerDidStopScreenShare) {
       return PeerDidStopScreenShareEvent.fromJson(data);
+    } else if (type == CallEventType.peerAudioDescriptionUpdate) {
+      return PeerAudioDescriptionUpdateEvent.fromJson(data);
     } else {
       return event;
     }
@@ -75,10 +77,11 @@ class DisconnectedEvent extends CallEvent {
   @PlanetKitDisconnectSourceConverter()
   final PlanetKitDisconnectSource disconnectSource;
 
+  final String? userCode;
   final bool byRemote;
 
   DisconnectedEvent(super.type, super.id, super.subType, this.disconnectReason,
-      this.disconnectSource, this.byRemote);
+      this.disconnectSource, this.userCode, this.byRemote);
 
   factory DisconnectedEvent.fromJson(Map<String, dynamic> json) =>
       _$DisconnectedEventFromJson(json);
@@ -180,4 +183,14 @@ class PeerDidStopScreenShareEvent extends CallEvent {
 
   factory PeerDidStopScreenShareEvent.fromJson(Map<String, dynamic> json) =>
       _$PeerDidStopScreenShareEventFromJson(json);
+}
+
+@JsonSerializable(createToJson: false)
+class PeerAudioDescriptionUpdateEvent extends CallEvent {
+  final int averageVolumeLevel;
+  PeerAudioDescriptionUpdateEvent(
+      super.type, super.id, super.subType, this.averageVolumeLevel);
+
+  factory PeerAudioDescriptionUpdateEvent.fromJson(Map<String, dynamic> json) =>
+      _$PeerAudioDescriptionUpdateEventFromJson(json);
 }

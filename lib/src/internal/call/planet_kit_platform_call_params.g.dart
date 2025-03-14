@@ -24,6 +24,8 @@ Map<String, dynamic> _$AcceptCallParamToJson(AcceptCallParam instance) =>
     <String, dynamic>{
       'callId': instance.callId,
       'useResponderPreparation': instance.useResponderPreparation,
+      'initialMyVideoState': const PlanetKitInitialMyVideoStateConverter()
+          .toJson(instance.initialMyVideoState),
     };
 
 Map<String, dynamic> _$HoldCallParamToJson(HoldCallParam instance) =>
@@ -115,4 +117,11 @@ Map<String, dynamic> _$DisableVideoParamToJson(DisableVideoParam instance) =>
       'callId': instance.callId,
       'reason':
           const PlanetKitMediaDisableReasonConverter().toJson(instance.reason),
+    };
+
+Map<String, dynamic> _$EnableVideoParamToJson(EnableVideoParam instance) =>
+    <String, dynamic>{
+      'callId': instance.callId,
+      'initialMyVideoState': const PlanetKitInitialMyVideoStateConverter()
+          .toJson(instance.initialMyVideoState),
     };

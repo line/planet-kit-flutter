@@ -74,6 +74,9 @@ enum PlanetKitDisconnectReason {
   /// (1:1)(CloudServer) Responder using the same id pair(user-id and service-id) declined the call in another device.
   multiDeviceDecline,
 
+  /// (Both)(CloudServer) Maximum call time has been reached.
+  maxCallTimeExceeded,
+
   /// (Both)(Caller, Callee, Participant, CloudServer) Network is unavailable to keep a call.
   networkUnstable,
 
@@ -106,6 +109,9 @@ enum PlanetKitDisconnectReason {
 
   /// (Both)(CloudServer) Server failed to deliver app server data to AppServer.
   appServerDataError,
+
+  /// (Both)(Caller, Callee, Participant) Desktop screen is locked
+  desktopScreenLocked,
 
   /// (Group)(CloudServer) The number of participants in this room is full.
   roomIsFull,
@@ -156,6 +162,9 @@ enum PlanetKitDisconnectReason {
   /// (Both)(CloudServer) The current PlanetKit version is deprecated. Need to upgrade.
   serviceIncompatiblePlanetKitVer,
 
+  /// (Both)(CloudServer) Too many call connection attempts in a short period of time.
+  serviceTooManyRequests,
+
   /// Represents an unknown or undefined disconnect reason.
   unknown;
 
@@ -190,6 +199,8 @@ enum PlanetKitDisconnectReason {
         return 1206;
       case PlanetKitDisconnectReason.multiDeviceDecline:
         return 1207;
+      case PlanetKitDisconnectReason.maxCallTimeExceeded:
+        return 1208;
       case PlanetKitDisconnectReason.networkUnstable:
         return 1301;
       case PlanetKitDisconnectReason.pushError:
@@ -212,6 +223,8 @@ enum PlanetKitDisconnectReason {
         return 1312;
       case PlanetKitDisconnectReason.appServerDataError:
         return 1313;
+      case PlanetKitDisconnectReason.desktopScreenLocked:
+        return 1314;
       case PlanetKitDisconnectReason.roomIsFull:
         return 1401;
       case PlanetKitDisconnectReason.aloneKickOut:
@@ -242,6 +255,8 @@ enum PlanetKitDisconnectReason {
         return 1510;
       case PlanetKitDisconnectReason.serviceIncompatiblePlanetKitVer:
         return 1511;
+      case PlanetKitDisconnectReason.serviceTooManyRequests:
+        return 1512;
       case PlanetKitDisconnectReason.unknown:
       default:
         return -1;
@@ -279,6 +294,8 @@ enum PlanetKitDisconnectReason {
         return PlanetKitDisconnectReason.multiDeviceAnswer;
       case 1207:
         return PlanetKitDisconnectReason.multiDeviceDecline;
+      case 1208:
+        return PlanetKitDisconnectReason.maxCallTimeExceeded;
       case 1301:
         return PlanetKitDisconnectReason.networkUnstable;
       case 1302:
@@ -301,6 +318,8 @@ enum PlanetKitDisconnectReason {
         return PlanetKitDisconnectReason.mtuExceeded;
       case 1313:
         return PlanetKitDisconnectReason.appServerDataError;
+      case 1314:
+        return PlanetKitDisconnectReason.desktopScreenLocked;
       case 1401:
         return PlanetKitDisconnectReason.roomIsFull;
       case 1402:
@@ -331,6 +350,8 @@ enum PlanetKitDisconnectReason {
         return PlanetKitDisconnectReason.serviceHttpInvalidUrl;
       case 1511:
         return PlanetKitDisconnectReason.serviceIncompatiblePlanetKitVer;
+      case 1512:
+        return PlanetKitDisconnectReason.serviceTooManyRequests;
       default:
         return PlanetKitDisconnectReason.unknown;
     }

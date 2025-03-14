@@ -14,28 +14,50 @@
 
 import Foundation
 
-
 class PlanetKitFlutterVideoViews {
-    static public let shared = PlanetKitFlutterVideoViews()
-    private var videoViews: [String : Weak<PlanetKitFlutterVideoView>] = [:]
+    static let shared = PlanetKitFlutterVideoViews()
+    private var videoViews: [String: (view: PlanetKitFlutterVideoView, count: Int)] = [:]
     private let lock = NSLock()
     
-    func addView(id: String, view: PlanetKitFlutterVideoView) {
+    func register(id: String, view: PlanetKitFlutterVideoView) {
         lock.lock()
         defer {
             lock.unlock()
         }
         
-        videoViews[id] = Weak<PlanetKitFlutterVideoView>(value: view)
+        if let current = videoViews[id] {
+            videoViews[id] = (current.view, current.count + 1)
+        } else {
+            videoViews[id] = (view, 1)
+        }
     }
     
-    func removeView(id: String) {
+    func release(id: String) {
         lock.lock()
         defer {
             lock.unlock()
         }
         
-        videoViews.removeValue(forKey: id)
+        if let current = videoViews[id] {
+            if current.count > 1 {
+                // Decrease the reference count
+                videoViews[id] = (current.view, current.count - 1)
+            } else {
+                // Remove the view if the reference count reaches zero
+                videoViews.removeValue(forKey: id)
+            }
+        }
+    }
+    
+    func retain(id: String) {
+        lock.lock()
+        defer {
+            lock.unlock()
+        }
+        
+        if let current = videoViews[id] {
+            videoViews[id] = (current.view, current.count + 1)
+        }
     }
     
     func getView(id: String) -> PlanetKitFlutterVideoView? {
@@ -43,7 +65,7 @@ class PlanetKitFlutterVideoViews {
         defer {
             lock.unlock()
         }
-        return videoViews[id]?.value
+        return videoViews[id]?.view
     }
     
     var views: [PlanetKitFlutterVideoView] {
@@ -52,6 +74,6 @@ class PlanetKitFlutterVideoViews {
             lock.unlock()
         }
         
-        return videoViews.filter { $1.value != nil }.map { $1.value! }
+        return videoViews.values.map { $0.view }
     }
 }

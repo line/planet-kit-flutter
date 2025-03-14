@@ -78,7 +78,7 @@ class PlanetKitFlutterPeerControlPlugin {
             result(false)
             return
         }
-        
+                
         peerControl.startVideo(maxResolution: param.maxResolution, delegate: view.delegate) { success in
             PlanetKitLog.v("#flutter \(#function) startVideo result \(success)")
             result(success)
@@ -189,7 +189,6 @@ extension PlanetKitFlutterPeerControlPlugin: PlanetKitPeerControlDelegate {
     
     func didUpdateAudioDescription(_ peerControl: PlanetKit.PlanetKitPeerControl, description: PlanetKit.PlanetKitPeerAudioDescription) {
         DispatchQueue.main.async {
-            PlanetKitLog.v("#flutter \(#function)")
             let event = PeerControlEvents.UpdateAudioDescriptionEvent(id: peerControl.instanceId, averageVolumeLevel: Int(description.averageVolumeLevel))
             let encodedEvent = PlanetKitFlutterPlugin.encode(data: event)
             self.eventStreamHandler.eventSink?(encodedEvent)

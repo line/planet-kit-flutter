@@ -16,37 +16,26 @@ import Flutter
 import Foundation
 import PlanetKit
 
+extension PlanetKitCameraManager: PluginInstance {
+    var instanceId: String {
+        return "\(Unmanaged<AnyObject>.passUnretained(self).toOpaque())"
+    }
+}
+
 class PlanetKitFlutterCameraPlugin {
-    init() {
-        PlanetKitCamera.shared.addReceiver(self)
+    let eventStreamHandler: PlanetKitFlutterStreamHandler
+
+    init(eventStreamHandler: PlanetKitFlutterStreamHandler) {
+        self.eventStreamHandler = eventStreamHandler
     }
     
-    deinit {
-        PlanetKitCamera.shared.removeReceiver(self)
+    func addCameraDelegate() {
+        PlanetKitCameraManager.shared.delegate = self
     }
     
-    // TODO: remove preview counts in PlanetKit 5.5
-    private var previews: [PlanetKitFlutterVideoView] = []
-    private let previewLock = NSLock()
-    
-    private func addPreview(view: PlanetKitFlutterVideoView) {
-        previewLock.lock()
-        defer {
-            previewLock.unlock()
-        }
-        
-        previews.append(view)
+    func removeCameraDelegate() {
+        PlanetKitCameraManager.shared.delegate = nil
     }
-    
-    private func removePreview(view: PlanetKitFlutterVideoView) {
-        previewLock.lock()
-        defer {
-            previewLock.unlock()
-        }
-        
-        previews.removeAll{ $0 == view }
-    }
-    
     
     func startPreview(call: FlutterMethodCall, result: @escaping FlutterResult) {
         PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
@@ -58,14 +47,8 @@ class PlanetKitFlutterCameraPlugin {
             return
         }
         
-        // TODO: remove preview counts in PlanetKit 5.5
-        if previews.count == 0 {
-            PlanetKitCamera.shared.open()
-            PlanetKitCamera.shared.start()
-        }
-        
-        previews.append(view)
-        
+        PlanetKitCameraManager.shared.startPreview(delegate: view.delegate)
+        PlanetKitFlutterVideoViews.shared.retain(id: viewId)
         result(true)
     }
     
@@ -79,19 +62,15 @@ class PlanetKitFlutterCameraPlugin {
             return
         }
         
-        // TODO: remove preview counts in PlanetKit 5.5
-        removePreview(view: view)
-        if previews.count == 0 {
-            PlanetKitCamera.shared.stop()
-            PlanetKitCamera.shared.close()
-        }
-        
+
+        PlanetKitCameraManager.shared.stopPreview(delegate: view.delegate)
+        PlanetKitFlutterVideoViews.shared.release(id: viewId)
         result(true)
     }
     
     func switchPosition(call: FlutterMethodCall, result: @escaping FlutterResult) {
         PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
-        PlanetKitCamera.shared.switchPosition()
+        PlanetKitCameraManager.shared.switchPosition()
     }
     
     func setVirtualBackgroundWithImage(call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -122,7 +101,7 @@ class PlanetKitFlutterCameraPlugin {
             return
         }
         
-        PlanetKitCamera.shared.virtualBackground = PlanetKitVirtualBackground(image: image)
+        PlanetKitCameraManager.shared.virtualBackground = PlanetKitVirtualBackground(image: image)
         result(true)
     }
     
@@ -136,7 +115,7 @@ class PlanetKitFlutterCameraPlugin {
         
         let blurRadius = call.arguments as! Int
 
-        PlanetKitCamera.shared.virtualBackground = PlanetKitVirtualBackground(blurRadius: Float(blurRadius))
+        PlanetKitCameraManager.shared.virtualBackground = PlanetKitVirtualBackground(blurRadius: Float(blurRadius))
         result(true)
     }
     
@@ -147,20 +126,70 @@ class PlanetKitFlutterCameraPlugin {
             result(false)
             return
         }
-        PlanetKitCamera.shared.virtualBackground = nil
+        PlanetKitCameraManager.shared.virtualBackground = nil
         result(true)
     }
 }
 
-extension PlanetKitFlutterCameraPlugin: PlanetKitVideoStreamDelegate {
-    public func videoOutput(_ videoBuffer: PlanetKit.PlanetKitVideoBuffer) {
-        previewLock.lock()
-        defer {
-            previewLock.unlock()
+extension PlanetKitFlutterCameraPlugin: PlanetKitCameraDelegate {
+    func didStart() {
+        DispatchQueue.main.async { [weak self] in
+            guard let `self` = self else { return }
+            let event = CameraEvents.StartEvent(id: PlanetKitCameraManager.shared.instanceId)
+            let encodedEvent = PlanetKitFlutterPlugin.encode(data: event)
+            
+            eventStreamHandler.eventSink?(encodedEvent)
         }
-        
-        for preview in previews {
-            preview.delegate.videoOutput(videoBuffer)
+    }
+    
+    func didStop(_ error: NSError?) {
+        DispatchQueue.main.async { [weak self] in
+            guard let `self` = self else { return }
+            
+            let encodedEvent = {
+                if let error = error {
+                    let event = CameraEvents.StartEvent(id: PlanetKitCameraManager.shared.instanceId)
+                    return PlanetKitFlutterPlugin.encode(data: event)
+                }
+                else {
+                    let event = CameraEvents.StopEvent(id: PlanetKitCameraManager.shared.instanceId)
+                    return PlanetKitFlutterPlugin.encode(data: event)
+                }
+            }()
+            
+            eventStreamHandler.eventSink?(encodedEvent)
         }
+    }
+}
+
+enum CameraEventType: Int, Encodable {
+    case start = 0
+    case stop = 1
+    case error = 2
+}
+
+protocol CameraEvent: Event {
+    var type: EventType { get }
+    var id: String { get }
+    var subType: CameraEventType { get }
+}
+
+struct CameraEvents {
+    struct StartEvent: CameraEvent {
+        let id: String
+        let type: EventType = .camera
+        let subType: CameraEventType = .start
+    }
+    
+    struct StopEvent: CameraEvent {
+        let id: String
+        let type: EventType = .camera
+        let subType: CameraEventType = .stop
+    }
+    
+    struct ErrorEvent: CameraEvent {
+        let id: String
+        let type: EventType = .camera
+        let subType: CameraEventType = .error
     }
 }

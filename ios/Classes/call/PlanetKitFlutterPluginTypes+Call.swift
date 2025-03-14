@@ -27,8 +27,11 @@ struct ScreenShareKey: Decodable {
 struct MakeCallParam: Decodable {
     let myUserId: String
     let myServiceId: String
+    let myCountryCode: String?
     let peerUserId: String
     let peerServiceId: String
+    let peerCountryCode: String?
+
     let accessToken: String
     let callKitType: PlanetKitCallKitType?
     let useResponderPreparation: Bool
@@ -45,6 +48,8 @@ struct MakeCallParam: Decodable {
     let enableStatistics: Bool
     
     let screenShareKey: ScreenShareKey?
+    
+    let initialMyVideoState: PlanetKitInitialMyVideoState
 }
 
 struct MakeCallResponse: Encodable {
@@ -99,38 +104,8 @@ struct VerifyCallResponse: Encodable {
 }
 
 
-struct SpeakerOutParam: Decodable {
-    let callId: String
-    let speakerOut: Bool
-}
-
-struct AcceptCallParam: Decodable {
-    let callId: String
-    let useResponderPreparation: Bool
-}
-
-struct HoldCallParam: Decodable {
-    let callId: String
-    let reason: String?
-}
-
-struct EndCallParam: Decodable {
-    let callId: String
-    let userReleasePhrase: String?
-}
-
-struct EndCallWithErrorParam: Decodable {
-    let callId: String
-    let userReleasePhrase: String
-}
-
-struct DisableVideoParam: Decodable {
-    let callId: String
-    let reason: PlanetKitMediaDisableReason
-}
 
 // TODO: (not urgent) name the call events to match all platform.
-
 enum CallEventType: Int, Encodable {
     case connected = 0
     case disconnected = 1
@@ -155,6 +130,8 @@ enum CallEventType: Int, Encodable {
     // MARK: screen share
     case peerDidStartScreenShare = 17
     case peerDidStopScreenShare = 18
+    
+    case peerAudioDescriptionUpdate = 19
 }
 
 protocol CallEvent: Event {
@@ -185,17 +162,18 @@ struct DisconnectedCallEvent: CallEvent {
     let id: String
     let disconnectReason: PlanetKitDisconnectReason
     let disconnectSource: PlanetKitDisconnectSource
+    let userCode: String?
     let byRemote: Bool
-    
     let subType: CallEventType
     
-    init(id: String, disconnectReason: PlanetKitDisconnectReason, disconnectSource: PlanetKitDisconnectSource, byRemote: Bool) {
+    init(id: String, disconnectReason: PlanetKitDisconnectReason, disconnectSource: PlanetKitDisconnectSource, userCode: String?, byRemote: Bool) {
         type = .call
         subType = .disconnected
         
         self.id = id
         self.disconnectReason = disconnectReason
         self.disconnectSource = disconnectSource
+        self.userCode = userCode
         self.byRemote = byRemote
     }
 }
@@ -426,6 +404,21 @@ struct PeerDidStopScreenShareEvent: CallEvent {
     }
 }
 
+struct PeerAudioDescriptionUpdateEvent: CallEvent {
+    let type: EventType
+    var id: String
+    let subType: CallEventType
+    
+    let averageVolumeLevel: Int
+
+    init(id: String, averageVolumeLevel: Int) {
+        type = .call
+        subType = .peerAudioDescriptionUpdate
+        
+        self.id = id
+        self.averageVolumeLevel = averageVolumeLevel
+    }
+}
 
 // TODO: organize types by feature
 struct PutHookedAudioBackParam: Codable {
@@ -459,5 +452,41 @@ struct CallParams {
     struct RemoveVideoViewParam: Decodable {
         let callId: String
         let viewId: String
+    }
+    
+    struct SpeakerOutParam: Decodable {
+        let callId: String
+        let speakerOut: Bool
+    }
+    
+    struct AcceptCallParam: Decodable {
+        let callId: String
+        let useResponderPreparation: Bool
+        let initialMyVideoState: PlanetKitInitialMyVideoState
+    }
+    
+    struct HoldCallParam: Decodable {
+        let callId: String
+        let reason: String?
+    }
+    
+    struct EndCallParam: Decodable {
+        let callId: String
+        let userReleasePhrase: String?
+    }
+    
+    struct EndCallWithErrorParam: Decodable {
+        let callId: String
+        let userReleasePhrase: String
+    }
+    
+    struct EnableVideoParam: Decodable {
+        let callId: String
+        let initialMyVideoState: PlanetKitInitialMyVideoState
+    }
+    
+    struct DisableVideoParam: Decodable {
+        let callId: String
+        let reason: PlanetKitMediaDisableReason
     }
 }

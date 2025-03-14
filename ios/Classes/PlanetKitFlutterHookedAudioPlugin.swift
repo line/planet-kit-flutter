@@ -16,7 +16,7 @@ import Foundation
 import PlanetKit
 import Flutter
 
-extension PlanetKitInterceptedAudio: PluginInstance {
+extension PlanetKitHookedAudio: PluginInstance {
     var instanceId: String {
         return "\(Unmanaged<AnyObject>.passUnretained(self).toOpaque())"
     }
@@ -42,7 +42,7 @@ extension PlanetKitFlutterHookedAudioPlugin {
             return
         }
         
-        call.enableInterceptMyAudio(delegate: self) { success in
+        call.enableHookMyAudio(delegate: self) { success in
             if !success {
                 PlanetKitLog.e("#flutter \(#function) api failed")
             }
@@ -60,7 +60,7 @@ extension PlanetKitFlutterHookedAudioPlugin {
             return
         }
         
-        call.disableInterceptMyAudio() { success in
+        call.disableHookMyAudio() { success in
             if !success {
                 PlanetKitLog.e("#flutter \(#function) api failed")
             }
@@ -83,13 +83,13 @@ extension PlanetKitFlutterHookedAudioPlugin {
             return
         }
 
-        guard let audio = nativeInstances.get(key: audioId) as? PlanetKitInterceptedAudio else {
+        guard let audio = nativeInstances.get(key: audioId) as? PlanetKitHookedAudio else {
             PlanetKitLog.e("#flutter \(#function) audio not found \(audioId)")
             result(false)
             return
         }
         
-        let ret = call.putInterceptedMyAudioBack(audio: audio)
+        let ret = call.putHookedMyAudioBack(audio: audio)
         
         if !ret {
             PlanetKitLog.e("#flutter \(#function) putInterceptedMyAudioBack \(ret)")
@@ -108,7 +108,7 @@ extension PlanetKitFlutterHookedAudioPlugin {
             return
         }
         
-        result(call.isInterceptMyAudioEnabled)
+        result(call.isHookMyAudioEnabled)
     }
     
     func setHookedAudioData(call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -122,7 +122,7 @@ extension PlanetKitFlutterHookedAudioPlugin {
             return
         }
         
-        guard let audio = nativeInstances.get(key: audioId) as? PlanetKitInterceptedAudio else {
+        guard let audio = nativeInstances.get(key: audioId) as? PlanetKitHookedAudio else {
             PlanetKitLog.e("#flutter \(#function) call not found \(audioId)")
             result(false)
             return
@@ -133,8 +133,8 @@ extension PlanetKitFlutterHookedAudioPlugin {
     }
 }
 
-extension PlanetKitFlutterHookedAudioPlugin: PlanetKitCallInterceptedAudioDelegate {
-    public func didIntercept(_ call: PlanetKitCall, audio: PlanetKitInterceptedAudio) {
+extension PlanetKitFlutterHookedAudioPlugin: PlanetKitCallHookedAudioDelegate {
+    public func didHook(_ call: PlanetKitCall, audio: PlanetKitHookedAudio) {
         nativeInstances.add(key: audio.instanceId, instance: audio)
 
         let data: [String : Any] = [ "callId" : call.instanceId,

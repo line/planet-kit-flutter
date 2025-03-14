@@ -43,6 +43,9 @@ class PlanetKitJoinConferenceParam {
   /// Whether to allow joining the conference without microphone permission.
   final bool? allowConferenceWithoutMic;
 
+  /// Whether to allow joining the conference without microphone permission. Android only.
+  final bool? allowConferenceWithoutMicPermission;
+
   /// Whether to enable audio description updates during the conference.
   final bool? enableAudioDescription;
 
@@ -63,6 +66,10 @@ class PlanetKitJoinConferenceParam {
   /// The screen share key for the call. iOS only.
   final ScreenShareKey? screenShareKey;
 
+  /// The initial state of the user's video.
+  @PlanetKitInitialMyVideoStateConverter()
+  final PlanetKitInitialMyVideoState initialMyVideoState;
+
   /// @nodoc
   PlanetKitJoinConferenceParam._(
       {required this.myUserId,
@@ -72,12 +79,14 @@ class PlanetKitJoinConferenceParam {
       required this.accessToken,
       required this.endTonePath,
       required this.allowConferenceWithoutMic,
+      required this.allowConferenceWithoutMicPermission,
       required this.enableAudioDescription,
       required this.audioDescriptionUpdateIntervalMs,
       required this.mediaType,
       required this.callKitType,
       required this.enableStatistics,
-      required this.screenShareKey});
+      required this.screenShareKey,
+      required this.initialMyVideoState});
 
   /// @nodoc
   Map<String, dynamic> toJson() => _$PlanetKitJoinConferenceParamToJson(this);
@@ -92,12 +101,15 @@ class PlanetKitJoinConferenceParamBuilder {
   String? _accessToken;
   String? _endTonePath;
   bool? _allowConferenceWithoutMic;
+  bool? _allowConferenceWithoutMicPermission;
   bool? _enableAudioDescription;
   int? _audioDescriptionUpdateIntervalMs;
   PlanetKitMediaType _mediaType = PlanetKitMediaType.audio;
   PlanetKitCallKitType _callKitType = PlanetKitCallKitType.none;
   bool _enableStatistics = false;
   ScreenShareKey? _screenShareKey;
+  PlanetKitInitialMyVideoState _initialMyVideoState =
+      PlanetKitInitialMyVideoState.resume;
 
   /// Sets the user ID and returns the builder.
   PlanetKitJoinConferenceParamBuilder setMyUserId(String myUserId) {
@@ -141,6 +153,13 @@ class PlanetKitJoinConferenceParamBuilder {
     return this;
   }
 
+  /// Sets whether to allow conference without mic permission. Android only.
+  PlanetKitJoinConferenceParamBuilder setAllowConferenceWithoutMicPermission(
+      bool allow) {
+    _allowConferenceWithoutMicPermission = allow;
+    return this;
+  }
+
   /// Sets whether to enable audio description and returns the builder.
   PlanetKitJoinConferenceParamBuilder setEnableAudioDescription(bool enable) {
     _enableAudioDescription = enable;
@@ -181,6 +200,13 @@ class PlanetKitJoinConferenceParamBuilder {
     return this;
   }
 
+  /// Sets the initial state of the user's video and returns the builder.
+  PlanetKitJoinConferenceParamBuilder setInitialMyVideoState(
+      PlanetKitInitialMyVideoState initialState) {
+    _initialMyVideoState = initialState;
+    return this;
+  }
+
   /// Builds and returns a [PlanetKitJoinConferenceParam] instance.
   ///
   /// Throws an exception if any required fields are not set.
@@ -202,11 +228,14 @@ class PlanetKitJoinConferenceParamBuilder {
         accessToken: _accessToken!,
         endTonePath: _endTonePath,
         allowConferenceWithoutMic: _allowConferenceWithoutMic,
+        allowConferenceWithoutMicPermission:
+            _allowConferenceWithoutMicPermission,
         enableAudioDescription: _enableAudioDescription,
         audioDescriptionUpdateIntervalMs: _audioDescriptionUpdateIntervalMs,
         mediaType: _mediaType,
         callKitType: _callKitType,
         enableStatistics: _enableStatistics,
-        screenShareKey: _screenShareKey);
+        screenShareKey: _screenShareKey,
+        initialMyVideoState: _initialMyVideoState);
   }
 }

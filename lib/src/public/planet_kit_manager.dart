@@ -43,8 +43,16 @@ class PlanetKitManager {
   ///
   /// PlanetKit user must call this method before using PlanetKit features.
   ///
-  Future<bool> initializePlanetKit(PlanetKitInitParam initParam) {
-    return Platform.instance.initializePlanetKit(initParam);
+  Future<bool> initializePlanetKit(PlanetKitInitParam initParam) async {
+    return await Platform.instance.initializePlanetKit(initParam);
+  }
+
+  /// Sets the server URL for the PlanetKit.
+  ///
+  /// Use it to change server URL set with `PlanetKitInitParam.serverUrl`
+  ///
+  Future<bool> setServerUrl(String serverURL) async {
+    return await Platform.instance.setServerUrl(serverURL);
   }
 
   /// Makes a call with the specified parameters and event handler.

@@ -32,6 +32,7 @@ Map<String, dynamic> _$PlanetKitVerifyCallParamToJson(
       'ringtonePath': instance.ringtonePath,
       'endTonePath': instance.endTonePath,
       'allowCallWithoutMic': instance.allowCallWithoutMic,
+      'allowCallWithoutMicPermission': instance.allowCallWithoutMicPermission,
       'enableAudioDescription': instance.enableAudioDescription,
       'audioDescriptionUpdateIntervalMs':
           instance.audioDescriptionUpdateIntervalMs,

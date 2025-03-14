@@ -28,8 +28,6 @@ class PlanetKitFlutterConferencePlugin {
     let eventStreamHandler: PlanetKitFlutterStreamHandler
     var myStatusDelegates: [String : Weak<PlanetKitMyMediaStatusDelegate>] = [:]
     
-    private var myVideoDelegates: [String : VideoOutputDelegates] = [:]
-
     init(nativeInstances: PlanetKitFlutterNativeInstances, eventStreamHandler: PlanetKitFlutterStreamHandler) {
         self.nativeInstances = nativeInstances
         self.eventStreamHandler = eventStreamHandler
@@ -81,7 +79,6 @@ class PlanetKitFlutterConferencePlugin {
     }
     
     func isSpeakerOut(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
         let id = call.arguments as! String
         guard let conference = nativeInstances.get(key: id) as? PlanetKitConference else {
             PlanetKitLog.e("#flutter \(#function) conference not found \(id)")
@@ -289,15 +286,8 @@ class PlanetKitFlutterConferencePlugin {
             return
         }
         
-        // TODO: remove stopPreview() call in PlanetKit 5.5
-        if myVideoDelegates[conference.instanceId] == nil {
-            let delegates = VideoOutputDelegates()
-            myVideoDelegates[conference.instanceId] = delegates
-            conference.myVideoReceiver = delegates
-            conference.startPreview()
-        }
-        
-        myVideoDelegates[conference.instanceId]?.add(delegate: view.delegate)
+        conference.myVideoStream.addReceiver(view.delegate)
+        PlanetKitFlutterVideoViews.shared.retain(id: param.viewId)
         
         result(true)
     }
@@ -318,37 +308,25 @@ class PlanetKitFlutterConferencePlugin {
             return
         }
         
+        conference.myVideoStream.removeReceiver(view.delegate)
+        PlanetKitFlutterVideoViews.shared.release(id: param.viewId)
         
-        guard let delegates = myVideoDelegates[conference.instanceId] else {
-            PlanetKitLog.e("#flutter \(#function) delegates not found \(param.viewId)")
-            result(false)
-            return
-        }
-        
-        delegates.remove(delegate: view.delegate)
-        
-        // TODO: remove stopPreview() call in PlanetKit 5.5
-        if delegates.count == 0 {
-            myVideoDelegates.removeValue(forKey: conference.instanceId)
-            conference.stopPreview()
-            conference.myVideoReceiver = nil
-        }
-
         result(true)
     }
     
     
     func enableVideo(call: FlutterMethodCall, result: @escaping FlutterResult) {
         PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
-        
-        let id = call.arguments as! String
+        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: ConferenceParams.EnableVideoParam.self)
+
+        let id = param.conferenceId
         guard let conference = nativeInstances.get(key: id) as? PlanetKitConference else {
             PlanetKitLog.e("#flutter \(#function) conference not found \(id)")
             result(false)
             return
         }
         
-        conference.enableVideo() { success in
+        conference.enableVideo(initialMyVideoState: param.initialMyVideoState) { success in
             PlanetKitLog.v("#flutter \(#function) result: \(success)")
             result(success)
             return
@@ -383,11 +361,6 @@ class PlanetKitFlutterConferencePlugin {
         }
         
         conference.pauseMyVideo() { success in
-            if success {
-                // TOBEDEL: This code will be deleted in PlanetKit 5.5.
-                // pause resume api will control the camera device in the future.
-                conference.stopPreview()
-            }
             result(success)
         }
     }
@@ -403,11 +376,6 @@ class PlanetKitFlutterConferencePlugin {
         }
         
         conference.resumeMyVideo() { success in
-            if success {
-                // TOBEDEL: This code will be deleted in PlanetKit 5.5.
-                // pause resume api will control the camera device in the future.
-                conference.startPreview()
-            }
             result(success)
         }
     }
@@ -449,9 +417,10 @@ extension PlanetKitFlutterConferencePlugin: PlanetKitConferenceDelegate {
     func didDisconnect(_ conference: PlanetKit.PlanetKitConference, disconnected: PlanetKit.PlanetKitDisconnectedParam) {
         DispatchQueue.main.async {
             PlanetKitLog.v("#flutter \(#function)")
-            let event = ConferenceEvents.DisconnectedEvent(id: conference.instanceId, disconnectReason: disconnected.reason, disconnectSource: disconnected.source, byRemote: disconnected.byRemote)
+            let event = ConferenceEvents.DisconnectedEvent(id: conference.instanceId, disconnectReason: disconnected.reason, disconnectSource: disconnected.source, userCode: disconnected.userCode, byRemote: disconnected.byRemote)
             let encodedEvent = PlanetKitFlutterPlugin.encode(data: event)
             self.eventStreamHandler.eventSink?(encodedEvent)
+            self.nativeInstances.remove(key: conference.myMediaStatus.instanceId)
         }
     }
     
@@ -469,6 +438,7 @@ extension PlanetKitFlutterConferencePlugin: PlanetKitConferenceDelegate {
             
             for removedPeer in updated.removedPeers {
                 removed.append(removedPeer.instanceId)
+                self.nativeInstances.remove(key: removedPeer.instanceId)
             }
             
             let event = ConferenceEvents.PeerListUpdateEvent(id: conference.instanceId, added: added, removed: removed, totalPeersCount: conference.peersCount)
@@ -548,6 +518,24 @@ extension PlanetKitFlutterConferencePlugin: PlanetKitConferenceDelegate {
         DispatchQueue.main.async {
             PlanetKitLog.v("#flutter \(#function)")
             let event = ConferenceEvents.MyAudioMuteRequestedByPeerEvent(id: conference.instanceId, peer: peer.instanceId, mute: mute)
+            let encodedEvent = PlanetKitFlutterPlugin.encode(data: event)
+            self.eventStreamHandler.eventSink?(encodedEvent)
+        }
+    }
+    
+    func networkDidUnavailable(_ conference: PlanetKitConference, willDisconnected seconds: TimeInterval) {
+        DispatchQueue.main.async {
+            PlanetKitLog.v("#flutter \(#function)")
+            let event = ConferenceEvents.NetworkDidUnavailableEvent(id: conference.instanceId, willDisconnectSec: Int(seconds))
+            let encodedEvent = PlanetKitFlutterPlugin.encode(data: event)
+            self.eventStreamHandler.eventSink?(encodedEvent)
+        }
+    }
+    
+    func networkDidReavailable(_ conference: PlanetKitConference) {
+        DispatchQueue.main.async {
+            PlanetKitLog.v("#flutter \(#function)")
+            let event = ConferenceEvents.NetworkDidReavailableEvent(id: conference.instanceId)
             let encodedEvent = PlanetKitFlutterPlugin.encode(data: event)
             self.eventStreamHandler.eventSink?(encodedEvent)
         }

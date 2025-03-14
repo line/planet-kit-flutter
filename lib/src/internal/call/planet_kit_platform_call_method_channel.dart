@@ -28,11 +28,14 @@ class CallMethodChannel implements CallInterface {
   CallMethodChannel({required this.methodChannel});
 
   @override
-  Future<bool> acceptCall(String callId, bool useResponderPreparation) async {
+  Future<bool> acceptCall(String callId, bool useResponderPreparation,
+      PlanetKitInitialMyVideoState initialMyVideoState) async {
     print(
-        "#flutter_method_channel acceptCall with callId $callId $useResponderPreparation");
+        "#flutter_method_channel acceptCall with callId $callId $useResponderPreparation $initialMyVideoState");
     final param = AcceptCallParam(
-        callId: callId, useResponderPreparation: useResponderPreparation);
+        callId: callId,
+        useResponderPreparation: useResponderPreparation,
+        initialMyVideoState: initialMyVideoState);
     return await methodChannel.invokeMethod<bool>(
         'call_acceptCall', param.toJson()) as bool;
   }
@@ -76,7 +79,6 @@ class CallMethodChannel implements CallInterface {
 
   @override
   Future<bool> isSpeakerOut(String callId) async {
-    print("#flutter_method_channel isSpeakerOut with callId $callId");
     return await methodChannel.invokeMethod<bool>('call_isSpeakerOut', callId)
         as bool;
   }
@@ -257,10 +259,15 @@ class CallMethodChannel implements CallInterface {
   }
 
   @override
-  Future<bool> enableVideo(String callId) async {
-    print("#flutter_method_channel enableVideo with callId $callId");
-    return await methodChannel.invokeMethod<bool>('call_enableVideo', callId)
-        as bool;
+  Future<bool> enableVideo(
+      String callId, PlanetKitInitialMyVideoState initialMyVideoState) async {
+    print(
+        "#flutter_method_channel enableVideo with callId $callId $initialMyVideoState");
+    final param = EnableVideoParam(
+        callId: callId, initialMyVideoState: initialMyVideoState);
+
+    return await methodChannel.invokeMethod<bool>(
+        'call_enableVideo', param.toJson()) as bool;
   }
 
   @override

@@ -31,7 +31,8 @@ enum EventType {
   call,
   myMediaStatus,
   conference,
-  peerControl;
+  peerControl,
+  camera;
 
   static EventType fromInt(int value) {
     switch (value) {
@@ -43,6 +44,8 @@ enum EventType {
         return EventType.conference;
       case 3:
         return EventType.peerControl;
+      case 4:
+        return EventType.camera;
       default:
         return EventType.error;
     }

@@ -51,6 +51,9 @@ class PlanetKitVerifyCallParam {
   /// Whether to allow the call without microphone permission.
   final bool? allowCallWithoutMic;
 
+  /// Whether to allow the call without microphone permission. Android only.
+  final bool? allowCallWithoutMicPermission;
+
   /// Whether to enable audio description updates during the call.
   final bool? enableAudioDescription;
 
@@ -77,6 +80,7 @@ class PlanetKitVerifyCallParam {
     required this.ringtonePath,
     required this.endTonePath,
     required this.allowCallWithoutMic,
+    required this.allowCallWithoutMicPermission,
     required this.enableAudioDescription,
     required this.audioDescriptionUpdateIntervalMs,
     required this.responseOnEnableVideo,
@@ -98,6 +102,7 @@ class PlanetKitVerifyCallParamBuilder {
   String? _ringtonePath;
   String? _endTonePath;
   bool? _allowCallWithoutMic;
+  bool? _allowCallWithoutMicPermission;
   bool? _enableAudioDescription;
   int? _audioDescriptionUpdateIntervalMs;
   PlanetKitResponseOnEnableVideo _responseOnEnableVideo =
@@ -154,6 +159,12 @@ class PlanetKitVerifyCallParamBuilder {
     return this;
   }
 
+  /// Sets whether to allow call without mic permission. Android only.
+  PlanetKitVerifyCallParamBuilder setAllowCallWithoutMicPermission(bool allow) {
+    _allowCallWithoutMicPermission = allow;
+    return this;
+  }
+
   /// Sets whether to enable audio description and returns the builder.
   PlanetKitVerifyCallParamBuilder setEnableAudioDescription(bool enable) {
     _enableAudioDescription = enable;
@@ -202,6 +213,7 @@ class PlanetKitVerifyCallParamBuilder {
         ringtonePath: _ringtonePath,
         endTonePath: _endTonePath,
         allowCallWithoutMic: _allowCallWithoutMic,
+        allowCallWithoutMicPermission: _allowCallWithoutMicPermission,
         enableAudioDescription: _enableAudioDescription,
         audioDescriptionUpdateIntervalMs: _audioDescriptionUpdateIntervalMs,
         responseOnEnableVideo: _responseOnEnableVideo,

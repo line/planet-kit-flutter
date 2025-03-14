@@ -21,16 +21,16 @@ import Vision
 import _Concurrency
 import _StringProcessing
 import _SwiftConcurrencyShims
-@objc public protocol PlanetKitCallInterceptedAudioDelegate {
-  @objc func didIntercept(_ call: PlanetKit.PlanetKitCall, audio: PlanetKit.PlanetKitInterceptedAudio)
+@objc public protocol PlanetKitCallHookedAudioDelegate {
+  @objc func didHook(_ call: PlanetKit.PlanetKitCall, audio: PlanetKit.PlanetKitHookedAudio)
 }
 extension PlanetKit.PlanetKitCall {
-  @objc dynamic public func enableInterceptMyAudio(delegate: any PlanetKit.PlanetKitCallInterceptedAudioDelegate, completion: @escaping (Swift.Bool) -> Swift.Void)
-  @objc dynamic public var isInterceptMyAudioEnabled: Swift.Bool {
+  @objc dynamic public func enableHookMyAudio(delegate: any PlanetKit.PlanetKitCallHookedAudioDelegate, completion: @escaping (Swift.Bool) -> Swift.Void)
+  @objc dynamic public var isHookMyAudioEnabled: Swift.Bool {
     @objc get
   }
-  @objc dynamic public func disableInterceptMyAudio(completion: @escaping (Swift.Bool) -> Swift.Void)
-  @objc dynamic public func putInterceptedMyAudioBack(audio: PlanetKit.PlanetKitInterceptedAudio) -> Swift.Bool
+  @objc dynamic public func disableHookMyAudio(completion: @escaping (Swift.Bool) -> Swift.Void)
+  @objc dynamic public func putHookedMyAudioBack(audio: PlanetKit.PlanetKitHookedAudio) -> Swift.Bool
 }
 @objc public class PlanetKitCallKitParam : ObjectiveC.NSObject {
   @objc final public let appName: Swift.String?
@@ -43,7 +43,8 @@ extension PlanetKit.PlanetKitCall {
   @objc final public let startMessage: PlanetKit.PlanetKitCallStartMessage?
   @objc final public let useResponderPreparation: Swift.Bool
   @objc final public let recordOnCloud: Swift.Bool
-  @objc public init(appName: Swift.String?, callerName: Swift.String, isVideo: Swift.Bool, ringtoneSound: Foundation.URL?, icon: Swift.String?, addCallToList: Swift.Bool, supportsHolding: Swift.Bool, startMessage: PlanetKit.PlanetKitCallStartMessage? = nil, useResponderPreparation: Swift.Bool = false, recordOnCloud: Swift.Bool = false)
+  @objc final public let initialMyVideoState: PlanetKit.PlanetKitInitialMyVideoState
+  @objc public init(appName: Swift.String?, callerName: Swift.String, isVideo: Swift.Bool, ringtoneSound: Foundation.URL?, icon: Swift.String?, addCallToList: Swift.Bool, supportsHolding: Swift.Bool, startMessage: PlanetKit.PlanetKitCallStartMessage? = nil, useResponderPreparation: Swift.Bool = false, recordOnCloud: Swift.Bool = false, initialMyVideoState: PlanetKit.PlanetKitInitialMyVideoState = .resume)
   @objc deinit
 }
 extension PlanetKit.PlanetKitCall : PlanetKit.PlanetKitSharedContentsControllable {
@@ -79,11 +80,7 @@ extension PlanetKit.PlanetKitCameraPosition : Swift.CustomStringConvertible {
     get
   }
 }
-@objc public class PlanetKitCameraPreset : ObjectiveC.NSObject {
-  @objc public var preset: AVFoundation.AVCaptureSession.Preset
-  @objc public init(preset: AVFoundation.AVCaptureSession.Preset)
-  @objc deinit
-}
+public typealias PlanetKitCameraPreset = AVFoundation.AVCaptureSession.Preset
 @objc public class PlanetKitFrameRate : ObjectiveC.NSObject {
   @objc final public let minFps: Swift.Int32
   @objc final public let maxFps: Swift.Int32
@@ -97,90 +94,19 @@ extension PlanetKit.PlanetKitCameraPosition : Swift.CustomStringConvertible {
   @objc func camDidInterruptBegin(_ reason: AVFoundation.AVCaptureSession.InterruptionReason)
   @objc func camDidInterruptEnd()
 }
-@objc public protocol PlanetKitVideoLimiterDelegate {
+@objc public protocol PlanetKitVideoLimiter {
   @objc func isVideoSendAvailable(_ timestamp: CoreMedia.CMTime) -> Swift.Bool
   @objc func isScreenShareSendAvailable(_ timestamp: CoreMedia.CMTime) -> Swift.Bool
 }
 @objc public protocol PlanetKitFpsLimitUpdateDelegate {
   @objc optional func didFpsLimitUpdate(enabled: Swift.Bool, fps: Swift.Int32)
 }
-@objc public protocol PlanetKitCameraControllable : PlanetKit.PlanetKitFpsLimitUpdateDelegate {
-  @objc func open()
-  @objc func open(device: PlanetKit.PlanetKitVideoCaptureDevice?)
-  @objc func close()
-  @objc func change(device: PlanetKit.PlanetKitVideoCaptureDevice?)
-  @objc var currentDevice: PlanetKit.PlanetKitVideoCaptureDevice? { get }
-  @objc func start()
-  @objc func stop()
-  @objc var isOpened: Swift.Bool { get }
-  @objc var isStarted: Swift.Bool { get }
-  @objc var cameraPosition: PlanetKit.PlanetKitCameraPosition { get }
-  @objc var cameraPreset: PlanetKit.PlanetKitCameraPreset? { get }
-  @objc var cameraFrameRate: PlanetKit.PlanetKitFrameRate? { get }
-  @objc func addReceiver(_ delegate: any PlanetKit.PlanetKitVideoStreamDelegate)
-  @objc func removeReceiver(_ delegate: any PlanetKit.PlanetKitVideoStreamDelegate)
-  @objc func switchPosition()
-  @objc func addInterruptReceiver(_ interruptReceiver: any PlanetKit.PlanetKitCameraInterruptDelegate)
-  @objc func removeInterruptReceiver(_ interruptReceiver: any PlanetKit.PlanetKitCameraInterruptDelegate)
+@objc public protocol PlanetKitCameraDelegate {
+  @objc func didStart()
+  @objc func didStop(_ error: Foundation.NSError?)
 }
-@objc @_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers public class PlanetKitCamera : ObjectiveC.NSObject {
-  @objc public static let shared: PlanetKit.PlanetKitCamera
-  @available(iOS 15.0, macOS 12.0, *)
-  @objc public var virtualBackground: PlanetKit.PlanetKitVirtualBackground? {
-    @objc get
-    @objc set
-  }
-  @objc public var cameraPosition: PlanetKit.PlanetKitCameraPosition {
-    @objc get
-  }
-  @objc public var cameraPreset: PlanetKit.PlanetKitCameraPreset? {
-    @objc get
-  }
-  @objc public var cameraFrameRate: PlanetKit.PlanetKitFrameRate? {
-    @objc get
-  }
-  @objc public var devices: [PlanetKit.PlanetKitVideoCaptureDevice] {
-    @objc get
-  }
-  @objc public static var isCameraAvailable: Swift.Bool {
-    @objc get
-  }
-  @objc public var currentDevice: PlanetKit.PlanetKitVideoCaptureDevice? {
-    get
-  }
-  @objc deinit
-}
-extension PlanetKit.PlanetKitCamera : PlanetKit.PlanetKitCameraControllable {
-  @objc dynamic public func didFpsLimitUpdate(enabled: Swift.Bool, fps: Swift.Int32)
-  @objc dynamic public func open()
-  @objc dynamic public func open(device: PlanetKit.PlanetKitVideoCaptureDevice?)
-  @objc dynamic public func close()
-  @objc dynamic public func start()
-  @objc dynamic public func stop()
-  @objc dynamic public func change(device: PlanetKit.PlanetKitVideoCaptureDevice?)
-  @objc dynamic public var isOpened: Swift.Bool {
-    @objc get
-  }
-  @objc dynamic public var isStarted: Swift.Bool {
-    @objc get
-  }
-  @objc dynamic public func addReceiver(_ delegate: any PlanetKit.PlanetKitVideoStreamDelegate)
-  @objc dynamic public func removeReceiver(_ delegate: any PlanetKit.PlanetKitVideoStreamDelegate)
-  @objc dynamic public func addInterruptReceiver(_ interruptReceiver: any PlanetKit.PlanetKitCameraInterruptDelegate)
-  @objc dynamic public func removeInterruptReceiver(_ interruptReceiver: any PlanetKit.PlanetKitCameraInterruptDelegate)
-  @objc dynamic public func switchPosition()
-}
-extension PlanetKit.PlanetKitCamera {
-  @objc public static func canSupportVideoSettings(_ pixelFormat: Darwin.OSType) -> Swift.Bool
-}
-extension PlanetKit.PlanetKitCamera : AVFoundation.AVCaptureVideoDataOutputSampleBufferDelegate {
-  @objc dynamic public func captureOutput(_ captureOutput: AVFoundation.AVCaptureOutput, didOutput sampleBuffer: CoreMedia.CMSampleBuffer, from connection: AVFoundation.AVCaptureConnection)
-}
-extension PlanetKit.PlanetKitCamera {
-  @objc public static let didOpenNotification: Foundation.NSNotification.Name
-  @objc public static let didCloseNotification: Foundation.NSNotification.Name
-  @objc public static let didStartNotification: Foundation.NSNotification.Name
-  @objc public static let didStopNotification: Foundation.NSNotification.Name
+extension PlanetKit.PlanetKitVideoBuffer {
+  @objc public static func getPreferredSampleBuffer(_ buffer: CoreMedia.CMSampleBuffer) -> CoreMedia.CMSampleBuffer?
 }
 @objc @_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers public class PlanetKitMTKViewResolution : ObjectiveC.NSObject {
   @objc final public let width: Swift.Int
@@ -232,7 +158,7 @@ extension PlanetKit.PlanetKitMirroredType : Swift.CustomStringConvertible {
   @objc @_Concurrency.MainActor(unsafe) public var isFirstFrameDrawn: Swift.Bool {
     @objc get
   }
-  @objc @_Concurrency.MainActor(unsafe) public var rotation: Foundation.NSNumber? {
+  @objc @_Concurrency.MainActor(unsafe) public var rotation: PlanetKit.PlanetKitVideoRotation {
     @objc get
     @objc set
   }
@@ -268,7 +194,9 @@ extension PlanetKit.PlanetKitMTKView {
   }
 }
 @objc @frozen public enum PlanetKitCallDirection : Swift.Int {
-  case unknown, outgoing, incoming
+  case unknown
+  case outgoing
+  case incoming
   public init?(rawValue: Swift.Int)
   public typealias RawValue = Swift.Int
   public var rawValue: Swift.Int {
@@ -332,25 +260,16 @@ extension PlanetKit.PlanetKitResponseOnEnableVideo : Swift.CustomStringConvertib
   @objc public var mediaType: PlanetKit.PlanetKitMediaType {
     @objc get
   }
-  @objc public var myCameraStream: PlanetKit.PlanetKitVideoStream! {
+  @objc public var myVideoStream: PlanetKit.PlanetKitVideoStream! {
+    get
+  }
+  @objc public var peerVideoStream: PlanetKit.PlanetKitVideoStream! {
     get
   }
   @objc public var myScreenShareStream: PlanetKit.PlanetKitVideoStream! {
     get
   }
-  @objc public var camera: (any PlanetKit.PlanetKitCameraControllable)? {
-    @objc get
-    @objc set
-  }
   @objc public var screen: (any PlanetKit.PlanetKitScreenControllable)? {
-    @objc get
-    @objc set
-  }
-  @objc weak public var myVideoReceiver: (any PlanetKit.PlanetKitVideoOutputDelegate)? {
-    @objc get
-    @objc set
-  }
-  @objc weak public var peerVideoReceiver: (any PlanetKit.PlanetKitVideoOutputDelegate)? {
     @objc get
     @objc set
   }
@@ -385,8 +304,7 @@ extension PlanetKit.PlanetKitResponseOnEnableVideo : Swift.CustomStringConvertib
   @objc deinit
 }
 extension PlanetKit.PlanetKitCall {
-  @objc dynamic public func declineCall()
-  @objc dynamic public func acceptCall(startMessage: PlanetKit.PlanetKitCallStartMessage?, useResponderPreparation: Swift.Bool, recordOnCloud: Swift.Bool = false)
+  @objc dynamic public func acceptCall(startMessage: PlanetKit.PlanetKitCallStartMessage?, useResponderPreparation: Swift.Bool, recordOnCloud: Swift.Bool = false, initialMyVideoState: PlanetKit.PlanetKitInitialMyVideoState = .resume)
   @objc dynamic public func endCall()
   @objc dynamic public func endCall(normalUserReleaseCode: Swift.String)
   @objc dynamic public func endCall(errorUserReleaseCode: Swift.String)
@@ -400,10 +318,6 @@ extension PlanetKit.PlanetKitCall {
   @objc dynamic public var isRecordOnCloudActivated: Swift.Bool {
     @objc get
   }
-}
-extension PlanetKit.PlanetKitCall {
-  @objc dynamic public func startPreview()
-  @objc dynamic public func stopPreview()
 }
 extension PlanetKit.PlanetKitCall {
   @objc dynamic public var isMyAudioMuted: Swift.Bool {
@@ -436,6 +350,9 @@ extension PlanetKit.PlanetKitCall {
   @objc dynamic public func resumeMyVideo(completion: @escaping (Swift.Bool) -> Swift.Void)
   @objc dynamic public func muteMyAudio(_ mute: Swift.Bool, completion: @escaping (Swift.Bool) -> Swift.Void)
   @objc dynamic public func silencePeerAudio(_ silent: Swift.Bool, completion: @escaping (Swift.Bool) -> Swift.Void)
+}
+extension PlanetKit.PlanetKitCall : PlanetKit.PlanetKitAudioRouteChangeDelegate {
+  @objc dynamic public func didAudioRouteChange(current: PlanetKit.PlanetKitAudioRoute, previous: PlanetKit.PlanetKitAudioRoute)
 }
 extension PlanetKit.PlanetKitCall : PlanetKit.PlanetKitCameraInterruptDelegate {
   @objc dynamic public func camDidInterruptBegin(_ reason: AVFoundation.AVCaptureSession.InterruptionReason)
@@ -639,16 +556,6 @@ extension PlanetKit.PlanetKitSendVoiceProcessorTargetProperty : Swift.CustomStri
     get
   }
 }
-@objc @frozen public enum PlanetKitConferenceError : Swift.Int {
-  case micNoSrc
-  case camNoSrc
-  case unknown
-  public init?(rawValue: Swift.Int)
-  public typealias RawValue = Swift.Int
-  public var rawValue: Swift.Int {
-    get
-  }
-}
 @objc @_hasMissingDesignatedInitializers public class PlanetKitConferenceConnectedParam : ObjectiveC.NSObject {
   @objc final public let isVideoHwCodecEnabled: Swift.Bool
   @objc final public let isVideoShareModeSupported: Swift.Bool
@@ -717,7 +624,7 @@ extension PlanetKit.PlanetKitSendVoiceProcessorTargetProperty : Swift.CustomStri
   @objc final public let reason: PlanetKit.PlanetKitVideoPauseReason
   @objc deinit
 }
-@objc @_hasMissingDesignatedInitializers public class PlanetKitConferenceSetSharedContent : ObjectiveC.NSObject {
+@_hasMissingDesignatedInitializers @objc public class PlanetKitConferenceSetSharedContent : ObjectiveC.NSObject {
   @objc final public let peer: PlanetKit.PlanetKitConferencePeer
   @objc final public let data: Foundation.Data
   @objc final public let elapsedSeconds: Foundation.TimeInterval
@@ -771,7 +678,7 @@ extension PlanetKit.PlanetKitUserEquipmentType : Swift.CustomStringConvertible {
   @objc weak public var delegate: (any PlanetKit.PlanetKitConferenceDelegate)? {
     get
   }
-  @objc public var myCameraStream: PlanetKit.PlanetKitVideoStream! {
+  @objc public var myVideoStream: PlanetKit.PlanetKitVideoStream! {
     get
   }
   @objc public var myScreenShareStream: PlanetKit.PlanetKitVideoStream! {
@@ -782,10 +689,6 @@ extension PlanetKit.PlanetKitUserEquipmentType : Swift.CustomStringConvertible {
   }
   @objc public var callKitParam: PlanetKit.PlanetKitCallKitParam? {
     get
-  }
-  @objc public var camera: (any PlanetKit.PlanetKitCameraControllable)? {
-    @objc get
-    @objc set
   }
   @objc public var screen: (any PlanetKit.PlanetKitScreenControllable)? {
     @objc get
@@ -854,10 +757,6 @@ extension PlanetKit.PlanetKitConference {
   @objc dynamic public func unhold(completion: @escaping (Swift.Bool) -> Swift.Void)
 }
 extension PlanetKit.PlanetKitConference {
-  @objc dynamic public func startPreview()
-  @objc dynamic public func stopPreview()
-}
-extension PlanetKit.PlanetKitConference {
   @objc dynamic public var isPeersAudioSilenced: Swift.Bool {
     @objc get
   }
@@ -911,12 +810,12 @@ extension PlanetKit.PlanetKitConference {
   }
 }
 extension PlanetKit.PlanetKitCall {
-  @objc dynamic public func enableVideo(completion: @escaping (Swift.Bool) -> Swift.Void)
-  @objc dynamic public func disableVideo(reason: PlanetKit.PlanetKitMediaDisableReason, stopCamera: Swift.Bool = true, completion: @escaping (Swift.Bool) -> Swift.Void)
+  @objc dynamic public func enableVideo(initialMyVideoState: PlanetKit.PlanetKitInitialMyVideoState = .resume, completion: @escaping (Swift.Bool) -> Swift.Void)
+  @objc dynamic public func disableVideo(reason: PlanetKit.PlanetKitMediaDisableReason, completion: @escaping (Swift.Bool) -> Swift.Void)
 }
 extension PlanetKit.PlanetKitConference {
-  @objc dynamic public func enableVideo(completion: @escaping (Swift.Bool) -> Swift.Void)
-  @objc dynamic public func disableVideo(stopCamera: Swift.Bool = true, completion: @escaping (Swift.Bool) -> Swift.Void)
+  @objc dynamic public func enableVideo(initialMyVideoState: PlanetKit.PlanetKitInitialMyVideoState = .resume, completion: @escaping (Swift.Bool) -> Swift.Void)
+  @objc dynamic public func disableVideo(completion: @escaping (Swift.Bool) -> Swift.Void)
 }
 extension PlanetKit.PlanetKitCall : PlanetKit.PlanetKitStatisticsControllable {
   @objc dynamic public var statistics: PlanetKit.PlanetKitStatistics? {
@@ -966,7 +865,7 @@ extension PlanetKit.PlanetKitConferencePeer {
   @objc dynamic public func volumeLevelSetting(subgroupName: Swift.String?) throws -> PlanetKit.PlanetKitVolumeLevel
 }
 @objc @_hasMissingDesignatedInitializers public class PlanetKitScreenShareStatus : ObjectiveC.NSObject {
-  @objc public var state: PlanetKit.PlanetKitScreenShareState
+  @objc final public let state: PlanetKit.PlanetKitScreenShareState
   @objc deinit
 }
 @objc @_hasMissingDesignatedInitializers public class PlanetKitVolumeLevel : ObjectiveC.NSObject {
@@ -982,6 +881,7 @@ extension PlanetKit.PlanetKitConferencePeer {
   case noError = 0
   case peerGetFailReasonNotInSubgroup = 2001
   case peerGetFailReasonDisconnected = 2002
+  case noCaptureDevice = 5001
   case unknown = 9999
   public init?(rawValue: Swift.Int)
   public typealias RawValue = Swift.Int
@@ -995,11 +895,6 @@ extension PlanetKit.PlanetKitCall : PlanetKit.PlanetKitDataSessionControllable {
   @objc dynamic public func unsupportInboundDataSession(streamId: PlanetKit.PlanetKitDataSessionStreamId)
   @objc dynamic public func getOutboundDataSession(streamId: PlanetKit.PlanetKitDataSessionStreamId) -> PlanetKit.PlanetKitOutboundDataSession?
   @objc dynamic public func getInboundDataSession(streamId: PlanetKit.PlanetKitDataSessionStreamId) -> PlanetKit.PlanetKitInboundDataSession?
-}
-@objc @_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers public class PlanetKitNetwork : ObjectiveC.NSObject {
-  public static var shared: PlanetKit.PlanetKitNetwork
-  public func getLocalAddress() -> Swift.String?
-  @objc deinit
 }
 extension PlanetKit.PlanetKitConference {
   @objc dynamic public func sendShortData(peerId: PlanetKit.PlanetKitUserId, type: Swift.String, data: Foundation.Data, completion: @escaping (Swift.Bool) -> Swift.Void)
@@ -1018,6 +913,9 @@ extension PlanetKit.PlanetKitConference : PlanetKit.PlanetKitSharedContentsContr
 }
 extension PlanetKit.PlanetKitConference : PlanetKit.PlanetKitAudioVolumeDelegate {
   @objc dynamic public func didChangeVolume(_ type: PlanetKit.PlanetKitAudioDeviceType, volume: Swift.Float)
+}
+extension PlanetKit.PlanetKitConference : PlanetKit.PlanetKitAudioRouteChangeDelegate {
+  @objc dynamic public func didAudioRouteChange(current: PlanetKit.PlanetKitAudioRoute, previous: PlanetKit.PlanetKitAudioRoute)
 }
 extension PlanetKit.PlanetKitConference : PlanetKit.PlanetKitCameraInterruptDelegate {
   @objc dynamic public func camDidInterruptBegin(_ reason: AVFoundation.AVCaptureSession.InterruptionReason)
@@ -1127,7 +1025,7 @@ extension PlanetKit.PlanetKitDataSessionClosedReason : Swift.CustomStringConvert
 }
 @objc @frozen public enum PlanetKitAudioSampleType : Swift.Int {
   case signedFloat32 = 0
-  case signedShort16 = 1
+  case signedShort16
   public var sampleSize: Swift.Int32 {
     get
   }
@@ -1184,6 +1082,9 @@ extension PlanetKit.PlanetKitAudioRoute : Swift.CustomStringConvertible {
   public var description: Swift.String {
     get
   }
+}
+@objc public protocol PlanetKitAudioRouteChangeDelegate {
+  @objc func didAudioRouteChange(current: PlanetKit.PlanetKitAudioRoute, previous: PlanetKit.PlanetKitAudioRoute)
 }
 @objc @frozen public enum PlanetKitAudioDeviceType : Swift.Int {
   case mic
@@ -1305,6 +1206,8 @@ extension PlanetKit.PlanetKitAudio {
   @objc dynamic public func removeVolumeDelegate(_ delegate: any PlanetKit.PlanetKitAudioVolumeDelegate, for type: PlanetKit.PlanetKitAudioDeviceType)
 }
 extension PlanetKit.PlanetKitAudio {
+  @objc dynamic public func addAudioRouteChangeDelegate(_ delegate: any PlanetKit.PlanetKitAudioRouteChangeDelegate)
+  @objc dynamic public func removeAudioRouteChangeDelegate(_ delegate: any PlanetKit.PlanetKitAudioRouteChangeDelegate)
   @objc dynamic public var isBluetoothInput: Swift.Bool {
     @objc get
   }
@@ -1343,7 +1246,7 @@ extension PlanetKit.PlanetKitConference : PlanetKit.PlanetKitAudioSpkPlayDelegat
 extension PlanetKit.PlanetKitConference : PlanetKit.PlanetKitVideoOutputDelegate {
   @objc dynamic public func videoOutput(_ videoBuffer: PlanetKit.PlanetKitVideoBuffer)
 }
-extension PlanetKit.PlanetKitConference : PlanetKit.PlanetKitVideoLimiterDelegate {
+extension PlanetKit.PlanetKitConference : PlanetKit.PlanetKitVideoLimiter {
   @objc dynamic public func isScreenShareSendAvailable(_ timestamp: CoreMedia.CMTime) -> Swift.Bool
   @objc dynamic public func isVideoSendAvailable(_ timestamp: CoreMedia.CMTime) -> Swift.Bool
 }
@@ -1406,6 +1309,7 @@ extension PlanetKit.PlanetKitDisconnectSource : Swift.CustomStringConvertible {
   case multiDeviceInUse = 1205
   case multiDeviceAnswer = 1206
   case multiDeviceDecline = 1207
+  case maxCallTimeExceeded = 1208
   case networkUnstable = 1301
   case pushError = 1302
   case authError = 1303
@@ -1417,6 +1321,7 @@ extension PlanetKit.PlanetKitDisconnectSource : Swift.CustomStringConvertible {
   case systemLogOff = 1311
   case mtuExceeded = 1312
   case appServerDataError = 1313
+  case desktopScreenLocked = 1314
   case roomIsFull = 1401
   case aloneKickOut = 1402
   case roomNotFound = 1404
@@ -1432,6 +1337,7 @@ extension PlanetKit.PlanetKitDisconnectSource : Swift.CustomStringConvertible {
   case serviceHttpConnectFail = 1509
   case serviceHttpInvalidUrl = 1510
   case serviceIncompatiblePlanetKitVer = 1511
+  case serviceTooManyRequests = 1512
   case unknown = -1
   public init?(rawValue: Swift.Int)
   public typealias RawValue = Swift.Int
@@ -1473,6 +1379,20 @@ extension PlanetKit.PlanetKitRecordOnCloudDeactivateReason : Swift.CustomStringC
     get
   }
 }
+@objc @frozen public enum PlanetKitInitialMyVideoState : Swift.Int {
+  case resume
+  case pause
+  public init?(rawValue: Swift.Int)
+  public typealias RawValue = Swift.Int
+  public var rawValue: Swift.Int {
+    get
+  }
+}
+extension PlanetKit.PlanetKitInitialMyVideoState : Swift.CustomStringConvertible {
+  public var description: Swift.String {
+    get
+  }
+}
 @_hasMissingDesignatedInitializers public class PlanetKitScreenShare {
   @objc @frozen public enum BroadcastError : Swift.Int {
     case listenError
@@ -1488,7 +1408,7 @@ extension PlanetKit.PlanetKitRecordOnCloudDeactivateReason : Swift.CustomStringC
   }
   @objc deinit
 }
-@_hasMissingDesignatedInitializers @objc public class PlanetKitInterceptedAudio : ObjectiveC.NSObject {
+@_hasMissingDesignatedInitializers @objc public class PlanetKitHookedAudio : ObjectiveC.NSObject {
   @objc final public let sampleRate: Swift.UInt32
   @objc final public let channel: Swift.UInt32
   @objc final public let sampleType: PlanetKit.PlanetKitAudioSampleType
@@ -1498,13 +1418,9 @@ extension PlanetKit.PlanetKitRecordOnCloudDeactivateReason : Swift.CustomStringC
   @objc deinit
 }
 @objc public protocol PlanetKitCameraDeviceChangeDelegate {
-  @objc func didCameraDeviceConnect(device: PlanetKit.PlanetKitVideoCaptureDevice)
-  @objc func didCameraDeviceDisconnect(device: PlanetKit.PlanetKitVideoCaptureDevice)
-  @objc func didCameraDeviceSelect(device: PlanetKit.PlanetKitVideoCaptureDevice, preset: PlanetKit.PlanetKitCameraPreset)
-}
-extension PlanetKit.PlanetKitCamera {
-  @objc dynamic public func addDeviceChangeDelegate(_ delegate: any PlanetKit.PlanetKitCameraDeviceChangeDelegate)
-  @objc dynamic public func removeDeviceChangeDelegate(_ delegate: any PlanetKit.PlanetKitCameraDeviceChangeDelegate)
+  @objc func didCameraDeviceConnect(deviceInfo: PlanetKit.PlanetKitVideoCaptureDeviceInfo)
+  @objc func didCameraDeviceDisconnect(deviceInfo: PlanetKit.PlanetKitVideoCaptureDeviceInfo)
+  @objc func didCameraDeviceSelect(deviceInfo: PlanetKit.PlanetKitVideoCaptureDeviceInfo, preset: PlanetKit.PlanetKitCameraPreset)
 }
 extension PlanetKit.PlanetKitConference {
   @available(*, deprecated, message: "Use startVideo(maxResolution:delegate:subgroupName:completion:) of PlanetKitPeerControl instead")
@@ -1673,18 +1589,9 @@ extension PlanetKit.PlanetKitSubgroupUnsubscribeFailReason : Swift.CustomStringC
 }
 @_inheritsConvenienceInitializers @objc public class PlanetKitVideoStream : ObjectiveC.NSObject {
   @objc override dynamic public init()
-  @objc public var fpsLimitEnabled: Swift.Bool {
-    @objc get
-  }
-  @objc public var fps: Swift.UInt32 {
-    @objc get
-  }
   @objc weak public var modifier: (any PlanetKit.PlanetKitVideoModifierDelegate)? {
     @objc get
     @objc set
-  }
-  @objc weak public var limiter: (any PlanetKit.PlanetKitVideoLimiterDelegate)? {
-    @objc get
   }
   @objc public func addReceiver(_ videoOutDelegate: any PlanetKit.PlanetKitVideoOutputDelegate)
   @objc public func removeReceiver(_ videoOutDelegate: any PlanetKit.PlanetKitVideoOutputDelegate)
@@ -2029,6 +1936,7 @@ extension PlanetKit.PlanetKitLogSizeLimit : Swift.CustomStringConvertible {
   @objc public var useResponderPreparation: Swift.Bool
   @objc public var startMessage: PlanetKit.PlanetKitCallStartMessage?
   @objc public var recordOnCloud: Swift.Bool
+  @objc public var initialMyVideoState: PlanetKit.PlanetKitInitialMyVideoState
   @available(*, deprecated, message: "Due to a security reason, use init(myUserId:peerUserId:delegate:accessToken:) instead")
   @objc public init(myUserId: PlanetKit.PlanetKitUserId, peerUserId: PlanetKit.PlanetKitUserId, delegate: any PlanetKit.PlanetKitCallDelegate, APIKey: Swift.String)
   @objc public init(myUserId: PlanetKit.PlanetKitUserId, peerUserId: PlanetKit.PlanetKitUserId, delegate: any PlanetKit.PlanetKitCallDelegate, accessToken: Swift.String)
@@ -2058,6 +1966,7 @@ extension PlanetKit.PlanetKitLogSizeLimit : Swift.CustomStringConvertible {
   }
   @objc public var appServerData: Swift.String?
   @objc public var mediaType: PlanetKit.PlanetKitMediaType
+  @objc public var initialMyVideoState: PlanetKit.PlanetKitInitialMyVideoState
   @available(*, deprecated, message: "Due to a security reason, use init(myUserId:roomId:roomServiceId:displayName:delegate:accessToken:) instead")
   @objc public init(myUserId: PlanetKit.PlanetKitUserId, roomId: Swift.String, roomServiceId: Swift.String, displayName: Swift.String?, delegate: any PlanetKit.PlanetKitConferenceDelegate, APIKey: Swift.String)
   @objc public init(myUserId: PlanetKit.PlanetKitUserId, roomId: Swift.String, roomServiceId: Swift.String, displayName: Swift.String?, delegate: any PlanetKit.PlanetKitConferenceDelegate, accessToken: Swift.String)
@@ -2166,9 +2075,16 @@ extension PlanetKit.PlanetKitCall : PlanetKit.PlanetKitAudioSpkPlayDelegate {
 extension PlanetKit.PlanetKitCall : PlanetKit.PlanetKitVideoOutputDelegate {
   @objc dynamic public func videoOutput(_ videoBuffer: PlanetKit.PlanetKitVideoBuffer)
 }
-extension PlanetKit.PlanetKitCall : PlanetKit.PlanetKitVideoLimiterDelegate {
+extension PlanetKit.PlanetKitCall : PlanetKit.PlanetKitVideoLimiter {
   @objc dynamic public func isScreenShareSendAvailable(_ timestamp: CoreMedia.CMTime) -> Swift.Bool
   @objc dynamic public func isVideoSendAvailable(_ timestamp: CoreMedia.CMTime) -> Swift.Bool
+}
+@_inheritsConvenienceInitializers @objc open class PlanetKitCustomCamera : ObjectiveC.NSObject {
+  @objc override dynamic public init()
+  @objc public func sendVideo(videoBuffer: PlanetKit.PlanetKitVideoBuffer)
+  @objc public func isVideoSendAvailable(timestamp: CoreMedia.CMTime) -> Swift.Bool
+  @objc open func processFpsLimitUpdate(enabled: Swift.Bool, fps: Swift.Int32)
+  @objc deinit
 }
 @objc @_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers public class PlanetKitAudioMic : ObjectiveC.NSObject {
   @objc public var vpioEnabled: Swift.Bool {
@@ -2251,7 +2167,6 @@ extension PlanetKit.PlanetKitAudioMic : PlanetKit.PlanetAudioUnitTargetDelegate 
   @objc deinit
 }
 @objc @_inheritsConvenienceInitializers public class PlanetKitInitialSettingBuilder : ObjectiveC.NSObject {
-  @objc public func withDisableKitCameraKey(disable: Swift.Bool) -> PlanetKit.PlanetKitInitialSettingBuilder
   @objc public func withSetKitVideoFormatBGRA32Key(bgra32: Swift.Bool) -> PlanetKit.PlanetKitInitialSettingBuilder
   @objc public func withSetKitCameraFormatBGRA32Key(bgra32: Swift.Bool) -> PlanetKit.PlanetKitInitialSettingBuilder
   @objc public func withSetKitServerKey(serverUrl: Swift.String) -> PlanetKit.PlanetKitInitialSettingBuilder
@@ -2270,6 +2185,7 @@ extension PlanetKit.PlanetKitAudioMic : PlanetKit.PlanetAudioUnitTargetDelegate 
   @objc public func withAllowCallWithoutMicKey(allow: Swift.Bool) -> PlanetKit.PlanetKitMakeCallSettingBuilder
   @objc public func withSetRingbackToneKey(fileResourceUrl: Foundation.URL) throws -> PlanetKit.PlanetKitMakeCallSettingBuilder
   @objc public func withSetEndToneKey(fileResourceUrl: Foundation.URL) throws -> PlanetKit.PlanetKitMakeCallSettingBuilder
+  @objc public func withPlayEndToneRegardlessOfCallStateKey(enable: Swift.Bool) throws -> PlanetKit.PlanetKitMakeCallSettingBuilder
   @objc public func withSetHoldToneKey(fileResourceUrl: Foundation.URL) throws -> PlanetKit.PlanetKitMakeCallSettingBuilder
   @objc public func withMyVideoSendCapabilityKey(capability: PlanetKit.PlanetKitVideoCapability) -> PlanetKit.PlanetKitMakeCallSettingBuilder
   @objc public func withMyVideoReceiveCapabilityKey(capability: PlanetKit.PlanetKitVideoCapability) -> PlanetKit.PlanetKitMakeCallSettingBuilder
@@ -2281,9 +2197,7 @@ extension PlanetKit.PlanetKitAudioMic : PlanetKit.PlanetAudioUnitTargetDelegate 
   @objc public func withEnableStatisticsKey(enable: Swift.Bool) -> PlanetKit.PlanetKitMakeCallSettingBuilder
   @objc public func withCustomMicKey(mic: any PlanetKit.PlanetKitAudioMicControllable) -> PlanetKit.PlanetKitMakeCallSettingBuilder
   @objc public func withCustomSpkKey(spk: any PlanetKit.PlanetKitAudioSpkControllable) -> PlanetKit.PlanetKitMakeCallSettingBuilder
-  @objc public func withCustomCameraKey(camera: any PlanetKit.PlanetKitCameraControllable) -> PlanetKit.PlanetKitMakeCallSettingBuilder
   @objc public func withCustomScreenKey(screen: any PlanetKit.PlanetKitScreenControllable) -> PlanetKit.PlanetKitMakeCallSettingBuilder
-  @objc public func withCustomCameraStreamKey(videoStream: PlanetKit.PlanetKitVideoStream) -> PlanetKit.PlanetKitMakeCallSettingBuilder
   @objc public func withCustomScreenShareStreamKey(videoStream: PlanetKit.PlanetKitVideoStream) -> PlanetKit.PlanetKitMakeCallSettingBuilder
   @objc public func withCallKitSettingsKey(setting: PlanetKit.PlanetKitCallKitSetting) -> PlanetKit.PlanetKitMakeCallSettingBuilder
   @objc public func withEnableAudioDescriptionKey(enable: Swift.Bool) -> PlanetKit.PlanetKitMakeCallSettingBuilder
@@ -2297,6 +2211,7 @@ extension PlanetKit.PlanetKitAudioMic : PlanetKit.PlanetAudioUnitTargetDelegate 
   @objc public func withAllowCallWithoutMicKey(allow: Swift.Bool) -> PlanetKit.PlanetKitVerifyCallSettingBuilder
   @objc public func withSetRingToneKey(fileResourceUrl: Foundation.URL) throws -> PlanetKit.PlanetKitVerifyCallSettingBuilder
   @objc public func withSetEndToneKey(fileResourceUrl: Foundation.URL) throws -> PlanetKit.PlanetKitVerifyCallSettingBuilder
+  @objc public func withPlayEndToneRegardlessOfCallStateKey(enable: Swift.Bool) throws -> PlanetKit.PlanetKitVerifyCallSettingBuilder
   @objc public func withSetHoldToneKey(fileResourceUrl: Foundation.URL) throws -> PlanetKit.PlanetKitVerifyCallSettingBuilder
   @objc public func withMyVideoSendCapabilityKey(capability: PlanetKit.PlanetKitVideoCapability) -> PlanetKit.PlanetKitVerifyCallSettingBuilder
   @objc public func withMyVideoReceiveCapabilityKey(capability: PlanetKit.PlanetKitVideoCapability) -> PlanetKit.PlanetKitVerifyCallSettingBuilder
@@ -2308,9 +2223,7 @@ extension PlanetKit.PlanetKitAudioMic : PlanetKit.PlanetAudioUnitTargetDelegate 
   @objc public func withEnableStatisticsKey(enable: Swift.Bool) -> PlanetKit.PlanetKitVerifyCallSettingBuilder
   @objc public func withCustomMicKey(mic: any PlanetKit.PlanetKitAudioMicControllable) -> PlanetKit.PlanetKitVerifyCallSettingBuilder
   @objc public func withCustomSpkKey(spk: any PlanetKit.PlanetKitAudioSpkControllable) -> PlanetKit.PlanetKitVerifyCallSettingBuilder
-  @objc public func withCustomCameraKey(camera: any PlanetKit.PlanetKitCameraControllable) -> PlanetKit.PlanetKitVerifyCallSettingBuilder
   @objc public func withCustomScreenKey(screen: any PlanetKit.PlanetKitScreenControllable) -> PlanetKit.PlanetKitVerifyCallSettingBuilder
-  @objc public func withCustomCameraStreamKey(videoStream: PlanetKit.PlanetKitVideoStream) -> PlanetKit.PlanetKitVerifyCallSettingBuilder
   @objc public func withCustomScreenShareStreamKey(videoStream: PlanetKit.PlanetKitVideoStream) -> PlanetKit.PlanetKitVerifyCallSettingBuilder
   @objc public func withCallKitSettingsKey(setting: PlanetKit.PlanetKitCallKitSetting) -> PlanetKit.PlanetKitVerifyCallSettingBuilder
   @objc public func withEnableAudioDescriptionKey(enable: Swift.Bool) -> PlanetKit.PlanetKitVerifyCallSettingBuilder
@@ -2332,14 +2245,13 @@ extension PlanetKit.PlanetKitAudioMic : PlanetKit.PlanetAudioUnitTargetDelegate 
   @objc public func withEnableStatisticsKey(enable: Swift.Bool) -> PlanetKit.PlanetKitJoinConferenceSettingBuilder
   @objc public func withCustomMicKey(mic: any PlanetKit.PlanetKitAudioMicControllable) -> PlanetKit.PlanetKitJoinConferenceSettingBuilder
   @objc public func withCustomSpkKey(spk: any PlanetKit.PlanetKitAudioSpkControllable) -> PlanetKit.PlanetKitJoinConferenceSettingBuilder
-  @objc public func withCustomCameraKey(camera: any PlanetKit.PlanetKitCameraControllable) -> PlanetKit.PlanetKitJoinConferenceSettingBuilder
   @objc public func withCustomScreenKey(screen: any PlanetKit.PlanetKitScreenControllable) -> PlanetKit.PlanetKitJoinConferenceSettingBuilder
-  @objc public func withCustomCameraStreamKey(videoStream: PlanetKit.PlanetKitVideoStream) -> PlanetKit.PlanetKitJoinConferenceSettingBuilder
   @objc public func withCustomScreenShareStreamKey(videoStream: PlanetKit.PlanetKitVideoStream) -> PlanetKit.PlanetKitJoinConferenceSettingBuilder
   @objc public func withCallKitSettingsKey(setting: PlanetKit.PlanetKitCallKitSetting) -> PlanetKit.PlanetKitJoinConferenceSettingBuilder
   @objc public func withEnableAudioDescriptionKey(enable: Swift.Bool) -> PlanetKit.PlanetKitJoinConferenceSettingBuilder
   @objc public func withAudioDescriptionUpdateIntervalKey(interval: Foundation.TimeInterval) -> PlanetKit.PlanetKitJoinConferenceSettingBuilder
   @objc public func withSetEndToneKey(fileResourceUrl: Foundation.URL) throws -> PlanetKit.PlanetKitJoinConferenceSettingBuilder
+  @objc public func withPlayEndToneRegardlessOfConferenceStateKey(enable: Swift.Bool) throws -> PlanetKit.PlanetKitJoinConferenceSettingBuilder
   @objc public func build() -> [Swift.String : Any]
   @objc override dynamic public init()
   @objc deinit
@@ -2412,10 +2324,11 @@ extension PlanetKit.PlanetKitAudioManager {
   @objc dynamic public func close()
   @objc dynamic public func setDefaultAudioRoute(_ hasVideo: Swift.Bool)
   @objc dynamic public func speakerOut(_ out: Swift.Bool)
+  @objc dynamic public func setCategory(_ category: AVFAudio.AVAudioSession.Category, options: AVFAudio.AVAudioSession.CategoryOptions)
   @objc dynamic public var isSpeakerOut: Swift.Bool {
     @objc get
   }
-  public func setPreferredAudioRoute(_ route: PlanetKit.PlanetKitAudioRoute)
+  @objc dynamic public func setPreferredAudioRoute(_ route: PlanetKit.PlanetKitAudioRoute)
 }
 extension PlanetKit.PlanetKitAudioManager {
   @objc dynamic public func addMicReceiver(_ micReceiver: any PlanetKit.PlanetKitAudioMicCaptureDelegate)
@@ -2469,22 +2382,20 @@ extension PlanetKit.PlanetKitConference : PlanetKit.PlanetKitStatisticsControlla
     @objc get
   }
 }
-@objc @_hasMissingDesignatedInitializers public class PlanetKitVideoCaptureDevice : ObjectiveC.NSObject {
+@objc @_hasMissingDesignatedInitializers public class PlanetKitVideoCaptureDeviceInfo : ObjectiveC.NSObject {
   @objc public var name: Swift.String {
     @objc get
   }
   @objc public var uniqueID: Swift.String {
     @objc get
   }
-  @objc public var device: AVFoundation.AVCaptureDevice {
-    @objc get
-  }
   @objc public var isAvailable: Swift.Bool {
     @objc get
   }
+  @objc final public let device: AVFoundation.AVCaptureDevice
   @objc public var preferredPreset: AVFoundation.AVCaptureSession.Preset
   @objc public var preferredFrameRate: PlanetKit.PlanetKitFrameRate
-  @objc public var rotation: Foundation.NSNumber?
+  @objc public var rotation: PlanetKit.PlanetKitVideoRotation
   @objc deinit
 }
 @objc @frozen public enum PlanetKitLogLevel : Swift.Int32 {
@@ -2502,10 +2413,10 @@ extension PlanetKit.PlanetKitLogLevel : Swift.CustomStringConvertible {
     get
   }
 }
-@objc public protocol PlanetKitLogObserver {
+@_documentation(visibility: internal) @objc public protocol PlanetKitLogObserver {
   @objc func kitLogDidWrite(_ level: PlanetKit.PlanetKitLogLevel, message: Swift.String)
 }
-@objc @_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers public class PlanetKitLog : ObjectiveC.NSObject {
+@objc @_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @_documentation(visibility: internal) public class PlanetKitLog : ObjectiveC.NSObject {
   @objc public static var shared: PlanetKit.PlanetKitLog
   @objc public func setErrorObservable(observer: (any PlanetKit.PlanetKitLogObserver)?)
   @objc public func resetAllObserver()
@@ -2693,6 +2604,70 @@ extension PlanetKit.PlanetKitPeerControl {
   @objc dynamic public func register(_ delegate: any PlanetKit.PlanetKitPeerControlDelegate, completion: @escaping (Swift.Bool) -> Swift.Void)
   @objc dynamic public func unregister(completion: @escaping (Swift.Bool) -> Swift.Void)
 }
+@objc @_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers public class PlanetKitCameraManager : ObjectiveC.NSObject {
+  @objc public static let shared: PlanetKit.PlanetKitCameraManager
+  @objc weak public var delegate: (any PlanetKit.PlanetKitCameraDelegate)? {
+    @objc get
+    @objc set
+  }
+  @objc deinit
+}
+extension PlanetKit.PlanetKitCameraManager {
+  @objc dynamic public func startPreview(delegate: any PlanetKit.PlanetKitVideoOutputDelegate)
+  @objc dynamic public func stopPreview(delegate: any PlanetKit.PlanetKitVideoOutputDelegate)
+  @objc dynamic public var previewModifier: (any PlanetKit.PlanetKitVideoModifierDelegate)? {
+    @objc get
+    @objc set
+  }
+}
+extension PlanetKit.PlanetKitCameraManager {
+  @objc dynamic public func setCustomCamera(_ customCamera: PlanetKit.PlanetKitCustomCamera)
+  @objc dynamic public func resetToDefaultCamera()
+}
+extension PlanetKit.PlanetKitCameraManager : PlanetKit.PlanetKitVideoOutputDelegate {
+  @objc dynamic public func videoOutput(_ videoBuffer: PlanetKit.PlanetKitVideoBuffer)
+}
+extension PlanetKit.PlanetKitCameraManager {
+  @objc dynamic public var currentDeviceInfo: PlanetKit.PlanetKitVideoCaptureDeviceInfo? {
+    @objc get
+    @objc set
+  }
+  @objc dynamic public var isStarted: Swift.Bool {
+    @objc get
+  }
+  @objc dynamic public var preset: PlanetKit.PlanetKitCameraPreset? {
+    @objc get
+  }
+  @objc dynamic public var position: PlanetKit.PlanetKitCameraPosition {
+    @objc get
+  }
+  @objc dynamic public var frameRate: PlanetKit.PlanetKitFrameRate? {
+    @objc get
+  }
+  @objc dynamic public func change(deviceInfo: PlanetKit.PlanetKitVideoCaptureDeviceInfo)
+  @objc dynamic public func switchPosition()
+  @objc dynamic public func addInterruptReceiver(_ interruptReceiver: any PlanetKit.PlanetKitCameraInterruptDelegate)
+  @objc dynamic public func removeInterruptReceiver(_ interruptReceiver: any PlanetKit.PlanetKitCameraInterruptDelegate)
+}
+extension PlanetKit.PlanetKitCameraManager {
+  @available(iOS 15.0, macOS 12.0, *)
+  @objc dynamic public var virtualBackground: PlanetKit.PlanetKitVirtualBackground? {
+    @objc get
+    @objc set
+  }
+}
+extension PlanetKit.PlanetKitCameraManager {
+  @objc dynamic public var deviceInfos: [PlanetKit.PlanetKitVideoCaptureDeviceInfo] {
+    @objc get
+  }
+  @objc public static var isCameraAvailable: Swift.Bool {
+    @objc get
+  }
+}
+extension PlanetKit.PlanetKitCameraManager {
+  @objc dynamic public func addDeviceChangeDelegate(_ delegate: any PlanetKit.PlanetKitCameraDeviceChangeDelegate)
+  @objc dynamic public func removeDeviceChangeDelegate(_ delegate: any PlanetKit.PlanetKitCameraDeviceChangeDelegate)
+}
 extension PlanetKit.PlanetKitCameraPosition : Swift.Equatable {}
 extension PlanetKit.PlanetKitCameraPosition : Swift.Hashable {}
 extension PlanetKit.PlanetKitCameraPosition : Swift.RawRepresentable {}
@@ -2749,10 +2724,6 @@ extension PlanetKit.PlanetKitScreenShareState : Swift.Equatable {}
 extension PlanetKit.PlanetKitScreenShareState : Swift.Hashable {}
 extension PlanetKit.PlanetKitScreenShareState : Swift.RawRepresentable {}
 extension PlanetKit.PlanetKitScreenShareState : Swift.Sendable {}
-extension PlanetKit.PlanetKitConferenceError : Swift.Equatable {}
-extension PlanetKit.PlanetKitConferenceError : Swift.Hashable {}
-extension PlanetKit.PlanetKitConferenceError : Swift.RawRepresentable {}
-extension PlanetKit.PlanetKitConferenceError : Swift.Sendable {}
 extension PlanetKit.PlanetKitConferenceExceptionType : Swift.Equatable {}
 extension PlanetKit.PlanetKitConferenceExceptionType : Swift.Hashable {}
 extension PlanetKit.PlanetKitConferenceExceptionType : Swift.RawRepresentable {}
@@ -2825,6 +2796,10 @@ extension PlanetKit.PlanetKitRecordOnCloudDeactivateReason : Swift.Equatable {}
 extension PlanetKit.PlanetKitRecordOnCloudDeactivateReason : Swift.Hashable {}
 extension PlanetKit.PlanetKitRecordOnCloudDeactivateReason : Swift.RawRepresentable {}
 extension PlanetKit.PlanetKitRecordOnCloudDeactivateReason : Swift.Sendable {}
+extension PlanetKit.PlanetKitInitialMyVideoState : Swift.Equatable {}
+extension PlanetKit.PlanetKitInitialMyVideoState : Swift.Hashable {}
+extension PlanetKit.PlanetKitInitialMyVideoState : Swift.RawRepresentable {}
+extension PlanetKit.PlanetKitInitialMyVideoState : Swift.Sendable {}
 extension PlanetKit.PlanetKitScreenShare.BroadcastError : Swift.Equatable {}
 extension PlanetKit.PlanetKitScreenShare.BroadcastError : Swift.Hashable {}
 extension PlanetKit.PlanetKitScreenShare.BroadcastError : Swift.RawRepresentable {}

@@ -17,6 +17,7 @@ import 'dart:convert';
 import 'dart:io' as ioPlatform;
 
 import 'package:flutter/services.dart';
+import 'package:planet_kit_flutter/src/public/planet_kit_types.dart';
 import 'package:planet_kit_flutter/src/public/statistics/planet_kit_statistics.dart';
 import '../../public/planet_kit_user_id.dart';
 import '../planet_kit_platform_interface.dart';
@@ -44,7 +45,6 @@ class ConferenceMethodChannel implements ConferenceInterface {
 
   @override
   Future<bool> isSpeakerOut(String id) async {
-    print("#flutter_method_channel isSpeakerOut with id $id");
     return await methodChannel.invokeMethod<bool>('conference_isSpeakerOut', id)
         as bool;
   }
@@ -154,10 +154,14 @@ class ConferenceMethodChannel implements ConferenceInterface {
   }
 
   @override
-  Future<bool> enableVideo(String id) async {
-    print("#flutter_method_channel enableVideo with id $id");
-    return await methodChannel.invokeMethod<bool>('conference_enableVideo', id)
-        as bool;
+  Future<bool> enableVideo(
+      String id, PlanetKitInitialMyVideoState initialMyVideoState) async {
+    print(
+        "#flutter_method_channel enableVideo with id $id $initialMyVideoState");
+    final param = EnableVideoParam(
+        conferenceId: id, initialMyVideoState: initialMyVideoState);
+    return await methodChannel.invokeMethod<bool>(
+        'conference_enableVideo', param.toJson()) as bool;
   }
 
   @override

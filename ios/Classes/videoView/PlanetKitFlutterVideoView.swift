@@ -28,7 +28,7 @@ class PlanetKitVideoViewFactory: NSObject, FlutterPlatformViewFactory {
         NSLog("#flutter \(#function) \(frame) \(viewId) \(args ?? "nil")")
         let view = PlanetKitFlutterVideoView(frame: frame, viewId: viewId, args: args, messenger: messenger)
         
-        PlanetKitFlutterVideoViews.shared.addView(id: String(viewId), view: view)
+        PlanetKitFlutterVideoViews.shared.register(id: String(viewId), view: view)
         return view
     }
     public func createArgsCodec() -> FlutterMessageCodec & NSObjectProtocol {
@@ -59,7 +59,6 @@ class PlanetKitFlutterVideoView: NSObject, FlutterPlatformView {
     
     deinit {
         NSLog("#flutter \(#function) video view deinit")
-        PlanetKitFlutterVideoViews.shared.removeView(id: id)
     }
 
     func view() -> UIView {

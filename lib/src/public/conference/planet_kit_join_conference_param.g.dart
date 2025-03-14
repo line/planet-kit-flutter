@@ -30,6 +30,8 @@ Map<String, dynamic> _$PlanetKitJoinConferenceParamToJson(
       'accessToken': instance.accessToken,
       'endTonePath': instance.endTonePath,
       'allowConferenceWithoutMic': instance.allowConferenceWithoutMic,
+      'allowConferenceWithoutMicPermission':
+          instance.allowConferenceWithoutMicPermission,
       'enableAudioDescription': instance.enableAudioDescription,
       'audioDescriptionUpdateIntervalMs':
           instance.audioDescriptionUpdateIntervalMs,
@@ -39,4 +41,6 @@ Map<String, dynamic> _$PlanetKitJoinConferenceParamToJson(
           const PlanetKitCallKitTypeConverter().toJson(instance.callKitType),
       'enableStatistics': instance.enableStatistics,
       'screenShareKey': instance.screenShareKey?.toJson(),
+      'initialMyVideoState': const PlanetKitInitialMyVideoStateConverter()
+          .toJson(instance.initialMyVideoState),
     };

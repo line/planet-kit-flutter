@@ -25,8 +25,10 @@ Map<String, dynamic> _$PlanetKitMakeCallParamToJson(
     <String, dynamic>{
       'myUserId': instance.myUserId,
       'myServiceId': instance.myServiceId,
+      'myCountryCode': instance.myCountryCode,
       'peerUserId': instance.peerUserId,
       'peerServiceId': instance.peerServiceId,
+      'peerCountryCode': instance.peerCountryCode,
       'accessToken': instance.accessToken,
       'useResponderPreparation': instance.useResponderPreparation,
       'callKitType':
@@ -35,6 +37,7 @@ Map<String, dynamic> _$PlanetKitMakeCallParamToJson(
       'ringbackTonePath': instance.ringbackTonePath,
       'endTonePath': instance.endTonePath,
       'allowCallWithoutMic': instance.allowCallWithoutMic,
+      'allowCallWithoutMicPermission': instance.allowCallWithoutMicPermission,
       'enableAudioDescription': instance.enableAudioDescription,
       'audioDescriptionUpdateIntervalMs':
           instance.audioDescriptionUpdateIntervalMs,
@@ -44,4 +47,6 @@ Map<String, dynamic> _$PlanetKitMakeCallParamToJson(
           .toJson(instance.responseOnEnableVideo),
       'enableStatistics': instance.enableStatistics,
       'screenShareKey': instance.screenShareKey?.toJson(),
+      'initialMyVideoState': const PlanetKitInitialMyVideoStateConverter()
+          .toJson(instance.initialMyVideoState),
     };

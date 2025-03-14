@@ -14,6 +14,8 @@
 
 import 'dart:async';
 
+import 'package:planet_kit_flutter/src/public/planet_kit_types.dart';
+
 import '../../internal/conference/planet_kit_platform_conference_event.dart';
 import '../../internal/conference/planet_kit_platform_conference_event_type.dart';
 import '../../internal/planet_kit_platform_interface.dart';
@@ -54,6 +56,7 @@ class PlanetKitConferenceEventHandler {
       PlanetKitConference conference,
       PlanetKitDisconnectReason reason,
       PlanetKitDisconnectSource source,
+      String? userCode,
       bool byRemote) onDisconnected;
 
   /// Called when the peer list in the conference is updated.
@@ -115,9 +118,9 @@ class PlanetKitConference {
   /// List of current peers in the conference.
   List<PlanetKitConferencePeer> peers = [];
 
-  final PlanetKitConferenceEventHandler? _eventHandler;
+  PlanetKitConferenceEventHandler? _eventHandler;
   StreamSubscription<ConferenceEvent>? _subscription;
-  Map<String, PlanetKitConferencePeer> _peerMap = {};
+  final Map<String, PlanetKitConferencePeer> _peerMap = {};
 
   void _addPeer(PlanetKitConferencePeer peer) {
     peers.add(peer);
@@ -215,8 +218,11 @@ class PlanetKitConference {
   }
 
   /// Enables video in conference.
-  Future<bool> enableVideo() async {
-    return await Platform.instance.conferenceInterface.enableVideo(id);
+  Future<bool> enableVideo(
+      {PlanetKitInitialMyVideoState initialMyVideoState =
+          PlanetKitInitialMyVideoState.resume}) async {
+    return await Platform.instance.conferenceInterface
+        .enableVideo(id, initialMyVideoState);
   }
 
   /// Disables video in conference.
@@ -316,8 +322,10 @@ class PlanetKitConference {
   void _handleDisconnectedEvent(ConferenceEvent conferenceEvent) {
     final event = conferenceEvent as DisconnectedEvent;
     _subscription?.cancel();
-    _eventHandler?.onDisconnected(
-        this, event.disconnectReason, event.disconnectSource, event.byRemote);
+    _eventHandler?.onDisconnected(this, event.disconnectReason,
+        event.disconnectSource, event.userCode, event.byRemote);
+    _eventHandler = null;
+    myMediaStatus.dispose();
   }
 
   void _handlePeersMicMuteEvent(ConferenceEvent conferenceEvent) {

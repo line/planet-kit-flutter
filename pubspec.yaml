@@ -1,6 +1,6 @@
 name: planet_kit_flutter
 description: "Flutter plugin for PlanetKit."
-version: 0.9.0
+version: 1.0.0
 homepage: https://docs.lineplanet.me/
 
 environment:
@@ -11,14 +11,14 @@ dependencies:
   flutter:
     sdk: flutter
   plugin_platform_interface: ^2.0.2
-  json_annotation: ^4.0.1 
+  json_annotation: ^4.9.0 
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
-  build_runner: ^2.0.5 
-  json_serializable: ^6.0.1 
+  build_runner: ^2.0.0
+  json_serializable: ^6.0.0 
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

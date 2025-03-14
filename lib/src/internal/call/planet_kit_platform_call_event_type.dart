@@ -46,6 +46,7 @@ enum CallEventType {
   detectedMyVideoNoSource, // 16
   peerDidStartScreenShare, // 17
   peerDidStopScreenShare, // 18
+  peerAudioDescriptionUpdate, // 19
   error; // default case
 
   static CallEventType fromInt(int value) {
@@ -88,6 +89,8 @@ enum CallEventType {
         return CallEventType.peerDidStartScreenShare;
       case 18:
         return CallEventType.peerDidStopScreenShare;
+      case 19:
+        return CallEventType.peerAudioDescriptionUpdate;
       default:
         return CallEventType.error;
     }

@@ -33,6 +33,7 @@ import 'conference/planet_kit_platform_conference_responses.dart';
 import 'planet_kit_platform_interface.dart';
 import 'planet_kit_platform_event_manager.dart';
 import 'my_media_status/planet_kit_platform_my_media_status_method_channel.dart';
+import 'video_view/planet_kit_platform_video_method_channel.dart';
 
 /// An implementation of [Platform] that uses method channels.
 class MethodChannelPlanetKit extends Platform {
@@ -45,6 +46,8 @@ class MethodChannelPlanetKit extends Platform {
   late final ConferenceMethodChannel _conferenceMethodChannel;
   late final PeerControlMethodChannel _peerControlMethodChannel;
   late final CameraInterface _cameraInterface;
+  late final VideoViewInterface _videoViewInterface;
+
   final EventManager _eventManager = EventManager();
 
   MethodChannelPlanetKit() {
@@ -60,6 +63,7 @@ class MethodChannelPlanetKit extends Platform {
     _peerControlMethodChannel =
         PeerControlMethodChannel(methodChannel: methodChannel);
     _cameraInterface = CameraMethodChannel(methodChannel: methodChannel);
+    _videoViewInterface = VideoViewMethodChannel(methodChannel: methodChannel);
   }
 
   @override
@@ -84,6 +88,9 @@ class MethodChannelPlanetKit extends Platform {
 
   @override
   CameraInterface get cameraInterface => _cameraInterface;
+
+  @override
+  VideoViewInterface get videoViewInterface => _videoViewInterface;
 
   @override
   Future<String?> getPlatformVersion() async {
@@ -158,6 +165,13 @@ class MethodChannelPlanetKit extends Platform {
   Future<bool> releaseInstance(String id) async {
     print("#flutter_method_channel releaseInstance $id");
     return await methodChannel.invokeMethod<bool>('releaseInstance', id)
+        as bool;
+  }
+
+  @override
+  Future<bool> setServerUrl(String serverUrl) async {
+    print("#flutter_method_channel setServerUrl $serverUrl");
+    return await methodChannel.invokeMethod<bool>('setServerUrl', serverUrl)
         as bool;
   }
 }

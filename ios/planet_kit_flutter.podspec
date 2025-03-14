@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'planet_kit_flutter'
-  s.version          = '0.6.0'
+  s.version          = '1.0.0'
   s.summary          = 'A new Flutter plugin project.'
   s.description      = <<-DESC
 A new Flutter plugin project.

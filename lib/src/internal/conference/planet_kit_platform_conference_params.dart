@@ -14,6 +14,7 @@
 
 import 'package:json_annotation/json_annotation.dart';
 
+import '../../public/planet_kit_types.dart';
 import '../../public/planet_kit_user_id.dart';
 part 'planet_kit_platform_conference_params.g.dart';
 
@@ -91,4 +92,16 @@ class RemoveMyVideoViewParam {
   final String viewId;
   RemoveMyVideoViewParam({required this.conferenceId, required this.viewId});
   Map<String, dynamic> toJson() => _$RemoveMyVideoViewParamToJson(this);
+}
+
+@JsonSerializable(explicitToJson: true, createFactory: false)
+class EnableVideoParam {
+  final String conferenceId;
+
+  @PlanetKitInitialMyVideoStateConverter()
+  final PlanetKitInitialMyVideoState initialMyVideoState;
+
+  EnableVideoParam(
+      {required this.conferenceId, required this.initialMyVideoState});
+  Map<String, dynamic> toJson() => _$EnableVideoParamToJson(this);
 }

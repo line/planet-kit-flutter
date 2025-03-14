@@ -68,10 +68,11 @@ class DisconnectedEvent extends ConferenceEvent {
   @PlanetKitDisconnectSourceConverter()
   final PlanetKitDisconnectSource disconnectSource;
 
+  final String? userCode;
   final bool byRemote;
 
   DisconnectedEvent(super.type, super.id, super.subType, this.disconnectReason,
-      this.disconnectSource, this.byRemote);
+      this.disconnectSource, this.userCode, this.byRemote);
 
   factory DisconnectedEvent.fromJson(Map<String, dynamic> json) =>
       _$DisconnectedEventFromJson(json);

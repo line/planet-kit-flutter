@@ -4,145 +4,53 @@
 <dict>
 	<key>files</key>
 	<dict>
-		<key>Headers/BCCUtils.h</key>
-		<data>
-		ofHnTz+JDr9l484FG8SnKniTLPA=
-		</data>
 		<key>Headers/PlanetKit-Swift.h</key>
 		<data>
-		HIz4uEY9gseMCUTHgI5FNhex67A=
-		</data>
-		<key>Headers/PlanetKit.h</key>
-		<data>
-		lNnu6HwIuwKsjP6QaOnao61g5O0=
-		</data>
-		<key>Headers/PlanetKitAudioMixer.h</key>
-		<data>
-		aLRAOzXZnPbseGp+3xqPBcoE3Yw=
-		</data>
-		<key>Headers/PlanetKitAudioPlayer.h</key>
-		<data>
-		Nd8iEBpto7UtMwERczbdbrOCKCk=
-		</data>
-		<key>Headers/PlanetKitAudioUnit.h</key>
-		<data>
-		2HCAUKatFzSWiKFLaQpI3fs0k5U=
-		</data>
-		<key>Headers/PlanetKitNative.h</key>
-		<data>
-		1vI59sGN6taUM8Fl7FayzGo5xuw=
-		</data>
-		<key>Headers/PlanetKitVideoFormatConverter.h</key>
-		<data>
-		oLi4g9kT5ozyFqjWWEpYiLwu3K8=
-		</data>
-		<key>Headers/planetkit_call.h</key>
-		<data>
-		lJrsKy2lesTLyECV7xQtUeU7xug=
-		</data>
-		<key>Headers/planetkit_call_start_message.h</key>
-		<data>
-		/3IjiF9x/zA1zZT6StZi+R09v9o=
-		</data>
-		<key>Headers/planetkit_cc_param.h</key>
-		<data>
-		bATYYXxfdUFO7rkAyA0tCGfrOmQ=
-		</data>
-		<key>Headers/planetkit_clog.h</key>
-		<data>
-		aumbKDVZJTLbWaREL+262gr6mxk=
-		</data>
-		<key>Headers/planetkit_common.h</key>
-		<data>
-		X+6vQXDuHnl+9UPVHM7DJ6cF6/Q=
-		</data>
-		<key>Headers/planetkit_common_event.h</key>
-		<data>
-		ioi+Z8d/FA348EqTASk3rYZQ7FY=
-		</data>
-		<key>Headers/planetkit_common_type.h</key>
-		<data>
-		2JMrfY25K5SR9as0FMQnhwXl+lQ=
-		</data>
-		<key>Headers/planetkit_conference.h</key>
-		<data>
-		ACsznPPAT0JSf4yM2dVhVxrL8rY=
-		</data>
-		<key>Headers/planetkit_data_sess.h</key>
-		<data>
-		TzUzzFeHjMU72oQ7JxInH5PkQUY=
-		</data>
-		<key>Headers/planetkit_frame.h</key>
-		<data>
-		9LlJIWHOUop5hpVsdzEZjZVhVg4=
-		</data>
-		<key>Headers/planetkit_intercepted_audio.h</key>
-		<data>
-		eAXSf2xUAdMrbs7WdH/ibeWWnpY=
-		</data>
-		<key>Headers/planetkit_my_status.h</key>
-		<data>
-		u+LuA4qUCjQZ2QuiNKf4RPPf72c=
-		</data>
-		<key>Headers/planetkit_peer.h</key>
-		<data>
-		m4dDJJKsUB2G8LCXEwCMEoVt/IA=
-		</data>
-		<key>Headers/planetkit_peer_control.h</key>
-		<data>
-		LUQGfuC2hs4KBkC5eFQ3sn30d6I=
-		</data>
-		<key>Headers/planetkit_send_voice_processor.h</key>
-		<data>
-		0eXKNbr4ctYczqLS/cjYroDzJ9g=
-		</data>
-		<key>Headers/planetkit_subgrp.h</key>
-		<data>
-		RM50P3B6T7EzHUmn696gy4xHCkU=
+		U7cHLc0pAnfsyNL9Z6dXQdM//y0=
 		</data>
 		<key>Info.plist</key>
 		<data>
-		tgML8YciLY+RkSykxdQr6eQBhRk=
+		02D5bEU6aizCHLV1mJWRCp3NNHg=
 		</data>
 		<key>Modules/PlanetKit.swiftmodule/arm64-apple-ios-simulator.abi.json</key>
 		<data>
-		WF24FmROSNFcNWxapZrnCf5Od0Y=
+		icD358ihMs/+VRJAVVnUJk0yZdk=
 		</data>
 		<key>Modules/PlanetKit.swiftmodule/arm64-apple-ios-simulator.private.swiftinterface</key>
 		<data>
-		iSReGNjWqxEjO885GxVvpucKMO4=
+		7mG5bJ4FDCkL/4MAA09PVxOMLF0=
 		</data>
 		<key>Modules/PlanetKit.swiftmodule/arm64-apple-ios-simulator.swiftdoc</key>
 		<data>
-		oIfXXSW5XZLCzHq9xMsUqAzd2VI=
+		7R45mujcGODSmsAdqd5mvA5GxMg=
 		</data>
 		<key>Modules/PlanetKit.swiftmodule/arm64-apple-ios-simulator.swiftinterface</key>
 		<data>
-		iSReGNjWqxEjO885GxVvpucKMO4=
+		7mG5bJ4FDCkL/4MAA09PVxOMLF0=
 		</data>
 		<key>Modules/PlanetKit.swiftmodule/arm64-apple-ios-simulator.swiftmodule</key>
 		<data>
-		vVwuIOfQqyUf1fTbGf7lJ9AnOW4=
+		UgQ5KhP5muiZfm3SCZrEg2JvmVg=
 		</data>
 		<key>Modules/PlanetKit.swiftmodule/x86_64-apple-ios-simulator.abi.json</key>
 		<data>
-		WF24FmROSNFcNWxapZrnCf5Od0Y=
+		icD358ihMs/+VRJAVVnUJk0yZdk=
 		</data>
 		<key>Modules/PlanetKit.swiftmodule/x86_64-apple-ios-simulator.private.swiftinterface</key>
 		<data>
-		eWNDdL9fQjOngYCqPcG6LyWdUFk=
+		p9bA+DGkr4M9yPVqcvy/TMcAHE8=
 		</data>
 		<key>Modules/PlanetKit.swiftmodule/x86_64-apple-ios-simulator.swiftdoc</key>
 		<data>
-		3evAiegjwxXM6VyJx6h10JeAA9U=
+		dVUxZU3LnOFu/s/DKU4so2/3otA=
 		</data>
 		<key>Modules/PlanetKit.swiftmodule/x86_64-apple-ios-simulator.swiftinterface</key>
 		<data>
-		eWNDdL9fQjOngYCqPcG6LyWdUFk=
+		p9bA+DGkr4M9yPVqcvy/TMcAHE8=
 		</data>
 		<key>Modules/PlanetKit.swiftmodule/x86_64-apple-ios-simulator.swiftmodule</key>
 		<data>
-		Zz1esmPL8qrmUDCKApLnbiUgpVk=
+		sPhkMblixOoMT4l65aLvJwEBHbs=
 		</data>
 		<key>Modules/module.modulemap</key>
 		<data>
@@ -152,6 +60,98 @@
 		<data>
 		C3USSI4g6LNrwJtZKySQzQUAkRY=
 		</data>
+		<key>PrivateHeaders/BCCUtils.h</key>
+		<data>
+		ofHnTz+JDr9l484FG8SnKniTLPA=
+		</data>
+		<key>PrivateHeaders/PlanetKit.h</key>
+		<data>
+		lNnu6HwIuwKsjP6QaOnao61g5O0=
+		</data>
+		<key>PrivateHeaders/PlanetKitAudioMixer.h</key>
+		<data>
+		vJJqvFGRvkfeLpF7v9p2SW2+AuQ=
+		</data>
+		<key>PrivateHeaders/PlanetKitAudioPlayer.h</key>
+		<data>
+		Nd8iEBpto7UtMwERczbdbrOCKCk=
+		</data>
+		<key>PrivateHeaders/PlanetKitAudioUnit.h</key>
+		<data>
+		2HCAUKatFzSWiKFLaQpI3fs0k5U=
+		</data>
+		<key>PrivateHeaders/PlanetKitNative.h</key>
+		<data>
+		wwF/k0mWHufWziQrN7qjUrVs9ew=
+		</data>
+		<key>PrivateHeaders/PlanetKitVideoFormatConverter.h</key>
+		<data>
+		oLi4g9kT5ozyFqjWWEpYiLwu3K8=
+		</data>
+		<key>PrivateHeaders/planetkit_call.h</key>
+		<data>
+		y0Hvha7sSC/hWDAOvb0z1SvWlqI=
+		</data>
+		<key>PrivateHeaders/planetkit_call_start_message.h</key>
+		<data>
+		/3IjiF9x/zA1zZT6StZi+R09v9o=
+		</data>
+		<key>PrivateHeaders/planetkit_cc_param.h</key>
+		<data>
+		bATYYXxfdUFO7rkAyA0tCGfrOmQ=
+		</data>
+		<key>PrivateHeaders/planetkit_clog.h</key>
+		<data>
+		aumbKDVZJTLbWaREL+262gr6mxk=
+		</data>
+		<key>PrivateHeaders/planetkit_common.h</key>
+		<data>
+		wBhHLKk1szi2/Yh7DuvXeRjggyQ=
+		</data>
+		<key>PrivateHeaders/planetkit_common_event.h</key>
+		<data>
+		ioi+Z8d/FA348EqTASk3rYZQ7FY=
+		</data>
+		<key>PrivateHeaders/planetkit_common_type.h</key>
+		<data>
+		9f2ni+FL2SvDQUtzOPThF8gCPYA=
+		</data>
+		<key>PrivateHeaders/planetkit_conference.h</key>
+		<data>
+		vCa1S85kqrJjaX6Vv2OQyx1anMQ=
+		</data>
+		<key>PrivateHeaders/planetkit_data_sess.h</key>
+		<data>
+		TzUzzFeHjMU72oQ7JxInH5PkQUY=
+		</data>
+		<key>PrivateHeaders/planetkit_frame.h</key>
+		<data>
+		9LlJIWHOUop5hpVsdzEZjZVhVg4=
+		</data>
+		<key>PrivateHeaders/planetkit_hooked_audio.h</key>
+		<data>
+		xtz7ozFPrR+om42Qfmd4QvDOZGM=
+		</data>
+		<key>PrivateHeaders/planetkit_my_status.h</key>
+		<data>
+		u+LuA4qUCjQZ2QuiNKf4RPPf72c=
+		</data>
+		<key>PrivateHeaders/planetkit_peer.h</key>
+		<data>
+		1B3TKsAxV2KkZDh+oucPD5XYAzs=
+		</data>
+		<key>PrivateHeaders/planetkit_peer_control.h</key>
+		<data>
+		LUQGfuC2hs4KBkC5eFQ3sn30d6I=
+		</data>
+		<key>PrivateHeaders/planetkit_send_voice_processor.h</key>
+		<data>
+		0eXKNbr4ctYczqLS/cjYroDzJ9g=
+		</data>
+		<key>PrivateHeaders/planetkit_subgrp.h</key>
+		<data>
+		RM50P3B6T7EzHUmn696gy4xHCkU=
+		</data>
 		<key>default.metallib</key>
 		<data>
 		LhFtk4lqmxp6uMXFxdYSrdwYwug=
@@ -159,242 +159,81 @@
 	</dict>
 	<key>files2</key>
 	<dict>
-		<key>Headers/BCCUtils.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			jbHI0HKo4GlbEgf7Gug0cXE/lBKyx88uWBxfcKHd0ZQ=
-			</data>
-		</dict>
 		<key>Headers/PlanetKit-Swift.h</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			9e4/SlyFFkvgnw6BnsS6uNdHYuP2uUhYdmFSjo8OO04=
-			</data>
-		</dict>
-		<key>Headers/PlanetKit.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			bc0hCQxhftGrBccSYKFB61iEXHKWGSXU+ApDOqk76Qs=
-			</data>
-		</dict>
-		<key>Headers/PlanetKitAudioMixer.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			KEtokilFZ2A5tBVUbnEVCbmSOlZU9yei7tVZxC48kgg=
-			</data>
-		</dict>
-		<key>Headers/PlanetKitAudioPlayer.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			rPzYHHtQxn+bP0NIBzD1vSmZo1g57JdoFyivgUMWFgM=
-			</data>
-		</dict>
-		<key>Headers/PlanetKitAudioUnit.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			VBphsJnCaBQ9ub15bn6OPnJ78zT0mqHpmegEitFL0T4=
-			</data>
-		</dict>
-		<key>Headers/PlanetKitNative.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			Owku0Phoil3eFb6AQug6F8fOX63AcZsHD1OLZL+hXUc=
-			</data>
-		</dict>
-		<key>Headers/PlanetKitVideoFormatConverter.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			/wphDkpR8AvrNdOpYdZ140QvQ/pkFc/Mnta76101pHo=
-			</data>
-		</dict>
-		<key>Headers/planetkit_call.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			dnrwjyr6219EPnvOYCZBwK3s72WKfCLk7u9xaUYmIn4=
-			</data>
-		</dict>
-		<key>Headers/planetkit_call_start_message.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			G60LG7xuJ8VAWzZyEtXT84YR1d/KuxEpw/xxfVsTuMQ=
-			</data>
-		</dict>
-		<key>Headers/planetkit_cc_param.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			4ckCrYWDmGSRMspnYE6Pcmk9Febi+No/QllZn9MiCgM=
-			</data>
-		</dict>
-		<key>Headers/planetkit_clog.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			bUyrP5eF2c9sTZ4kyt2t42a+70zC5C/jQK80Mh7H/s0=
-			</data>
-		</dict>
-		<key>Headers/planetkit_common.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			ybtS0MRiKJ77kdn+BdXHUSQnUwderxcj1fJAjsweGVg=
-			</data>
-		</dict>
-		<key>Headers/planetkit_common_event.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			3hQhK/lwNmiVMqp7PetV6TfcWJYOwaIGalZJxPw8uz4=
-			</data>
-		</dict>
-		<key>Headers/planetkit_common_type.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			2VqPSQ/F88erEurFiqnwzm0YHUnDX6AFcV0jBuHT1rk=
-			</data>
-		</dict>
-		<key>Headers/planetkit_conference.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			cBMysnCnFmmIcO67mZmDL6gF9opC/BXIrvncD5vzHrw=
-			</data>
-		</dict>
-		<key>Headers/planetkit_data_sess.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			suXu+nbWyKgkHdzpviUwagalSzuwtm84WEdeZrUxTrM=
-			</data>
-		</dict>
-		<key>Headers/planetkit_frame.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			ZiGwqCZRX3IB5tsshGuZeJekAUO91DLtZf06sE6v/7U=
-			</data>
-		</dict>
-		<key>Headers/planetkit_intercepted_audio.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			Muf/N4jiNgSVFdrFcg9eeqaITvZsVcYA15AJv3W/F6w=
-			</data>
-		</dict>
-		<key>Headers/planetkit_my_status.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			81pOhmSLZrpMnBGng7cAJFS80+6UVH0HNi/M9pPj+do=
-			</data>
-		</dict>
-		<key>Headers/planetkit_peer.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			LjRvBADOzQ11cgsU2hHKXGEMOqOAGjCAkFoGNMugEUQ=
-			</data>
-		</dict>
-		<key>Headers/planetkit_peer_control.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			z+UUJjS+VtHyPs92E/x/aK9YCji++ZASVsMez0OdudU=
-			</data>
-		</dict>
-		<key>Headers/planetkit_send_voice_processor.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			lFip3cAeyqhn+lkU1YF2BQRWc53tBriRFc8GgapaZzw=
-			</data>
-		</dict>
-		<key>Headers/planetkit_subgrp.h</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			4YinbX/77/WblU85ufqn6YGeBekRN4qSogKhWtii2N4=
+			XmswQZo7YXrEFPRgxD/4gBQv80/Oea9eoVhaZp5PJbs=
 			</data>
 		</dict>
 		<key>Modules/PlanetKit.swiftmodule/arm64-apple-ios-simulator.abi.json</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			e1yMY4KDFbm0JNC+VTyP9i8CE33zPExrZi1sHiSZZ+Y=
+			r62ZqF8BjKF7ptv6o4joAk2i2hWXl6LtSJvDPsEk/Dc=
 			</data>
 		</dict>
 		<key>Modules/PlanetKit.swiftmodule/arm64-apple-ios-simulator.private.swiftinterface</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			0n0oddxQ9/4NSaTZ1a1Ecizi6l5asLRe+K6tLFGq6qc=
+			m9B/HBb+8JAPbvMZPEwohq/827WsK/YDzPhjsJ+mCAE=
 			</data>
 		</dict>
 		<key>Modules/PlanetKit.swiftmodule/arm64-apple-ios-simulator.swiftdoc</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			6f11D6OhQWrSisnrMsmsDNkc7Dj/OvJDmBE259U9m7I=
+			+NzlJ5JSga32rQllAeqos7+8lgUvWj8lYpvUSG2u9SI=
 			</data>
 		</dict>
 		<key>Modules/PlanetKit.swiftmodule/arm64-apple-ios-simulator.swiftinterface</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			0n0oddxQ9/4NSaTZ1a1Ecizi6l5asLRe+K6tLFGq6qc=
+			m9B/HBb+8JAPbvMZPEwohq/827WsK/YDzPhjsJ+mCAE=
 			</data>
 		</dict>
 		<key>Modules/PlanetKit.swiftmodule/arm64-apple-ios-simulator.swiftmodule</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			sxm1NeOPd4fjaNmEx8M/mobySaJYhsjn9ZpuESvGCKk=
+			Yy9C/FN3jOc2tdyv2sqYKYcOiypLdpfFPDpiURfqGaE=
 			</data>
 		</dict>
 		<key>Modules/PlanetKit.swiftmodule/x86_64-apple-ios-simulator.abi.json</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			e1yMY4KDFbm0JNC+VTyP9i8CE33zPExrZi1sHiSZZ+Y=
+			r62ZqF8BjKF7ptv6o4joAk2i2hWXl6LtSJvDPsEk/Dc=
 			</data>
 		</dict>
 		<key>Modules/PlanetKit.swiftmodule/x86_64-apple-ios-simulator.private.swiftinterface</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			7/mCxBzrZLXOIE+v1FyVKWe/ivWp5XjfY21qhqasFpc=
+			qGd6ua8HElz31AfurBRMqAhf21eMneocbVKQVPtgH+Y=
 			</data>
 		</dict>
 		<key>Modules/PlanetKit.swiftmodule/x86_64-apple-ios-simulator.swiftdoc</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			RTOxWnD+KNST36ANB63wSlu59gJYQ+/Vnops8sWESw4=
+			i7bto+5EvWDYErSZC3cBELN4OBJ+IMaySryUsgYO+ZQ=
 			</data>
 		</dict>
 		<key>Modules/PlanetKit.swiftmodule/x86_64-apple-ios-simulator.swiftinterface</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			7/mCxBzrZLXOIE+v1FyVKWe/ivWp5XjfY21qhqasFpc=
+			qGd6ua8HElz31AfurBRMqAhf21eMneocbVKQVPtgH+Y=
 			</data>
 		</dict>
 		<key>Modules/PlanetKit.swiftmodule/x86_64-apple-ios-simulator.swiftmodule</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			jspzQ6opOKbq6z9Ei9+7VBMfVciuNejrGEFAvRixhU4=
+			mTILxZhy3mijZ6Tbjk1mA6viIc+q6anrKEiNq9uDaWs=
 			</data>
 		</dict>
 		<key>Modules/module.modulemap</key>
@@ -409,6 +248,167 @@
 			<key>hash2</key>
 			<data>
 			VjeCr0NortTuQoWFdo2SRzpp/pgyFL50PoyD2IdAcLQ=
+			</data>
+		</dict>
+		<key>PrivateHeaders/BCCUtils.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			jbHI0HKo4GlbEgf7Gug0cXE/lBKyx88uWBxfcKHd0ZQ=
+			</data>
+		</dict>
+		<key>PrivateHeaders/PlanetKit.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			bc0hCQxhftGrBccSYKFB61iEXHKWGSXU+ApDOqk76Qs=
+			</data>
+		</dict>
+		<key>PrivateHeaders/PlanetKitAudioMixer.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			FoVEIv+t9H8Li3iLdX13L5B2Qp8cDwX+ffHK+2erPXw=
+			</data>
+		</dict>
+		<key>PrivateHeaders/PlanetKitAudioPlayer.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			rPzYHHtQxn+bP0NIBzD1vSmZo1g57JdoFyivgUMWFgM=
+			</data>
+		</dict>
+		<key>PrivateHeaders/PlanetKitAudioUnit.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			VBphsJnCaBQ9ub15bn6OPnJ78zT0mqHpmegEitFL0T4=
+			</data>
+		</dict>
+		<key>PrivateHeaders/PlanetKitNative.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			yiOAiINLCI2kBQQ4x3Q8IMLUhgER5SfibRV9SLwOzaY=
+			</data>
+		</dict>
+		<key>PrivateHeaders/PlanetKitVideoFormatConverter.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			/wphDkpR8AvrNdOpYdZ140QvQ/pkFc/Mnta76101pHo=
+			</data>
+		</dict>
+		<key>PrivateHeaders/planetkit_call.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			/KL34owsfcxHENbl7APQaEz2PSDdkHATu8xfQxdsMBk=
+			</data>
+		</dict>
+		<key>PrivateHeaders/planetkit_call_start_message.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			G60LG7xuJ8VAWzZyEtXT84YR1d/KuxEpw/xxfVsTuMQ=
+			</data>
+		</dict>
+		<key>PrivateHeaders/planetkit_cc_param.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			4ckCrYWDmGSRMspnYE6Pcmk9Febi+No/QllZn9MiCgM=
+			</data>
+		</dict>
+		<key>PrivateHeaders/planetkit_clog.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			bUyrP5eF2c9sTZ4kyt2t42a+70zC5C/jQK80Mh7H/s0=
+			</data>
+		</dict>
+		<key>PrivateHeaders/planetkit_common.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			+YJGihL0Bthjv361YjSHpJTMQAj2d5UWI4nM0JKJSGE=
+			</data>
+		</dict>
+		<key>PrivateHeaders/planetkit_common_event.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			3hQhK/lwNmiVMqp7PetV6TfcWJYOwaIGalZJxPw8uz4=
+			</data>
+		</dict>
+		<key>PrivateHeaders/planetkit_common_type.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			iylmJM1rZgdACft9adOC+/Gp6unP0fMr0ryOzFEikjg=
+			</data>
+		</dict>
+		<key>PrivateHeaders/planetkit_conference.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			kKQ3PvpxUHPyVH/0KzNsuJD+LASBAFYjkac8BxvMLqU=
+			</data>
+		</dict>
+		<key>PrivateHeaders/planetkit_data_sess.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			suXu+nbWyKgkHdzpviUwagalSzuwtm84WEdeZrUxTrM=
+			</data>
+		</dict>
+		<key>PrivateHeaders/planetkit_frame.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			ZiGwqCZRX3IB5tsshGuZeJekAUO91DLtZf06sE6v/7U=
+			</data>
+		</dict>
+		<key>PrivateHeaders/planetkit_hooked_audio.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			VAjqG0Ov6hgN9+KcjxJFJaLqldU99jzPYcB8Jv7626c=
+			</data>
+		</dict>
+		<key>PrivateHeaders/planetkit_my_status.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			81pOhmSLZrpMnBGng7cAJFS80+6UVH0HNi/M9pPj+do=
+			</data>
+		</dict>
+		<key>PrivateHeaders/planetkit_peer.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			ysBLMGFPxZC2SlNpFJdC9hZ/bWDm6GLWXiqm4+YGO4Y=
+			</data>
+		</dict>
+		<key>PrivateHeaders/planetkit_peer_control.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			z+UUJjS+VtHyPs92E/x/aK9YCji++ZASVsMez0OdudU=
+			</data>
+		</dict>
+		<key>PrivateHeaders/planetkit_send_voice_processor.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			lFip3cAeyqhn+lkU1YF2BQRWc53tBriRFc8GgapaZzw=
+			</data>
+		</dict>
+		<key>PrivateHeaders/planetkit_subgrp.h</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			4YinbX/77/WblU85ufqn6YGeBekRN4qSogKhWtii2N4=
 			</data>
 		</dict>
 		<key>default.metallib</key>

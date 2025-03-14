@@ -111,4 +111,9 @@ class PlanetKitMyMediaStatus {
           ?.call(this, updateScreenShareStateEvent.state);
     }
   }
+
+  void dispose() {
+    _handler = null;
+    _subscription?.cancel();
+  }
 }

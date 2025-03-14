@@ -272,3 +272,45 @@ class PlanetKitResponseOnEnableVideoConverter
     }
   }
 }
+
+/// Represents the initial state of the user's video.
+enum PlanetKitInitialMyVideoState {
+  /// Resume the video.
+  resume,
+
+  /// Pause the video.
+  pause
+}
+
+/// A converter for [PlanetKitInitialMyVideoState] to and from JSON.
+class PlanetKitInitialMyVideoStateConverter
+    implements JsonConverter<PlanetKitInitialMyVideoState, int> {
+  const PlanetKitInitialMyVideoStateConverter();
+
+  /// Converts an integer from JSON to a [PlanetKitInitialMyVideoState] enum.
+  ///
+  /// Throws an [ArgumentError] if the integer does not match any known state.
+  @override
+  PlanetKitInitialMyVideoState fromJson(int json) {
+    switch (json) {
+      case 0:
+        return PlanetKitInitialMyVideoState.resume;
+      case 1:
+        return PlanetKitInitialMyVideoState.pause;
+      default:
+        throw ArgumentError(
+            'Unknown PlanetKitInitialMyVideoState value: $json');
+    }
+  }
+
+  /// Converts a [PlanetKitInitialMyVideoState] enum to an integer for JSON.
+  @override
+  int toJson(PlanetKitInitialMyVideoState object) {
+    switch (object) {
+      case PlanetKitInitialMyVideoState.resume:
+        return 0;
+      case PlanetKitInitialMyVideoState.pause:
+        return 1;
+    }
+  }
+}
