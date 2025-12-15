@@ -132,6 +132,7 @@ enum CallEventType: Int, Encodable {
     case peerDidStopScreenShare = 18
     
     case peerAudioDescriptionUpdate = 19
+    case adoptBackgroundCall = 100
 }
 
 protocol CallEvent: Event {
@@ -417,6 +418,18 @@ struct PeerAudioDescriptionUpdateEvent: CallEvent {
         
         self.id = id
         self.averageVolumeLevel = averageVolumeLevel
+    }
+}
+
+struct AdoptBackgroundCallEvent: CallEvent {
+    let type: EventType
+    let id: String
+    let subType: CallEventType
+    init(id: String) {
+        type = .call
+        subType = .adoptBackgroundCall
+        
+        self.id = id
     }
 }
 

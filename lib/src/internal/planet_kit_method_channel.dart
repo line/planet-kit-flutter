@@ -14,6 +14,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:isolate';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:planet_kit_flutter/src/internal/camera/planet_kit_platform_camera_method_channel.dart';
@@ -32,6 +33,7 @@ import 'call/planet_kit_platform_call_method_channel.dart';
 import 'conference/planet_kit_platform_conference_responses.dart';
 import 'planet_kit_platform_interface.dart';
 import 'planet_kit_platform_event_manager.dart';
+import 'planet_kit_platform_background_event_manager.dart';
 import 'my_media_status/planet_kit_platform_my_media_status_method_channel.dart';
 import 'video_view/planet_kit_platform_video_method_channel.dart';
 
@@ -48,11 +50,14 @@ class MethodChannelPlanetKit extends Platform {
   late final CameraInterface _cameraInterface;
   late final VideoViewInterface _videoViewInterface;
 
-  final EventManager _eventManager = EventManager();
+  late final EventManager _eventManager = EventManager();
+  late final BackgroundEventManager _backgroundEventManager =
+      BackgroundEventManager();
 
   MethodChannelPlanetKit() {
-    print("#flutter_method_channel Constructor");
-    _eventManager.initializeEventChannel();
+    // Log which isolate this is being called on
+    print(
+        "#flutter_method_channel Constructor running on isolate: ${Isolate.current.debugName ?? Isolate.current.hashCode}");
     _callMethodChannel = CallMethodChannel(methodChannel: methodChannel);
     _myMediaStatusMethodChannel =
         MyMediaStatusMethodChannel(methodChannel: methodChannel);
@@ -68,6 +73,10 @@ class MethodChannelPlanetKit extends Platform {
 
   @override
   EventManagerInterface get eventManager => _eventManager;
+
+  @override
+  BackgroundEventManagerInterface get backgroundEventManager =>
+      _backgroundEventManager;
 
   @override
   CallInterface get callInterface => _callMethodChannel;
@@ -127,6 +136,25 @@ class MethodChannelPlanetKit extends Platform {
     final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
     final response = VerifyCallResponse.fromJson(jsonMap);
     return response;
+  }
+
+  @override
+  Future<VerifyCallResponse> verifyBackgroundCall(
+      PlanetKitVerifyCallParam param) async {
+    print(
+        "#flutter_method_channel verifyBackgroundCall with ${param.toJson()}");
+    final jsonString = await methodChannel.invokeMethod<String>(
+        'verifyBackgroundCall', param.toJson()) as String;
+    final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
+    final response = VerifyCallResponse.fromJson(jsonMap);
+    return response;
+  }
+
+  @override
+  Future<bool> adoptBackgroundCall(String backgroundCallId) async {
+    print("#flutter_method_channel adoptBackgroundCall $backgroundCallId");
+    return await methodChannel.invokeMethod<bool>(
+        'adoptBackgroundCall', backgroundCallId) as bool;
   }
 
   @override

@@ -24,6 +24,7 @@ import '../public/conference/planet_kit_conference_peer.dart';
 import '../public/planet_kit_user_id.dart';
 import '../public/video/planet_kit_video_resolution.dart';
 import 'call/planet_kit_platform_call_event.dart';
+import 'call/planet_kit_platform_background_call_event.dart';
 import 'call/planet_kit_platform_call_reponses.dart';
 import 'camera/planet_kit_platform_camera_event.dart';
 import 'conference/planet_kit_platform_conference_event.dart';
@@ -43,6 +44,11 @@ import '../public/call/planet_kit_verify_call_param.dart';
 
 abstract class HookedAudioHandler {
   void onHookedAudio(String callId, Map<String, dynamic> audioData);
+}
+
+abstract class BackgroundEventManagerInterface {
+  Stream<BackgroundCallEvent> get onCallEvent;
+  void dispose();
 }
 
 abstract class EventManagerInterface {
@@ -179,6 +185,9 @@ abstract class Platform extends PlatformInterface {
 
   EventManagerInterface get eventManager => _instance.eventManager;
 
+  BackgroundEventManagerInterface get backgroundEventManager =>
+      _instance.backgroundEventManager;
+
   CallInterface get callInterface =>
       throw UnimplementedError('callInterface not available');
 
@@ -214,6 +223,18 @@ abstract class Platform extends PlatformInterface {
 
   Future<VerifyCallResponse> verifyCall(PlanetKitVerifyCallParam param) {
     throw UnimplementedError('verifyCall() has not been implemented.');
+  }
+
+  /// Verifies an incoming call in a background context. Returns callId and failReason.
+  Future<VerifyCallResponse> verifyBackgroundCall(
+      PlanetKitVerifyCallParam param) {
+    throw UnimplementedError(
+        'verifyBackgroundCall() has not been implemented.');
+  }
+
+  /// Moves a background-verified call into active native instances by [backgroundCallId].
+  Future<bool> adoptBackgroundCall(String backgroundCallId) {
+    throw UnimplementedError('adoptBackgroundCall() has not been implemented.');
   }
 
   Future<JoinConferenceResponse> joinConference(

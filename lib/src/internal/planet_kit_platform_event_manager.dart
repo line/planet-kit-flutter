@@ -25,6 +25,8 @@ import 'planet_kit_platform_event_types.dart';
 import 'planet_kit_platform_event.dart';
 import 'planet_kit_platform_interface.dart';
 
+// BackgroundEventManager moved to `planet_kit_platform_background_event_manager.dart`
+
 class EventManager implements EventManagerInterface {
   final EventChannel _eventChannel = const EventChannel('planetkit_event');
   final EventChannel _interceptedAudioStream =
@@ -32,8 +34,8 @@ class EventManager implements EventManagerInterface {
 
   final Map<String, HookedAudioHandler> _interceptedAudioHandlers = {};
 
-  void initializeEventChannel() {
-    print("#flutter_method_channel setEventChannel");
+  EventManager() {
+    print("#flutter_method_channel event manager constructor");
     _eventChannel.receiveBroadcastStream().listen(_onEvent, onError: _onError);
     _interceptedAudioStream
         .receiveBroadcastStream()
@@ -100,6 +102,7 @@ class EventManager implements EventManagerInterface {
     _myMediaStatusEventController.close();
     _conferenceEventController.close();
     _peerControlEventController.close();
+    _cameraEventController.close();
   }
 
   @override
