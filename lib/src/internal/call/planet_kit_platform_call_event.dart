@@ -51,6 +51,8 @@ class CallEventFactory {
       return PeerDidStopScreenShareEvent.fromJson(data);
     } else if (type == CallEventType.peerAudioDescriptionUpdate) {
       return PeerAudioDescriptionUpdateEvent.fromJson(data);
+    } else if (type == CallEventType.adoptBackgroundCall) {
+      return AdoptBackgroundCallEvent.fromJson(data);
     } else {
       return event;
     }
@@ -193,4 +195,12 @@ class PeerAudioDescriptionUpdateEvent extends CallEvent {
 
   factory PeerAudioDescriptionUpdateEvent.fromJson(Map<String, dynamic> json) =>
       _$PeerAudioDescriptionUpdateEventFromJson(json);
+}
+
+@JsonSerializable(createToJson: false)
+class AdoptBackgroundCallEvent extends CallEvent {
+  AdoptBackgroundCallEvent(super.type, super.id, super.subType);
+
+  factory AdoptBackgroundCallEvent.fromJson(Map<String, dynamic> json) =>
+      _$AdoptBackgroundCallEventFromJson(json);
 }

@@ -13,6 +13,10 @@
 // under the License.
 
 import '../internal/planet_kit_platform_interface.dart';
+import 'call/planet_kit_background_call.dart';
+import 'call/planet_kit_verify_background_call_result.dart';
+import '../internal/call/planet_kit_background_call_impl.dart'
+    as internal_impl;
 import 'my_media_status/planet_kit_my_media_status.dart';
 import 'planet_kit_start_fail_reason.dart';
 import 'planet_kit_init_param.dart';
@@ -86,6 +90,69 @@ class PlanetKitManager {
 
     final result = PlanetKitVerifyCallResult(call: call, reason: failReason);
     return result;
+  }
+
+  /// Verifies a call in a background isolate.
+  ///
+  /// Use this when you need to verify and monitor an incoming call outside the
+  /// UI isolate (for example, in a background service or headless isolate).
+  /// If successful, returns a [PlanetKitVerifyBackgroundCallResult] whose
+  /// [PlanetKitVerifyBackgroundCallResult.call] contains a
+  /// [PlanetKitBackgroundCall] handle that receives background events via the
+  /// provided [eventHandler].
+  ///
+  /// To continue the call in the foreground, adopt it with
+  /// [adoptBackgroundCall] by passing the `backgroundCallId` obtained from the
+  /// returned [PlanetKitBackgroundCall].
+  ///
+  /// ```dart
+  /// final result = await PlanetKitManager.instance.verifyBackgroundCall(
+  ///   param,
+  ///   PlanetKitBackgroundCallEventHandler(
+  ///     onDisconnected: (bgCall, reason, source, userCode, byRemote) {
+  ///       // Handle background disconnection
+  ///     },
+  ///   ),
+  /// );
+  /// if (result.reason == PlanetKitStartFailReason.none) {
+  ///   final bgCall = result.call!;
+  ///   // Later in UI isolate: adopt the call into a PlanetKitCall
+  ///   // final call = await PlanetKitManager.instance
+  ///   //     .adoptBackgroundCall(bgCall.backgroundCallId, uiEventHandler);
+  /// }
+  /// ```
+  Future<PlanetKitVerifyBackgroundCallResult> verifyBackgroundCall(
+      PlanetKitVerifyCallParam param,
+      PlanetKitBackgroundCallEventHandler eventHandler) async {
+    final response = await Platform.instance.verifyBackgroundCall(param);
+
+    PlanetKitBackgroundCall? call;
+    final PlanetKitStartFailReason failReason = response.failReason;
+
+    if (response.failReason == PlanetKitStartFailReason.none && response.callId != null) {
+      call = internal_impl.PlanetKitBackgroundCallImpl(
+          backgroundCallId: response.callId!, eventHandler: eventHandler);
+    }
+
+    return PlanetKitVerifyBackgroundCallResult(call: call, reason: failReason);
+  }
+  
+  /// Adopts a background-verified call into the foreground isolate.
+  ///
+  /// Pass the [backgroundCallId] retrieved from a successful
+  /// [verifyBackgroundCall] result to obtain a fully featured [PlanetKitCall].
+  /// Returns `null` if the native call is not found or media status mapping
+  /// fails.
+  ///
+  /// Typical flow:
+  /// 1) Call [verifyBackgroundCall] in background, store `backgroundCallId`.
+  /// 2) In UI isolate, call [adoptBackgroundCall] and provide a
+  ///    [PlanetKitCallEventHandler] to receive foreground call events.
+  Future<PlanetKitCall?> adoptBackgroundCall(String backgroundCallId,
+      PlanetKitCallEventHandler eventHandler) async {
+    // Ask native layer to move background-verified call into active instances if present
+    await Platform.instance.adoptBackgroundCall(backgroundCallId);
+    return _createPlanetKitCall(backgroundCallId, eventHandler);
   }
 
   Future<PlanetKitCall?> _createPlanetKitCall(

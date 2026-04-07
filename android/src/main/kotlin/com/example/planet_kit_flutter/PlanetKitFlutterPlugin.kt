@@ -15,29 +15,64 @@
 /** PlanetKitFlutterPlugin */
 package com.example.planet_kit_flutter
 
-import android.os.Handler
-import android.os.Looper
+
+import android.content.Context
+import android.net.Uri
 import android.util.Log
+import com.example.planet_kit_flutter.call.CallEventType
+import com.example.planet_kit_flutter.call.CallEventTypeSerializer
+import com.example.planet_kit_flutter.call.NetworkReavailableCallEvent
+import com.example.planet_kit_flutter.call.NetworkUnavailableCallEvent
+import com.example.planet_kit_flutter.call.PlanetKitFlutterCallPlugin
+import com.example.planet_kit_flutter.call.PlanetKitFlutterVerifyListenerBroadcaster
+import com.example.planet_kit_flutter.camera.CameraEventType
+import com.example.planet_kit_flutter.camera.CameraEventTypeSerializer
+import com.example.planet_kit_flutter.camera.PlanetKitFlutterCameraPlugin
+import com.example.planet_kit_flutter.conference.ConferenceEventType
+import com.example.planet_kit_flutter.conference.ConferenceEventTypeSerializer
+import com.example.planet_kit_flutter.conference.ConferenceParams
+import com.example.planet_kit_flutter.conference.JoinConferenceResponse
+import com.example.planet_kit_flutter.conference.PlanetKitFlutterConferencePeerPlugin
+import com.example.planet_kit_flutter.conference.PlanetKitFlutterConferencePlugin
+import com.example.planet_kit_flutter.conference.peerControl.PeerControlEventType
+import com.example.planet_kit_flutter.conference.peerControl.PeerControlEventTypeSerializer
+import com.example.planet_kit_flutter.conference.peerControl.PlanetKitFlutterPeerControlPlugin
+import com.example.planet_kit_flutter.statistics.MyAudioSerializer
+import com.example.planet_kit_flutter.statistics.MyScreenShareSerializer
+import com.example.planet_kit_flutter.statistics.MyVideoSerializer
+import com.example.planet_kit_flutter.statistics.NetworkSerializer
+import com.example.planet_kit_flutter.statistics.PeerAudioSerializer
+import com.example.planet_kit_flutter.statistics.PeerScreenShareSerializer
+import com.example.planet_kit_flutter.statistics.PeerVideoSerializer
+import com.example.planet_kit_flutter.statistics.PlanetKitStatisticsSerializer
+import com.example.planet_kit_flutter.statistics.VideoSerializer
+import com.example.planet_kit_flutter.videoView.PlanetKitFlutterVideoViewFactory
+import com.example.planet_kit_flutter.videoView.PlanetKitFlutterVideoViews
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.linecorp.planetkit.PlanetKit
+import com.linecorp.planetkit.PlanetKitInitialMyVideoState
 import com.linecorp.planetkit.PlanetKitLogLevel
 import com.linecorp.planetkit.PlanetKitLogSizeLimit
+import com.linecorp.planetkit.PlanetKitMediaType
+import com.linecorp.planetkit.PlanetKitResponseOnEnableVideo
 import com.linecorp.planetkit.PlanetKitStartFailReason
-import com.linecorp.planetkit.audio.PlanetKitInterceptMyAudioListener
-import com.linecorp.planetkit.audio.PlanetKitInterceptedAudio
+import com.linecorp.planetkit.PlanetKitStatistics
+import com.linecorp.planetkit.PlanetKitVideoPauseReason
+import com.linecorp.planetkit.PlanetKitVideoResolution
 import com.linecorp.planetkit.session.PlanetKitDisconnectReason
 import com.linecorp.planetkit.session.PlanetKitDisconnectSource
-import com.linecorp.planetkit.session.PlanetKitDisconnectedParam
-import com.linecorp.planetkit.session.call.AcceptCallListener
-import com.linecorp.planetkit.session.call.MakeCallListener
+import com.linecorp.planetkit.session.PlanetKitMediaDisableReason
+import com.linecorp.planetkit.session.call.NetworkListener
 import com.linecorp.planetkit.session.call.PlanetKitCCParam
 import com.linecorp.planetkit.session.call.PlanetKitCall
-import com.linecorp.planetkit.session.call.PlanetKitCallConnectedParam
-import com.linecorp.planetkit.session.call.PlanetKitCallStartMessage
 import com.linecorp.planetkit.session.call.PlanetKitMakeCallParam
 import com.linecorp.planetkit.session.call.PlanetKitVerifyCallParam
 import com.linecorp.planetkit.session.call.VerifyListener
+import com.linecorp.planetkit.session.conference.PlanetKitConference
+import com.linecorp.planetkit.session.conference.PlanetKitConferenceParam
+import com.linecorp.planetkit.video.PlanetKitScreenShareState
+import com.linecorp.planetkit.video.PlanetKitVideoStatus
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterPluginBinding
 import io.flutter.plugin.common.EventChannel
@@ -47,587 +82,746 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import java.lang.ref.WeakReference
 
-class PlanetKitFlutterPlugin: FlutterPlugin, MethodCallHandler {
-  private lateinit var channel: MethodChannel
-  private var flutterPluginBindingRef: WeakReference<FlutterPluginBinding>? = null
-  private lateinit var gson: Gson
 
-  private val _nativeInstances = HashMap<String, Any>()
+class PlanetKitFlutterPlugin : FlutterPlugin, MethodCallHandler {
+    val planetKitFlutterVersion = "1.1.0"
+    private lateinit var channel: MethodChannel
+    private var flutterPluginBindingRef: WeakReference<FlutterPluginBinding>? = null
+    private var gson: Gson
+    private var flutterAssets: FlutterPlugin.FlutterAssets? = null
 
-  @Synchronized
-  fun addNativeInstance(key: String, instance: Any) {
-    _nativeInstances[key] = instance
-  }
+    private val nativeInstances = PlanetKitFlutterNativeInstances()
+    private var callPlugin: PlanetKitFlutterCallPlugin
+    private var hookedAudioPlugin: PlanetKitFlutterHookedAudioPlugin
+    private var myMediaStatusPlugin: PlanetKitFlutterMyMediaStatusPlugin
+    private var conferencePlugin: PlanetKitFlutterConferencePlugin
+    private var conferencePeerPlugin: PlanetKitFlutterConferencePeerPlugin
+    private var peerControlPlugin: PlanetKitFlutterPeerControlPlugin
+    private lateinit var cameraPlugin: PlanetKitFlutterCameraPlugin
+    private var videoViews = PlanetKitFlutterVideoViews
+    val eventStreamHandler = PlanetKitFlutterStreamHandler()
+    val hookedAudioStreamHandler = PlanetKitFlutterStreamHandler()
+    val backgroundEventStreamHandler = PlanetKitFlutterStreamHandler()
 
-  @Synchronized
-  fun removeNativeInstance(key: String) {
-    _nativeInstances.remove(key)
-  }
+    // TODO: remove after SDK update
 
-  @Synchronized
-  fun getNativeInstance(key: String): Any? {
-    return _nativeInstances[key]
-  }
-
-  val eventStreamHandler = PlanetKitFlutterStreamHandler()
-  val hookedAudioStreamHandler = PlanetKitFlutterStreamHandler()
-
-  // TODO: remove after SDK update
-  val isInterceptedAudioEnabled = HashMap<String, Boolean>()
-
-  private val listener = object : MakeCallListener, AcceptCallListener, VerifyListener {
-    override fun onConnected(call: PlanetKitCall, param: PlanetKitCallConnectedParam) {
-      Log.d("FlutterPlugin", "onConnected")
-
-      Handler(Looper.getMainLooper()).post {
-
-        val eventData = CallConnectedEventData(
-          call.hashCode().toString()
-        );
-
-        val json = gson.toJson(eventData);
-        eventStreamHandler.eventSink?.success(json);
-      }
+    init {
+        gson = GsonBuilder()
+            .registerTypeAdapter(EventType::class.java, EventTypeSerializer())
+            .registerTypeAdapter(CallEventType::class.java, CallEventTypeSerializer())
+            .registerTypeAdapter(ConferenceEventType::class.java, ConferenceEventTypeSerializer())
+            .registerTypeAdapter(PeerControlEventType::class.java, PeerControlEventTypeSerializer())
+            .registerTypeAdapter(CameraEventType::class.java, CameraEventTypeSerializer())
+            .registerTypeAdapter(
+                MyMediaStatusEventType::class.java,
+                MyMediaStatusEventTypeSerializer()
+            )
+            .registerTypeAdapter(PlanetKitLogLevel::class.java, PlanetKitLogLevelDeserializer())
+            .registerTypeAdapter(
+                PlanetKitLogSizeLimit::class.java,
+                PlanetKitLogSizeLimitDeserializer()
+            )
+            .registerTypeAdapter(
+                PlanetKitStartFailReason::class.java,
+                PlanetKitStartFailReasonSerializer()
+            )
+            .registerTypeAdapter(
+                PlanetKitDisconnectSource::class.java,
+                PlanetKitDisconnectSourceSerializer()
+            )
+            .registerTypeAdapter(
+                PlanetKitDisconnectReason::class.java,
+                PlanetKitDisconnectReasonSerializer()
+            )
+            .registerTypeAdapter(
+                PlanetKitMediaType.PLANET_MEDIA_TYPE_UNKNOWN::class.java,
+                PlanetKitMediaTypeAdapter()
+            )
+            .registerTypeAdapter(
+                PlanetKitMediaType.AUDIO::class.java,
+                PlanetKitMediaTypeAdapter()
+            )
+            .registerTypeAdapter(
+                PlanetKitMediaType.VIDEO::class.java,
+                PlanetKitMediaTypeAdapter()
+            )
+            .registerTypeAdapter(
+                PlanetKitMediaType.AUDIOVIDEO::class.java,
+                PlanetKitMediaTypeAdapter()
+            )
+            .registerTypeAdapter(
+                PlanetKitMediaType::class.java,
+                PlanetKitMediaTypeAdapter()
+            )
+            .registerTypeAdapter(
+                PlanetKitMediaDisableReason::class.java,
+                PlanetKitMediaDisableReasonSerializer()
+            )
+            .registerTypeAdapter(
+                PlanetKitVideoPauseReason::class.java,
+                PlanetKitVideoPauseReasonSerializer()
+            )
+            .registerTypeAdapter(
+                PlanetKitVideoStatus::class.java,
+                PlanetKitVideoStatusSerializer()
+            )
+            .registerTypeAdapter(
+                PlanetKitVideoStatus.VideoState::class.java,
+                PlanetKitVideoStateSerializer()
+            )
+            .registerTypeAdapter(
+                PlanetKitResponseOnEnableVideo::class.java,
+                PlanetKitResponseOnEnableVideoDeserializer()
+            )
+            .registerTypeAdapter(
+                PlanetKitVideoResolution::class.java,
+                PlanetKitVideoResolutionDeserializer()
+            )
+            .registerTypeAdapter(PlanetKitStatistics::class.java, PlanetKitStatisticsSerializer())
+            .registerTypeAdapter(PlanetKitStatistics.MyAudio::class.java, MyAudioSerializer())
+            .registerTypeAdapter(PlanetKitStatistics.Network::class.java, NetworkSerializer())
+            .registerTypeAdapter(PlanetKitStatistics.MyVideo::class.java, MyVideoSerializer())
+            .registerTypeAdapter(PlanetKitStatistics.PeerAudio::class.java, PeerAudioSerializer())
+            .registerTypeAdapter(PlanetKitStatistics.PeerVideo::class.java, PeerVideoSerializer())
+            .registerTypeAdapter(PlanetKitStatistics.Video::class.java, VideoSerializer())
+            .registerTypeAdapter(PlanetKitStatistics.MyScreenShare::class.java, MyScreenShareSerializer())
+            .registerTypeAdapter(PlanetKitStatistics.PeerScreenShare::class.java, PeerScreenShareSerializer())
+            .registerTypeAdapter(
+                PlanetKitScreenShareState::class.java,
+                PlanetKitScreenShareStateSerializer()
+            )
+            .registerTypeAdapter(PlanetKitInitialMyVideoState::class.java, PlanetKitInitialMyVideoStateAdapter())
+            .create()
+        callPlugin = PlanetKitFlutterCallPlugin(eventStreamHandler, backgroundEventStreamHandler, nativeInstances, gson)
+        hookedAudioPlugin =
+            PlanetKitFlutterHookedAudioPlugin(hookedAudioStreamHandler, nativeInstances, gson)
+        myMediaStatusPlugin =
+            PlanetKitFlutterMyMediaStatusPlugin(eventStreamHandler, nativeInstances, gson)
+        conferencePlugin =
+            PlanetKitFlutterConferencePlugin(eventStreamHandler, nativeInstances, gson)
+        conferencePeerPlugin = PlanetKitFlutterConferencePeerPlugin(nativeInstances, gson)
+        peerControlPlugin =
+            PlanetKitFlutterPeerControlPlugin(eventStreamHandler, nativeInstances, gson)
     }
 
-    override fun onVerified(
-      call: PlanetKitCall,
-      peerStartMessage: PlanetKitCallStartMessage?,
-      peerUseResponderPreparation: Boolean
-    ) {
-      Log.d("FlutterPlugin", "onVerified")
+    override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+        channel = MethodChannel(flutterPluginBinding.binaryMessenger, "planetkit_sdk")
+        flutterAssets = flutterPluginBinding.flutterAssets
+        channel.setMethodCallHandler(this)
+        flutterPluginBindingRef = WeakReference(flutterPluginBinding)
 
-      Handler(Looper.getMainLooper()).post {
+        val context = flutterPluginBinding.applicationContext
 
-        val eventData = CallVerifiedEventData(
-          call.hashCode().toString()
-        );
+        cameraPlugin = PlanetKitFlutterCameraPlugin(context, videoViews, eventStreamHandler, gson)
 
-        val json = gson.toJson(eventData);
-        eventStreamHandler.eventSink?.success(json);
-      }
+        flutterPluginBinding
+            .platformViewRegistry
+            .registerViewFactory("planet_kit_video_view", PlanetKitFlutterVideoViewFactory())
+
+        EventChannel(flutterPluginBinding.binaryMessenger, "planetkit_event").setStreamHandler(
+            eventStreamHandler
+        )
+        EventChannel(
+            flutterPluginBinding.binaryMessenger,
+            "planetkit_hooked_audio"
+        ).setStreamHandler(hookedAudioStreamHandler)
+        EventChannel(
+            flutterPluginBinding.binaryMessenger,
+            "planetkit_background_event"
+        ).setStreamHandler(backgroundEventStreamHandler)
     }
 
-    override fun onWaitConnected(call: PlanetKitCall) {
-      Log.d("FlutterPlugin", "onWaitConnected")
+    // Handle incoming method calls
+    override fun onMethodCall(call: MethodCall, result: Result) {
+        when (call.method) {
+            "getPlatformVersion" -> result.success("Android ${android.os.Build.VERSION.RELEASE}")
+            "initializePlanetKit" -> initializePlanetKit(call, result)
+            "makeCall" -> makeCall(call, result)
+            "verifyCall" -> verifyCall(call, result)
+            "verifyBackgroundCall" -> verifyBackgroundCall(call, result)
+            "joinConference" -> joinConference(call, result)
+            "releaseInstance" -> releaseInstance(call, result)
+            "createCcParam" -> createCcParam(call, result)
+            "setServerUrl" -> setServerUrl(call, result)
+            "adoptBackgroundCall" -> adoptBackgroundCall(call, result)
 
-      Handler(Looper.getMainLooper()).post {
+            // HookedAudio
+            "call_enableHookMyAudio" -> hookedAudioPlugin.enableHookMyAudio(call, result)
+            "call_disableHookMyAudio" -> hookedAudioPlugin.disableHookMyAudio(call, result)
+            "call_putHookedMyAudioBack" -> hookedAudioPlugin.putHookedMyAudioBack(call, result)
+            "call_isHookMyAudioEnabled" -> hookedAudioPlugin.isHookMyAudioEnabled(call, result)
+            "call_setHookedAudioData" -> hookedAudioPlugin.setHookedAudioData(call, result)
 
-        val eventData = CallWaitConnectEventData(
-          call.hashCode().toString()
-        );
+            // Call
+            "call_acceptCall" -> callPlugin.acceptCall(call, result)
+            "call_endCall" -> callPlugin.endCall(call, result)
+            "call_endCallWithError" -> callPlugin.endCallWithError(call, result)
+            "call_muteMyAudio" -> callPlugin.muteMyAudio(call, result)
+            "call_requestPeerMute" -> callPlugin.requestPeerMute(call, result)
+            "call_speakerOut" -> callPlugin.speakerOut(call, result)
+            "call_isSpeakerOut" -> callPlugin.isSpeakerOut(call, result)
+            "call_isMyAudioMuted" -> callPlugin.isMyAudioMuted(call, result)
+            "call_isPeerAudioMuted" -> callPlugin.isPeerAudioMuted(call, result)
+            "call_finishPreparation" -> callPlugin.finishPreparation(call, result)
+            "call_isOnHold" -> callPlugin.isOnHold(call, result)
+            "call_holdCall" -> callPlugin.holdCall(call, result)
+            "call_unholdCall" -> callPlugin.unholdCall(call, result)
+            "call_getMyMediaStatus" -> callPlugin.getMyMediaStatus(
+                call,
+                myMediaStatusPlugin,
+                result
+            )
 
-        val json = gson.toJson(eventData);
-        eventStreamHandler.eventSink?.success(json);
-      }
+            "call_silencePeerAudio" -> callPlugin.silencePeerAudio(call, result)
+
+            "call_addMyVideoView" -> callPlugin.addMyVideoView(call, result)
+            "call_removeMyVideoView" -> callPlugin.removeMyVideoView(call, result)
+            "call_addPeerVideoView" -> callPlugin.addPeerVideoView(call, result)
+            "call_removePeerVideoView" -> callPlugin.removePeerVideoView(call, result)
+            "call_pauseMyVideo" -> callPlugin.pauseMyVideo(call, result)
+            "call_resumeMyVideo" -> callPlugin.resumeMyVideo(call, result)
+            "call_enableVideo" -> callPlugin.enableVideo(call, result)
+            "call_disableVideo" -> callPlugin.disableVideo(call, result)
+            "call_getStatistics" -> callPlugin.getStatistics(call, result)
+
+            "call_addPeerScreenShareView" -> callPlugin.addPeerScreenShareView(call, result)
+            "call_removePeerScreenShareView" -> callPlugin.removePeerScreenShareView(call, result)
+
+
+            // My media status
+            "myMediaStatus_isMyAudioMuted" -> myMediaStatusPlugin.isMyAudioMuted(call, result)
+            "myMediaStatus_getMyVideoStatus" -> myMediaStatusPlugin.getMyVideoStatus(call, result)
+
+            // Conference
+            "conference_leaveConference" -> conferencePlugin.leaveConference(call, result)
+            "conference_muteMyAudio" -> conferencePlugin.muteMyAudio(call, result)
+            "conference_speakerOut" -> conferencePlugin.speakerOut(call, result)
+            "conference_isSpeakerOut" -> conferencePlugin.isSpeakerOut(call, result)
+            "conference_silencePeersAudio" -> conferencePlugin.silencePeersAudio(call, result)
+            "conference_requestPeerMute" -> conferencePlugin.requestPeerMute(call, result)
+            "conference_requestPeersMute" -> conferencePlugin.requestPeersMute(call, result)
+            "conference_hold" -> conferencePlugin.hold(call, result)
+            "conference_unhold" -> conferencePlugin.unhold(call, result)
+            "conference_isOnHold" -> conferencePlugin.isOnHold(call, result)
+            "conference_getMyMediaStatus" -> conferencePlugin.getMyMediaStatus(
+                call,
+                myMediaStatusPlugin,
+                result
+            )
+
+            "conference_createPeerControl" -> conferencePlugin.createPeerControl(call, result)
+            "conference_addMyVideoView" -> conferencePlugin.addMyVideoView(call, result)
+            "conference_removeMyVideoView" -> conferencePlugin.removeMyVideoView(call, result)
+            "conference_enableVideo" -> conferencePlugin.enableVideo(call, result)
+            "conference_disableVideo" -> conferencePlugin.disableVideo(call, result)
+            "conference_pauseMyVideo" -> conferencePlugin.pauseMyVideo(call, result)
+            "conference_resumeMyVideo" -> conferencePlugin.resumeMyVideo(call, result)
+            "conference_getStatistics" -> conferencePlugin.getStatistics(call, result)
+            
+            // Conference Peer
+            "conferencePeer_getHoldStatus" -> conferencePeerPlugin.getHoldStatus(call, result)
+            "conferencePeer_isMuted" -> conferencePeerPlugin.isMuted(call, result)
+            "conferencePeer_getVideoStatus" -> conferencePeerPlugin.getVideoStatus(call, result)
+            "conferencePeer_getScreenShareState" -> conferencePeerPlugin.getScreenShareState(call, result)
+
+            // Peer control
+            "peerControl_register" -> peerControlPlugin.register(call, result)
+            "peerControl_unregister" -> peerControlPlugin.unregister(call, result)
+            "peerControl_startVideo" -> peerControlPlugin.startVideo(call, result)
+            "peerControl_stopVideo" -> peerControlPlugin.stopVideo(call, result)
+            "peerControl_startScreenShare" -> peerControlPlugin.startScreenShare(call, result)
+            "peerControl_stopScreenShare" -> peerControlPlugin.stopScreenShare(call, result)
+
+            // Camera
+            "camera_startPreview" -> cameraPlugin.startPreview(call, result)
+            "camera_stopPreview" -> cameraPlugin.stopPreview(call, result)
+            "camera_switchPosition" -> cameraPlugin.switchPosition(call, result)
+            "camera_clearVirtualBackground" -> cameraPlugin.clearVirtualBackground(call, result)
+            "camera_setVirtualBackgroundWithBlur" -> cameraPlugin.setVirtualBackgroundWithBlur(
+                call,
+                result
+            )
+
+            "camera_setVirtualBackgroundWithImage" -> cameraPlugin.setVirtualBackgroundWithImage(
+                call,
+                result
+            )
+
+            else -> result.notImplemented()
+        }
     }
 
-    override fun onPeerMicMuted(call: PlanetKitCall) {
-      Log.d("FlutterPlugin", "onPeerMicMuted ")
 
-      Handler(Looper.getMainLooper()).post {
+    private fun initializePlanetKit(call: MethodCall, result: Result) {
+        Log.d("FlutterPlugin", "initializePlanetKit")
 
-        val eventData = CallPeerMicMutedEventData(
-          call.hashCode().toString()
-        );
+        val args = call.arguments<Map<String, Any>>()
+        val applicationContext = flutterPluginBindingRef?.get()?.applicationContext
 
-        val json = gson.toJson(eventData);
-        eventStreamHandler.eventSink?.success(json);
-      }
+        if (applicationContext == null) {
+            result.success(false);
+            Log.e("FlutterPlugin", "applicationContext is null")
+            return
+        }
+
+        val sharedPreferences = applicationContext?.getSharedPreferences("com.linecorp.planetkit.flutter", Context.MODE_PRIVATE)
+        sharedPreferences?.edit()?.apply {
+            putString("version", planetKitFlutterVersion)
+            apply()
+        }
+
+        if (PlanetKit.isInitialize == true) {
+            result.success(true)
+            return
+        }
+
+        val jsonArgs = gson.toJson(args)
+        val param = gson.fromJson(jsonArgs, InitParam::class.java)
+
+        val config = PlanetKit.PlanetKitConfiguration.Builder(applicationContext)
+            .enableLog(param.logSetting.enabled)
+            .setLogLevel(param.logSetting.logLevel)
+            .setLogSizeLimit(param.logSetting.logSizeLimit)
+            .setServerUrl(param.serverUrl)
+            .build()
+        PlanetKit.initialize(config) { isSuccessful, isVideoHwCodecSupport, userAgent ->
+            Log.d(
+                "FlutterPlugin", "PlanetKit initialization(isSuccessful=$isSuccessful, " +
+                        "isVideoHwCodecSupport=$isVideoHwCodecSupport, userAgent=$userAgent)"
+            )
+
+            if (isSuccessful) {
+                cameraPlugin.addCameraTypeChangedListener()
+            }
+            result.success(isSuccessful)
+        }
     }
 
-    override fun onPeerMicUnmuted(call: PlanetKitCall) {
-      Log.d("FlutterPlugin", "onPeerMicUnmuted ")
+    private fun setNetworkListener(call: PlanetKitCall) {
+        val networkListener = object : NetworkListener {
+            override fun onNetworkReavailable(isPeer: Boolean) {
+                Log.d("FlutterPlugin", "onNetworkReavailable")
+                val eventData = NetworkReavailableCallEvent(
+                    call.hashCode().toString(),
+                    isPeer
+                );
+                val json = gson.toJson(eventData);
+                eventStreamHandler.eventSink?.success(json);
+            }
 
-      Handler(Looper.getMainLooper()).post {
+            override fun onNetworkUnavailable(isPeer: Boolean, disconnectAfterSec: Int) {
+                Log.d("FlutterPlugin", "onNetworkUnavailable")
+                val eventData = NetworkUnavailableCallEvent(
+                    call.hashCode().toString(),
+                    isPeer,
+                    disconnectAfterSec,
+                );
+                val json = gson.toJson(eventData);
+                eventStreamHandler.eventSink?.success(json);
+            }
+        }
 
-        val eventData = CallPeerMicUnmutedEventData(
-          call.hashCode().toString()
-        );
-
-        val json = gson.toJson(eventData);
-        eventStreamHandler.eventSink?.success(json);
-      }
+        call.setNetworkListener(networkListener)
     }
 
-    override fun onDisconnected(call: PlanetKitCall, param: PlanetKitDisconnectedParam) {
-      Log.d("FlutterPlugin", "onDisconnected ")
-
-      Handler(Looper.getMainLooper()).post {
-
-        val eventData = CallDisconnectedEventData(
-          call.hashCode().toString(),
-          param.reason,
-          param.source,
-          param.byRemote
-        );
-
-        val json = gson.toJson(eventData);
-        eventStreamHandler.eventSink?.success(json);
-      }
-    }
-  }
-
-  override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-    channel = MethodChannel(flutterPluginBinding.binaryMessenger, "planetkit_sdk")
-    channel.setMethodCallHandler(this)
-    flutterPluginBindingRef = WeakReference(flutterPluginBinding);
-    gson = GsonBuilder()
-      .registerTypeAdapter(EventType::class.java, EventTypeSerializer())
-      .registerTypeAdapter(CallEventType::class.java, CallEventTypeSerializer())
-      .registerTypeAdapter(PlanetKitLogLevel::class.java, PlanetKitLogLevelDeserializer())
-      .registerTypeAdapter(PlanetKitLogSizeLimit::class.java, PlanetKitLogSizeLimitDeserializer())
-      .registerTypeAdapter(PlanetKitStartFailReason::class.java, PlanetKitStartFailReasonSerializer())
-      .registerTypeAdapter(PlanetKitDisconnectSource::class.java, PlanetKitDisconnectSourceSerializer())
-      .registerTypeAdapter(PlanetKitDisconnectReason::class.java, PlanetKitDisconnectReasonSerializer())
-      .create()
-
-    EventChannel(flutterPluginBinding.binaryMessenger, "planetkit_event").setStreamHandler(eventStreamHandler)
-    EventChannel(flutterPluginBinding.binaryMessenger, "planetkit_hooked_audio").setStreamHandler(hookedAudioStreamHandler)
-  }
-
-  // Handle incoming method calls
-  override fun onMethodCall(call: MethodCall, result: Result) {
-    when (call.method) {
-      "getPlatformVersion" -> result.success("Android ${android.os.Build.VERSION.RELEASE}")
-      "initializePlanetKit" -> initializePlanetKit(call, result)
-      "makeCall" -> makeCall(call, result)
-      "verifyCall" -> verifyCall(call, result)
-      "acceptCall" -> acceptCall(call, result)
-      "endCall" -> endCall(call, result)
-      "muteMyAudio" -> muteMyAudio(call, result)
-      "unmuteMyAudio" -> unmuteMyAudio(call, result)
-      "speakerOut" -> speakerOut(call, result)
-      "isSpeakerOut" -> isSpeakerOut(call, result)
-      "isMyAudioMuted" -> isMyAudioMuted(call, result)
-      "isPeerAudioMuted" -> isPeerAudioMuted(call, result)
-      "releaseInstance" -> releaseInstance(call, result)
-      "createCcParam" -> createCcParam(call, result)
-      "enableHookMyAudio" -> enableHookMyAudio(call, result)
-      "disableHookMyAudio" -> disableHookMyAudio(call, result)
-      "putHookedMyAudioBack" -> putHookedMyAudioBack(call, result)
-      "isHookMyAudioEnabled" -> isHookMyAudioEnabled(call, result)
-      "setHookedAudioData" -> setHookedAudioData(call, result)
-
-      else -> result.notImplemented()
-    }
-  }
-
-  private fun initializePlanetKit(call: MethodCall, result: Result) {
-    Log.d("FlutterPlugin", "initializePlanetKit")
-
-    val args = call.arguments<Map<String, Any>>()
-    val applicationContext = flutterPluginBindingRef?.get()?.applicationContext
-
-    if (applicationContext == null) {
-      result.success(false);
-      Log.e("FlutterPlugin", "applicationContext is null")
-      return
-    }
-
-    if (PlanetKit.isInitialize == true) {
-      result.success(true)
-      return
-    }
-
-    val jsonArgs = gson.toJson(args)
-    val param = gson.fromJson(jsonArgs, InitParam::class.java)
-
-    val config = PlanetKit.PlanetKitConfiguration.Builder(applicationContext)
-      .enableLog(param.logSetting.enabled)
-      .setLogLevel(param.logSetting.logLevel)
-      .setLogSizeLimit(param.logSetting.logSizeLimit)
-      .setServerUrl(param.serverUrl)
-      .build()
-    PlanetKit.initialize(config) { isSuccessful, isVideoHwCodecSupport, userAgent ->
-      Log.d(
-        "FlutterPlugin", "PlanetKit initialization(isSuccessful=$isSuccessful, " +
-                "isVideoHwCodecSupport=$isVideoHwCodecSupport, userAgent=$userAgent)"
-      )
-      result.success(isSuccessful)
-    }
-  }
 
 
-  private fun makeCall(call: MethodCall, result: Result) {
-    Log.d("FlutterPlugin", "makeCall")
+    private fun makeCall(call: MethodCall, result: Result) {
+        Log.d("FlutterPlugin", "makeCall")
 
-    val args = call.arguments<Map<String, Any>>()
-    val jsonArgs = gson.toJson(args)
-    val param = gson.fromJson(jsonArgs, MakeCallParam::class.java)
+        val args = call.arguments<Map<String, Any>>()
+        val jsonArgs = gson.toJson(args)
+        val param = gson.fromJson(jsonArgs, MakeCallParam::class.java)
 
-    val makeCallParam = PlanetKitMakeCallParam.Builder()
-      .myId(param.myUserId)
-      .myServiceId(param.myServiceId)
-      .peerId(param.peerUserId)
-      .peerServiceId(param.peerServiceId)
-      .accessToken(param.accessToken)
-      .build()
+        var makeCallParamBuilder = PlanetKitMakeCallParam.Builder()
+            .myId(param.myUserId)
+            .myServiceId(param.myServiceId)
+            .peerId(param.peerUserId)
+            .peerServiceId(param.peerServiceId)
+            .accessToken(param.accessToken)
+            .responderPreparation(param.useResponderPreparation)
+            .setInitialMyVideoState(param.initialMyVideoState)
 
-    val makeCallResult = PlanetKit.makeCall(makeCallParam, listener)
+        param.myCountryCode?.let { myCountryCode ->
+            makeCallParamBuilder = makeCallParamBuilder.myCountryCode(myCountryCode)
+        }
+        param.peerCountryCode?.let { peerCountryCode ->
+            makeCallParamBuilder = makeCallParamBuilder.peerCountryCode(peerCountryCode)
+        }
 
-    if (makeCallResult.reason == PlanetKitStartFailReason.NONE &&
-      makeCallResult.call != null) {
-      val call = makeCallResult.call as PlanetKitCall
-      addNativeInstance(call.hashCode().toString(), call)
+        param.holdTonePath?.let { holdTonePath ->
+            flutterAssets?.getAssetFilePathByName(holdTonePath)?.let { key ->
+                val uri = Uri.parse(key)
+                makeCallParamBuilder = makeCallParamBuilder.holdTone(uri)
+            }
+        }
+
+        param.endTonePath?.let { holdTonePath ->
+            flutterAssets?.getAssetFilePathByName(holdTonePath)?.let { key ->
+                val uri = Uri.parse(key)
+                makeCallParamBuilder = makeCallParamBuilder.endTone(uri)
+            }
+        }
+
+        param.ringbackTonePath?.let { ringbackTonePath ->
+            flutterAssets?.getAssetFilePathByName(ringbackTonePath)?.let { key ->
+                val uri = Uri.parse(key)
+                makeCallParamBuilder = makeCallParamBuilder.ringbackTone(uri)
+            }
+        }
+
+        param.allowCallWithoutMic?.let { allow ->
+            makeCallParamBuilder = makeCallParamBuilder.allowCallWithoutMic(allow)
+            Log.d("FlutterPlugin", "set allowCallWithoutMic $allow")
+        }
+
+        param.enableAudioDescription?.let { enable ->
+            makeCallParamBuilder = makeCallParamBuilder.enableAudioDescription(enable)
+            Log.d("FlutterPlugin", "set enableAudioDescription $enable")
+        }
+
+        param.audioDescriptionUpdateIntervalMs?.let { interval ->
+            makeCallParamBuilder =
+                makeCallParamBuilder.setAudioDescriptionInterval(interval.toLong())
+            Log.d("FlutterPlugin", "set setAudioDescriptionInterval $interval")
+        }
+
+        param.allowCallWithoutMicPermission?.let { allow ->
+            makeCallParamBuilder = makeCallParamBuilder.allowCallWithoutMicPermission(allow)
+            Log.d("FlutterPlugin", "allowCallWithoutMicPermission $allow")
+        }
+
+
+        makeCallParamBuilder = makeCallParamBuilder.mediaType(param.mediaType)
+        makeCallParamBuilder =
+            makeCallParamBuilder.responseOnEnableVideo(param.responseOnEnableVideo)
+        makeCallParamBuilder = makeCallParamBuilder.enableStatistics(param.enableStatistics)
+
+        val makeCallParam = makeCallParamBuilder.build()
+
+        // Regular makeCall uses the plugin instance directly (no broadcaster)
+        val makeCallResult = PlanetKit.makeCall(makeCallParam, callPlugin)
+
+        if (makeCallResult.reason == PlanetKitStartFailReason.NONE &&
+            makeCallResult.call != null
+        ) {
+            val call = makeCallResult.call as PlanetKitCall
+            nativeInstances.add(call.hashCode().toString(), call)
+            setNetworkListener(call)
+        }
+
+        val response = MakeCallResponse(
+            makeCallResult.call?.hashCode().toString(),
+            makeCallResult.reason
+        )
+        val responseJson = gson.toJson(response)
+
+        result.success(responseJson)
     }
 
-    val response = MakeCallResponse(makeCallResult.call?.hashCode().toString(),
-      makeCallResult.reason)
-    val responseJson = gson.toJson(response)
+    private fun verifyCall(call: MethodCall, result: Result) {
+        Log.d("FlutterPlugin", "verifyCall ")
 
-    result.success(responseJson)
-  }
+        val args = call.arguments<Map<String, Any>>()
+        val jsonArgs = gson.toJson(args)
+        val param = gson.fromJson(jsonArgs, VerifyCallParam::class.java)
 
-  private fun verifyCall(call: MethodCall, result: Result) {
-    Log.d("FlutterPlugin", "verifyCall ")
+        val ccParam = nativeInstances.get(param.ccParam.id) as? PlanetKitCCParam
 
-    val args = call.arguments<Map<String, Any>>()
-    val jsonArgs = gson.toJson(args)
-    val param = gson.fromJson(jsonArgs, VerifyCallParam::class.java)
+        if (ccParam == null) {
+            Log.d("FlutterPlugin", "failed to retrive ccParam instance")
+            val response = VerifyCallResponse(null, PlanetKitStartFailReason.INVALID_PARAM)
+            val responseJson = gson.toJson(response)
+            result.success(responseJson)
+            return
+        }
 
-    val ccParam = getNativeInstance(param.ccParam.id) as? PlanetKitCCParam
+        var verifyCallParamBuilder = PlanetKitVerifyCallParam.Builder()
+            .myId(param.myUserId)
+            .myServiceId(param.myServiceId)
+            .cCParam(ccParam)
 
-    if (ccParam == null) {
-      Log.d("FlutterPlugin", "failed to retrive ccParam instance")
-      val response = VerifyCallResponse(null, PlanetKitStartFailReason.INVALID_PARAM)
-      val responseJson = gson.toJson(response)
-      result.success(responseJson)
-      return
+        param.holdTonePath?.let { holdTonePath ->
+            flutterAssets?.getAssetFilePathByName(holdTonePath)?.let { key ->
+                val uri = Uri.parse(key)
+                verifyCallParamBuilder = verifyCallParamBuilder.holdTone(uri)
+            }
+        }
+
+        param.endTonePath?.let { endTonePath ->
+            flutterAssets?.getAssetFilePathByName(endTonePath)?.let { key ->
+                val uri = Uri.parse(key)
+                verifyCallParamBuilder = verifyCallParamBuilder.endTone(uri)
+            }
+        }
+
+        param.ringtonePath?.let { ringtonePath ->
+            flutterAssets?.getAssetFilePathByName(ringtonePath)?.let { key ->
+                val uri = Uri.parse(key)
+                verifyCallParamBuilder = verifyCallParamBuilder.ringTone(uri)
+            }
+        }
+
+        param.allowCallWithoutMic?.let { allow ->
+            verifyCallParamBuilder = verifyCallParamBuilder.allowCallWithoutMic(allow)
+            Log.d("FlutterPlugin", "set allowCallWithoutMic $allow")
+        }
+
+        param.enableAudioDescription?.let { enable ->
+            verifyCallParamBuilder = verifyCallParamBuilder.enableAudioDescription(enable)
+            Log.d("FlutterPlugin", "set enableAudioDescription $enable")
+        }
+
+        param.audioDescriptionUpdateIntervalMs?.let { interval ->
+            verifyCallParamBuilder =
+                verifyCallParamBuilder.setAudioDescriptionInterval(interval.toLong())
+            Log.d("FlutterPlugin", "set setAudioDescriptionInterval $interval")
+        }
+
+        param.allowCallWithoutMicPermission?.let { allow ->
+            verifyCallParamBuilder = verifyCallParamBuilder.allowCallWithoutMicPermission(allow)
+            Log.d("FlutterPlugin", "allowCallWithoutMicPermission $allow")
+        }
+
+        verifyCallParamBuilder =
+            verifyCallParamBuilder.responseOnEnableVideo(param.responseOnEnableVideo)
+        verifyCallParamBuilder = verifyCallParamBuilder.enableStatistics(param.enableStatistics)
+
+        val verifyCallParam = verifyCallParamBuilder.build()
+
+        // Regular verifyCall uses the plugin instance directly (no broadcaster)
+        val verifyCallResult = PlanetKit.verifyCall(verifyCallParam, callPlugin as VerifyListener)
+
+        if (verifyCallResult.reason == PlanetKitStartFailReason.NONE &&
+            verifyCallResult.call != null
+        ) {
+            val call = verifyCallResult.call as PlanetKitCall
+            nativeInstances.add(call.hashCode().toString(), call)
+            setNetworkListener(call)
+        }
+
+        val response = VerifyCallResponse(
+            verifyCallResult.call?.hashCode().toString(),
+            verifyCallResult.reason
+        )
+        val responseJson = gson.toJson(response)
+
+        result.success(responseJson)
     }
 
-    val verifyCallParam = PlanetKitVerifyCallParam.Builder()
-      .myId(param.myUserId)
-      .myServiceId(param.myServiceId)
-      .cCParam(ccParam)
-      .build()
+    private fun verifyBackgroundCall(call: MethodCall, result: Result) {
+        Log.d("FlutterPlugin", "verifyBackgroundCall ")
 
-    val verifyCallResult = PlanetKit.verifyCall(verifyCallParam, listener as VerifyListener)
+        val args = call.arguments<Map<String, Any>>()
+        val jsonArgs = gson.toJson(args)
+        val param = gson.fromJson(jsonArgs, VerifyCallParam::class.java)
 
-    if (verifyCallResult.reason == PlanetKitStartFailReason.NONE &&
-      verifyCallResult.call != null) {
-      val call = verifyCallResult.call as PlanetKitCall
-      addNativeInstance(call.hashCode().toString(), call)
-    }
+        val ccParam = nativeInstances.get(param.ccParam.id) as? PlanetKitCCParam
 
-    val response = VerifyCallResponse(verifyCallResult.call?.hashCode().toString(),
-      verifyCallResult.reason)
-    val responseJson = gson.toJson(response)
+        if (ccParam == null) {
+            Log.d("FlutterPlugin", "failed to retrive ccParam instance")
+            val response = VerifyCallResponse(null, PlanetKitStartFailReason.INVALID_PARAM)
+            val responseJson = gson.toJson(response)
+            result.success(responseJson)
+            return
+        }
 
-    result.success(responseJson)
-  }
+        var verifyCallParamBuilder = PlanetKitVerifyCallParam.Builder()
+            .myId(param.myUserId)
+            .myServiceId(param.myServiceId)
+            .cCParam(ccParam)
 
-  private fun acceptCall(call: MethodCall, result: Result) {
-    Log.d("FlutterPlugin", "acceptCall ${call.arguments}")
+        param.holdTonePath?.let { holdTonePath ->
+            flutterAssets?.getAssetFilePathByName(holdTonePath)?.let { key ->
+                val uri = Uri.parse(key)
+                verifyCallParamBuilder = verifyCallParamBuilder.holdTone(uri)
+            }
+        }
 
-    val callId = call.arguments<String>() as String
-    val planetKitCall = getNativeInstance(callId) as? PlanetKitCall
+        param.endTonePath?.let { endTonePath ->
+            flutterAssets?.getAssetFilePathByName(endTonePath)?.let { key ->
+                val uri = Uri.parse(key)
+                verifyCallParamBuilder = verifyCallParamBuilder.endTone(uri)
+            }
+        }
 
-    if (planetKitCall == null) {
-      Log.d("FlutterPlugin", "failed to find the call for $callId")
-      result.success(false)
-      return
-    }
+        param.ringtonePath?.let { ringtonePath ->
+            flutterAssets?.getAssetFilePathByName(ringtonePath)?.let { key ->
+                val uri = Uri.parse(key)
+                verifyCallParamBuilder = verifyCallParamBuilder.ringTone(uri)
+            }
+        }
 
-    planetKitCall.acceptCall(listener as AcceptCallListener, useResponderPreparation = false, recordOnCloud = false)
+        param.allowCallWithoutMic?.let { allow ->
+            verifyCallParamBuilder = verifyCallParamBuilder.allowCallWithoutMic(allow)
+            Log.d("FlutterPlugin", "set allowCallWithoutMic $allow")
+        }
 
-    result.success(true)
-  }
+        param.enableAudioDescription?.let { enable ->
+            verifyCallParamBuilder = verifyCallParamBuilder.enableAudioDescription(enable)
+            Log.d("FlutterPlugin", "set enableAudioDescription $enable")
+        }
 
-  private fun endCall(call: MethodCall, result: Result) {
-    Log.d("FlutterPlugin", "endCall ${call.arguments}")
+        param.audioDescriptionUpdateIntervalMs?.let { interval ->
+            verifyCallParamBuilder =
+                verifyCallParamBuilder.setAudioDescriptionInterval(interval.toLong())
+            Log.d("FlutterPlugin", "set setAudioDescriptionInterval $interval")
+        }
 
-    val callId = call.arguments<String>() as String
-    val planetKitCall = getNativeInstance(callId) as? PlanetKitCall
+        param.allowCallWithoutMicPermission?.let { allow ->
+            verifyCallParamBuilder = verifyCallParamBuilder.allowCallWithoutMicPermission(allow)
+            Log.d("FlutterPlugin", "allowCallWithoutMicPermission $allow")
+        }
 
-    if (planetKitCall == null) {
-      Log.d("FlutterPlugin", "failed to find the call for $callId")
-      result.success(false)
-      return
-    }
+        verifyCallParamBuilder =
+            verifyCallParamBuilder.responseOnEnableVideo(param.responseOnEnableVideo)
+        verifyCallParamBuilder = verifyCallParamBuilder.enableStatistics(param.enableStatistics)
 
-    planetKitCall.endCall()
-    result.success(true)
-  }
+        val verifyCallParam = verifyCallParamBuilder.build()
 
-  private fun muteMyAudio(call: MethodCall, result: Result) {
-    Log.d("FlutterPlugin", "muteMyAudio ${call.arguments}")
-
-    val callId = call.arguments<String>() as String
-    val planetKitCall = getNativeInstance(callId) as? PlanetKitCall
-
-    if (planetKitCall == null) {
-      Log.d("FlutterPlugin", "failed to find the call for $callId")
-      result.success( false)
-      return
-    }
-
-    val ret = planetKitCall.muteMyAudio(isMute = true) { res ->
-      result.success( res.isSuccessful)
-    }
-
-    if (!ret) {
-      Log.d("FlutterPlugin", "muteMyAudio(true) returned false")
-      result.success(false)
-    }
-  }
-
-  private fun unmuteMyAudio(call: MethodCall, result: Result) {
-    Log.d("FlutterPlugin", "unmuteMyAudio ${call.arguments}")
-
-    val callId = call.arguments<String>() as String
-    val planetKitCall = getNativeInstance(callId) as? PlanetKitCall
-
-    if (planetKitCall == null) {
-      Log.d("FlutterPlugin", "failed to find the call for $callId")
-      result.success( false)
-      return
-    }
-
-    val ret = planetKitCall.muteMyAudio(isMute = false) { res ->
-      result.success( res.isSuccessful)
-    }
-
-    if (!ret) {
-      Log.d("FlutterPlugin", "muteMyAudio(false) returned false")
-      result.success(false)
-    }
-  }
-
-  private fun speakerOut(call: MethodCall, result: Result) {
-    Log.d("FlutterPlugin", "speakerOut ${call.arguments}")
-
-    val args = call.arguments<Map<String, Any>>()
-    val jsonArgs = gson.toJson(args)
-    val param = gson.fromJson(jsonArgs, SpeakerOutParam::class.java)
-    val planetKitCall = getNativeInstance(param.callId) as? PlanetKitCall
-
-    if (planetKitCall == null) {
-      Log.d("FlutterPlugin", "failed to find the call for ${param.callId}")
-      result.success( false)
-      return
-    }
-
-    planetKitCall.setSpeakerOn(param.speakerOut)
-    result.success(true)
-  }
-
-  private fun isSpeakerOut(call: MethodCall, result: Result) {
-    Log.d("FlutterPlugin", "isSpeakerOut ${call.arguments}")
-
-    val callId = call.arguments<String>() as String
-    val planetKitCall = getNativeInstance(callId) as? PlanetKitCall
-
-    if (planetKitCall == null) {
-      Log.d("FlutterPlugin", "failed to find the call for $callId")
-      result.success( false)
-      return
-    }
-
-    result.success(planetKitCall.isSpeakerOn)
-  }
-
-  private fun isMyAudioMuted(call: MethodCall, result: Result) {
-    Log.d("FlutterPlugin", "isMyAudioMuted ${call.arguments}")
-
-    val callId = call.arguments<String>() as String
-    val planetKitCall = getNativeInstance(callId) as? PlanetKitCall
-
-    if (planetKitCall == null) {
-      Log.d("FlutterPlugin", "failed to find the call for $callId")
-      result.success( false)
-      return
-    }
-
-    result.success(planetKitCall.isMyAudioMuted)
-  }
-
-  private fun isPeerAudioMuted(call: MethodCall, result: Result) {
-    Log.d("FlutterPlugin", "isPeerAudioMuted ${call.arguments}")
-
-    val callId = call.arguments<String>() as String
-    val planetKitCall = getNativeInstance(callId) as? PlanetKitCall
-
-    if (planetKitCall == null) {
-      Log.d("FlutterPlugin", "failed to find the call for $callId")
-      result.success( false)
-      return
-    }
-
-    result.success(planetKitCall.isPeerAudioMuted)
-  }
-
-
-  private fun releaseInstance(call: MethodCall, result: Result) {
-    Log.d("FlutterPlugin", "releaseInstance ${call.arguments}")
-    val id = call.arguments<String>() as String
-    removeNativeInstance(id)
-    result.success(true)
-  }
-
-  private fun createCcParam(call: MethodCall, result: Result) {
-    Log.d("FlutterPlugin", "createCcParam")
-
-    val ccParamString = call.arguments<String>() as String
-    val ccParam = PlanetKitCCParam(ccParamString)
-    val id = ccParam.hashCode().toString()
-    addNativeInstance(id, ccParam)
-
-    result.success(id)
-  }
-
-  private fun enableHookMyAudio(call: MethodCall, result: Result) {
-    Log.d("FlutterPlugin", "enableHookMyAudio")
-    val callId = call.arguments<String>() as String
-    val planetKitCall = getNativeInstance(callId) as? PlanetKitCall
-
-    if (planetKitCall == null) {
-      Log.d("FlutterPlugin", "failed to find the call for $callId")
-      result.success( false)
-      return
-    }
-
-    val interceptMyAudioListener = object : PlanetKitInterceptMyAudioListener {
-      override fun onIntercept(audioData: PlanetKitInterceptedAudio) {
-        addNativeInstance(audioData.hashCode().toString(), audioData)
-
-        val data = mapOf(
-          "callId" to planetKitCall.hashCode().toString(),
-          "audioId" to audioData.hashCode().toString(),
-          "sampleRate" to audioData.sampleRate,
-          "channel" to audioData.channel,
-          "sampleType" to audioData.sampleType.ordinal,
-          "sampleCount" to audioData.sampleCount,
-          "seq" to audioData.sequenceNumber,
-          "data" to audioData.getRawData()  // Assuming this is a ByteArray or similar
+        // IMPORTANT: Use the global broadcaster for background-verified calls
+        // Flow: 1) Background engine: broadcaster → background plugin
+        //       2) After adoptBackgroundCall(): broadcaster → foreground plugin  
+        //       3) After acceptCall(): foreground plugin directly (no broadcaster)
+        val verifyCallResult = PlanetKit.verifyCall(
+            verifyCallParam,
+            PlanetKitFlutterVerifyListenerBroadcaster.instance as VerifyListener
         )
 
-        Handler(Looper.getMainLooper()).post {
-          hookedAudioStreamHandler.eventSink?.success(data)
+        // Do not add to nativeInstances here; we keep it in the background pool
+        verifyCallResult.call?.let { callObj ->
+            callPlugin.addBackgroundCall(callObj)
         }
-      }
+
+        val response = VerifyCallResponse(
+            verifyCallResult.call?.hashCode().toString(),
+            verifyCallResult.reason
+        )
+        val responseJson = gson.toJson(response)
+
+        result.success(responseJson)
     }
 
-    val ret = planetKitCall.enableInterceptMyAudio(interceptMyAudioListener) { res ->
-      if (res.isSuccessful) {
-        // TODO: remove after SDK update
-        isInterceptedAudioEnabled[planetKitCall.hashCode().toString()] = true
-      }
-      result.success(res.isSuccessful)
+    private fun adoptBackgroundCall(call: MethodCall, result: Result) {
+        val callId = call.arguments<String>() as String
+        val adopted = callPlugin.adoptBackgroundCall(callId, nativeInstances)
+        result.success(adopted)
     }
 
-    if (!ret) {
-      Log.d("FlutterPlugin", "enableInterceptMyAudio returned false")
-      result.success(false)
-    }
-  }
+    private fun joinConference(call: MethodCall, result: Result) {
+        Log.d("FlutterPlugin", "joinConference ${call.arguments}")
+        val args = call.arguments<Map<String, Any>>()
+        val jsonArgs = gson.toJson(args)
+        val param = gson.fromJson(jsonArgs, ConferenceParams.JoinConferenceParam::class.java)
 
-  private fun disableHookMyAudio(call: MethodCall, result: Result) {
-    Log.d("FlutterPlugin", "disableHookMyAudio")
-    val callId = call.arguments<String>() as String
-    val planetKitCall = getNativeInstance(callId) as? PlanetKitCall
+        var conferenceParamBuilder = PlanetKitConferenceParam.Builder()
+            .myId(param.myUserId)
+            .myServiceId(param.myServiceId)
+            .roomId(param.roomId)
+            .roomServiceId(param.roomServiceId)
+            .accessToken(param.accessToken)
+            .enableStatistics(param.enableStatistics)
+            .setInitialMyVideoState(param.initialMyVideoState)
 
-    if (planetKitCall == null) {
-      Log.d("FlutterPlugin", "failed to find the call for $callId")
-      result.success( false)
-      return
-    }
+        param.endTonePath?.let { endTonePath ->
+            flutterAssets?.getAssetFilePathByName(endTonePath)?.let { key ->
+                val uri = Uri.parse(key)
+                conferenceParamBuilder = conferenceParamBuilder.endTone(uri)
+            }
+        }
 
-    val ret = planetKitCall.disableInterceptMyAudio() { res ->
-      if (res.isSuccessful) {
-        // TODO: remove after SDK update
-        isInterceptedAudioEnabled[planetKitCall.hashCode().toString()] = false
-      }
-      result.success(res.isSuccessful)
-    }
+        param.allowConferenceWithoutMic?.let { allow ->
+            conferenceParamBuilder = conferenceParamBuilder.allowConferenceWithoutMic(allow)
+            Log.d("FlutterPlugin", "set allowCallWithoutMic $allow")
+        }
 
-    if (!ret) {
-      Log.d("FlutterPlugin", "enableInterceptMyAudio returned false")
-      result.success(false)
-    }
-  }
+        param.enableAudioDescription?.let { enable ->
+            conferenceParamBuilder = conferenceParamBuilder.enableAudioDescription(enable)
+            Log.d("FlutterPlugin", "set enableAudioDescription $enable")
+        }
 
-  private fun putHookedMyAudioBack(call: MethodCall, result: Result) {
-    Log.d("FlutterPlugin", "putHookedMyAudioBack")
-    val args = call.arguments<Map<String, Any>>()
-    val jsonArgs = gson.toJson(args)
-    val param = gson.fromJson(jsonArgs, PutHookedAudioBackParam::class.java)
+        param.audioDescriptionUpdateIntervalMs?.let { interval ->
+            conferenceParamBuilder =
+                conferenceParamBuilder.setAudioDescriptionInterval(interval.toLong())
+            Log.d("FlutterPlugin", "set setAudioDescriptionInterval $interval")
+        }
 
-    val callId = param.callId
-    val audioId = param.audioId
-    val planetKitCall = getNativeInstance(callId) as? PlanetKitCall
-    val audio = getNativeInstance(audioId) as? PlanetKitInterceptedAudio
+        param.allowConferenceWithoutMicPermission?.let { allow ->
+            conferenceParamBuilder = conferenceParamBuilder.allowConferenceWithoutMicPermission(allow)
+            Log.d("FlutterPlugin", "allowConferenceWithoutMicPermission $allow")
+        }
 
-    if (planetKitCall == null) {
-      Log.d("FlutterPlugin", "failed to find the call for $callId")
-      result.success( false)
-      return
-    }
+        conferenceParamBuilder = conferenceParamBuilder.mediaType(param.mediaType)
 
-    if (audio == null) {
-      Log.d("FlutterPlugin", "failed to find the call for $audioId")
-      result.success( false)
-      return
-    }
+        val conferenceParam = conferenceParamBuilder.build()
 
-    val ret = planetKitCall.putInterceptedMyAudioBack(audio)
+        val joinConferenceResult = PlanetKit.joinConference(conferenceParam, conferencePlugin)
 
-    if (!ret) {
-      Log.d("FlutterPlugin", "putInterceptedMyAudioBack returned false")
-    }
+        if (joinConferenceResult.reason == PlanetKitStartFailReason.NONE &&
+            joinConferenceResult.conference != null
+        ) {
+            val conference = joinConferenceResult.conference as PlanetKitConference
+            nativeInstances.add(conference.hashCode().toString(), conference)
+        }
 
-    result.success(ret)
-  }
+        val response = JoinConferenceResponse(
+            joinConferenceResult.conference?.hashCode().toString(),
+            joinConferenceResult.reason
+        )
 
-  private fun isHookMyAudioEnabled(call: MethodCall, result: Result) {
-    Log.d("FlutterPlugin", "isHookMyAudioEnabled")
-    val callId = call.arguments<String>() as String
-    val planetKitCall = getNativeInstance(callId) as? PlanetKitCall
-
-    if (planetKitCall == null) {
-      Log.d("FlutterPlugin", "failed to find the call for $callId")
-      result.success( false)
-      return
+        val responseJson = gson.toJson(response)
+        result.success(responseJson)
     }
 
-    if (isInterceptedAudioEnabled.containsKey(planetKitCall.hashCode().toString())) {
-      Log.d("FlutterPlugin", "failed to find the call in isInterceptedAudioEnabled")
-      result.success( false)
-      return
+
+    private fun releaseInstance(call: MethodCall, result: Result) {
+        Log.d("FlutterPlugin", "releaseInstance ${call.arguments}")
+        val id = call.arguments<String>() as String
+        nativeInstances.remove(id)
+        result.success(true)
     }
 
-    result.success(isInterceptedAudioEnabled[planetKitCall.hashCode().toString()])
-  }
+    private fun createCcParam(call: MethodCall, result: Result) {
+        Log.d("FlutterPlugin", "createCcParam")
 
-  private fun setHookedAudioData(call: MethodCall, result: Result) {
-    Log.d("FlutterPlugin", "setHookedAudioData")
-    val args = call.arguments as? Map<String, Any>
+        val ccParamString = call.arguments<String>() as String
+        val ccParam = PlanetKitCCParam.create(ccParamString)
 
-    val audioId = args?.get("audioId") as? String
-    val dataBytes = args?.get("data") as? ByteArray
+        if (ccParam == null) {
+            result.success(null)
+            return
+        }
 
-    if (audioId == null || dataBytes == null) {
-      Log.d("FlutterPlugin", "failed to get parameters")
-      result.success(false)
-      return
+        val id = ccParam.hashCode().toString()
+        nativeInstances.add(id, ccParam)
+
+        val response = CreateCcParamResponse(
+            id,
+            ccParam.peerId,
+            ccParam.peerServiceId,
+            ccParam.mediaType
+        )
+        val responseJson = gson.toJson(response)
+
+        Log.d("FlutterPlugin", "createCcParam ${responseJson}")
+
+        result.success(responseJson)
     }
 
-    val audio = getNativeInstance(audioId) as? PlanetKitInterceptedAudio
-    if (audio == null) {
-      Log.d("FlutterPlugin", "failed to get PlanetKitInterceptedAudio instance")
-      result.success(false)
-      return
+    private fun setServerUrl(call: MethodCall, result: Result) {
+        Log.d("FlutterPlugin", "setServerUrl")
+        val serverUrl = call.arguments<String>() as String
+
+        PlanetKit.setServer(serverUrl)
+        result.success(true)
     }
 
-    audio.setRawData(dataBytes)
-    result.success(true)
-  }
 
-  override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
-    channel.setMethodCallHandler(null)
-    flutterPluginBindingRef = null
-  }
+    override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        channel.setMethodCallHandler(null)
+        flutterPluginBindingRef = null
+        cameraPlugin.removeCameraTypeChangedListener()
+    }
 }
-
 
 

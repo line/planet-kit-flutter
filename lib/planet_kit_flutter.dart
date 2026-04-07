@@ -33,6 +33,8 @@ export 'package:planet_kit_flutter/src/public/call/planet_kit_verify_call_param.
 export 'package:planet_kit_flutter/src/public/call/planet_kit_make_call_result.dart';
 export 'package:planet_kit_flutter/src/public/call/planet_kit_verify_call_result.dart';
 export 'package:planet_kit_flutter/src/public/my_media_status/planet_kit_my_media_status.dart';
+export 'package:planet_kit_flutter/src/public/call/planet_kit_background_call.dart';
+export 'package:planet_kit_flutter/src/public/call/planet_kit_verify_background_call_result.dart';
 
 export 'package:planet_kit_flutter/src/public/conference/planet_kit_conference.dart';
 export 'package:planet_kit_flutter/src/public/conference/planet_kit_conference_join_conference_result.dart';

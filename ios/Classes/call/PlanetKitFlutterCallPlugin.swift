@@ -26,12 +26,48 @@ class PlanetKitFlutterCallPlugin {
     
     private let nativeInstances: PlanetKitFlutterNativeInstances
     private let eventStreamHandler: PlanetKitFlutterStreamHandler
+    private let backgroundEventStreamHandler: PlanetKitFlutterStreamHandler
     private var myStatusDelegates: [String : Weak<PlanetKitMyMediaStatusDelegate>] = [:]
     private var peerAudioDescriptionDelegates: [String : PeerAudioDescriptionDelegate] = [:]
+    private var backgroundCalls: [String: PlanetKitCall] = [:]
     
-    init(nativeInstances: PlanetKitFlutterNativeInstances, eventStreamHandler: PlanetKitFlutterStreamHandler) {
+    init(nativeInstances: PlanetKitFlutterNativeInstances, eventStreamHandler: PlanetKitFlutterStreamHandler, backgroundEventStreamHandler: PlanetKitFlutterStreamHandler) {
         self.nativeInstances = nativeInstances
         self.eventStreamHandler = eventStreamHandler
+        self.backgroundEventStreamHandler = backgroundEventStreamHandler
+        
+        // Register this delegate with broadcaster to receive events from background-verified calls
+        // Regular calls (makeCall, verifyCall) bypass the broadcaster
+        PlanetKitFlutterCallDelegateBroadcaster.shared.registerDelegate(self)
+        PlanetKitLog.v("#flutter PlanetKitFlutterCallPlugin registered with broadcaster")
+    }
+    
+    /**
+     * Unregister from the broadcaster when this plugin is being cleaned up
+     */
+    func dispose() {
+        PlanetKitFlutterCallDelegateBroadcaster.shared.unregisterDelegate(self)
+        PlanetKitLog.v("#flutter PlanetKitFlutterCallPlugin unregistered from broadcaster")
+    }
+
+    // MARK: Background call management
+    func addBackgroundCall(_ call: PlanetKitCall) {
+        backgroundCalls[call.instanceId] = call
+    }
+
+    func adoptBackgroundCall(callId: String, nativeInstances: PlanetKitFlutterNativeInstances) -> Bool {
+        if let call = backgroundCalls.removeValue(forKey: callId) {
+            nativeInstances.add(key: callId, instance: call)
+            DispatchQueue.main.async { [weak self] in
+                guard let `self` = self else { return }
+
+                let event = AdoptBackgroundCallEvent(id: callId)
+                let encodedEvent = PlanetKitFlutterPlugin.encode(data: event)
+                self.backgroundEventStreamHandler.eventSink?(encodedEvent)
+            }
+            return true
+        }
+        return false
     }
     
     func acceptCall(call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -359,6 +395,7 @@ extension PlanetKitFlutterCallPlugin: PlanetKitCallDelegate {
     public func didDisconnect(_ call: PlanetKit.PlanetKitCall, disconnected: PlanetKit.PlanetKitDisconnectedParam) {
         DispatchQueue.main.async { [weak self] in
             guard let `self` = self else { return }
+            
             PlanetKitLog.v("#flutter \(#function) \(disconnected.reason)")
             let event = DisconnectedCallEvent(id: call.instanceId, disconnectReason: disconnected.reason, disconnectSource: disconnected.source, userCode: disconnected.userCode, byRemote: disconnected.byRemote)
             let encodedEvent = PlanetKitFlutterPlugin.encode(data: event)
@@ -371,18 +408,33 @@ extension PlanetKitFlutterCallPlugin: PlanetKitCallDelegate {
                     }
                 }
             }
-            
-            peerAudioDescriptionDelegates.removeValue(forKey: call.instanceId)
-            nativeInstances.remove(key: call.myMediaStatus.instanceId)
+
+            if backgroundCalls.keys.contains(call.instanceId) {
+                PlanetKitLog.v("#flutter \(#function) background call")
+                _ = backgroundCalls.removeValue(forKey: call.instanceId)
+                self.backgroundEventStreamHandler.eventSink?(encodedEvent)
+            } else {
+                peerAudioDescriptionDelegates.removeValue(forKey: call.instanceId)
+                nativeInstances.remove(key: call.myMediaStatus.instanceId)
+                self.eventStreamHandler.eventSink?(encodedEvent)
+            }
         }
     }
     
     public func didVerify(_ call: PlanetKit.PlanetKitCall, peerStartMessage: PlanetKit.PlanetKitCallStartMessage?, peerUseResponderPreparation: Bool) {
-        DispatchQueue.main.async {
+        DispatchQueue.main.async { [weak self] in
+            guard let `self` = self else { return }
+
             PlanetKitLog.v("#flutter \(#function)")
             let event = VerifiedCallEvent(id: call.instanceId, peerUseResponderPreparation: peerUseResponderPreparation)
             let encodedEvent = PlanetKitFlutterPlugin.encode(data: event)
-            self.eventStreamHandler.eventSink?(encodedEvent)
+
+            if backgroundCalls.keys.contains(call.instanceId) {
+                PlanetKitLog.v("#flutter \(#function) background call")
+                self.backgroundEventStreamHandler.eventSink?(encodedEvent)
+            } else {
+                self.eventStreamHandler.eventSink?(encodedEvent)
+            }
         }
     }
     

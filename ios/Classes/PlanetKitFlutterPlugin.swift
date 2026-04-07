@@ -27,9 +27,10 @@ extension PlanetKitCCParam: PluginInstance {
 
 
 public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
-    static let planetKitFlutterVersion = "1.0.0"
+    static let planetKitFlutterVersion = "1.1.0"
     var registrar: FlutterPluginRegistrar?
     let eventStreamHandler = PlanetKitFlutterStreamHandler()
+    let backgroundEventStreamHandler = PlanetKitFlutterStreamHandler()
     let hookedAudioStreamHandler = PlanetKitFlutterStreamHandler()
     let nativeInstances = PlanetKitFlutterNativeInstances()
     
@@ -38,7 +39,7 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
     }()
     
     lazy var callPlugin: PlanetKitFlutterCallPlugin = {
-        PlanetKitFlutterCallPlugin(nativeInstances: nativeInstances, eventStreamHandler: eventStreamHandler)
+        PlanetKitFlutterCallPlugin(nativeInstances: nativeInstances, eventStreamHandler: eventStreamHandler, backgroundEventStreamHandler: backgroundEventStreamHandler)
     }()
     
     lazy var myMediaStatusPlugin: PlanetKitFlutterMyMediaStatusPlugin = {
@@ -75,7 +76,8 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
 
         FlutterEventChannel(name: "planetkit_event", binaryMessenger: messenger).setStreamHandler(instance.eventStreamHandler)
         FlutterEventChannel(name: "planetkit_hooked_audio", binaryMessenger: messenger).setStreamHandler(instance.hookedAudioStreamHandler)
-        
+        FlutterEventChannel(name: "planetkit_background_event", binaryMessenger: messenger).setStreamHandler(instance.backgroundEventStreamHandler)
+
         let factory = PlanetKitVideoViewFactory(messenger: registrar.messenger())
         registrar.register(factory, withId: "planet_kit_video_view")
         
@@ -95,6 +97,9 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
         case "verifyCall":
             verifyCall(call: call, result: result)
             break
+        case "verifyBackgroundCall":
+            verifyBackgroundCall(call: call, result: result)
+            break
         case "joinConference":
             joinConference(call: call, result: result)
             break
@@ -106,6 +111,9 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
             break
         case "setServerUrl":
             setServerUrl(call: call, result: result)
+            break
+        case "adoptBackgroundCall":
+            adoptBackgroundCall(call: call, result: result)
             break
             
         case "call_enableHookMyAudio":
@@ -398,6 +406,7 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
             return planetKitUserId
         }()
         
+        // Regular makeCall uses the plugin instance directly (no broadcaster)
         let makeCallParam = PlanetKitCallParam(myUserId: myPlanetKitUserId, peerUserId: peerPlanetKitUserId, delegate: callPlugin, accessToken: param.accessToken)
         
         makeCallParam.useResponderPreparation = param.useResponderPreparation
@@ -532,7 +541,7 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
         settings = settings.withResponseOnEnableVideo(response: param.responseOnEnableVideo)
         settings = settings.withEnableStatisticsKey(enable: param.enableStatistics)
 
-        
+        // Regular verifyCall uses the plugin instance directly (no broadcaster)
         let verifyCallResult = PlanetKitManager.shared.verifyCall(myUserId: myPlanetKitUserId, ccParam: ccParam, settings: settings.build(), delegate: callPlugin)
         
         if verifyCallResult.reason == .none, let planetKitCall = verifyCallResult.call {
@@ -549,6 +558,91 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
 
         PlanetKitLog.v("#flutter \(#function) response: \(encodedResponse)")
         result(encodedResponse)
+    }
+
+    func verifyBackgroundCall(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+
+        let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: VerifyCallParam.self)
+        let myPlanetKitUserId = PlanetKitUserId(id: param.myUserId, serviceId: param.myServiceId)
+
+        guard let ccParam = nativeInstances.get(key: param.ccParam.id) as? PlanetKitCCParam else {
+            PlanetKitLog.e("#flutter \(#function) failed to get cc param")
+            let response = VerifyCallResponse(callId: nil, failReason: .invalidParam)
+            let encodedResponse = PlanetKitFlutterPlugin.encode(data: response)
+            result(encodedResponse)
+            return
+        }
+
+        var settings = PlanetKitVerifyCallSettingBuilder()
+
+        if let callKitType = param.callKitType {
+            let callKitSetting = PlanetKitCallKitSetting(type: callKitType, param: nil)
+            settings = settings.withCallKitSettingsKey(setting: callKitSetting)
+        }
+
+        if let holdTonePath = param.holdTonePath, let key = registrar?.lookupKey(forAsset: holdTonePath), let url = Bundle.main.url(forResource: key, withExtension: nil), let resultSettings = try?  settings.withSetHoldToneKey(fileResourceUrl: url) {
+            PlanetKitLog.v("#flutter \(#function) hold url set")
+            settings = resultSettings
+        }
+
+        if let ringTonePath = param.ringtonePath, let key = registrar?.lookupKey(forAsset: ringTonePath), let url = Bundle.main.url(forResource: key, withExtension: nil), let resultSettings = try?  settings.withSetRingToneKey(fileResourceUrl: url) {
+            PlanetKitLog.v("#flutter \(#function) ringtone url set")
+            settings = resultSettings
+        }
+
+        if let endTonePath = param.endTonePath, let key = registrar?.lookupKey(forAsset: endTonePath), let url = Bundle.main.url(forResource: key, withExtension: nil), let resultSettings = try? settings.withSetEndToneKey(fileResourceUrl: url) {
+            PlanetKitLog.v("#flutter \(#function) endtone url set")
+            settings = resultSettings
+        }
+
+        if let allowCallWithoutMic = param.allowCallWithoutMic {
+            PlanetKitLog.v("#flutter \(#function) allowCallWithoutMic: \(allowCallWithoutMic)")
+            settings = settings.withAllowCallWithoutMicKey(allow: allowCallWithoutMic)
+        }
+
+        if let enableAudioDescription = param.enableAudioDescription {
+            PlanetKitLog.v("#flutter \(#function) enableAudioDescription: \(enableAudioDescription)")
+            settings = settings.withEnableAudioDescriptionKey(enable: enableAudioDescription)
+        }
+
+        if let audioDescriptionUpdateIntervalMs = param.audioDescriptionUpdateIntervalMs {
+            PlanetKitLog.v("#flutter \(#function) audioDescriptionUpdateIntervalMs: \(audioDescriptionUpdateIntervalMs)")
+            let interval = TimeInterval(audioDescriptionUpdateIntervalMs) / 1000.0
+            settings = settings.withAudioDescriptionUpdateIntervalKey(interval: interval)
+        }
+
+        if let screenShareKey = param.screenShareKey {
+            PlanetKitLog.v("#flutter \(#function) screenShareKey: \(screenShareKey)")
+            settings = settings.withEnableScreenShareKey(broadcastPort: UInt16(screenShareKey.broadcastPort), broadcastPeerToken: screenShareKey.broadcastPeerToken, broadcastMyToken: screenShareKey.broadcastMyToken)
+        }
+
+        settings = settings.withResponseOnEnableVideo(response: param.responseOnEnableVideo)
+        settings = settings.withEnableStatisticsKey(enable: param.enableStatistics)
+
+        // IMPORTANT: Use the global broadcaster for background-verified calls
+        // Flow: 1) Background engine: broadcaster → background plugin
+        //       2) After adoptBackgroundCall(): broadcaster → foreground plugin  
+        //       3) After acceptCall(): foreground plugin directly (no broadcaster)
+        let verifyCallResult = PlanetKitManager.shared.verifyCall(myUserId: myPlanetKitUserId, ccParam: ccParam, settings: settings.build(), delegate: PlanetKitFlutterCallDelegateBroadcaster.shared)
+
+        if verifyCallResult.reason == .none, let planetKitCall = verifyCallResult.call {
+            // Keep in background pool; do not add to active nativeInstances yet
+            callPlugin.addBackgroundCall(planetKitCall)
+        }
+
+        let response = VerifyCallResponse(callId: verifyCallResult.call?.instanceId, failReason: verifyCallResult.reason)
+        let encodedResponse = PlanetKitFlutterPlugin.encode(data: response)
+        PlanetKitLog.v("#flutter \(#function) response: \(encodedResponse)")
+        result(encodedResponse)
+    }
+
+    // MARK: Background call adoption
+    func adoptBackgroundCall(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        let callId = call.arguments as! String
+        let adopted = callPlugin.adoptBackgroundCall(callId: callId, nativeInstances: nativeInstances)
+        result(adopted)
     }
     
     func joinConference(call: FlutterMethodCall, result: @escaping FlutterResult) {
