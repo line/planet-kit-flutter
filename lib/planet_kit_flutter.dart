@@ -16,6 +16,7 @@ library planet_kit_flutter;
 
 export 'package:planet_kit_flutter/src/public/planet_kit_init_param.dart';
 export 'package:planet_kit_flutter/src/public/planet_kit_manager.dart';
+export 'package:planet_kit_flutter/src/public/planet_kit_version_info.dart';
 export 'package:planet_kit_flutter/src/public/planet_kit_start_fail_reason.dart';
 export 'package:planet_kit_flutter/src/public/planet_kit_disconnect_reason.dart';
 export 'package:planet_kit_flutter/src/public/planet_kit_disconnect_source.dart';
@@ -50,3 +51,5 @@ export 'package:planet_kit_flutter/src/public/video/planet_kit_video_resolution.
 export 'package:planet_kit_flutter/src/public/statistics/planet_kit_statistics.dart';
 
 export 'package:planet_kit_flutter/src/public/screen_share/planet_kit_screen_share_key.dart';
+
+export 'package:planet_kit_flutter/src/public/data_session/planet_kit_data_session.dart';

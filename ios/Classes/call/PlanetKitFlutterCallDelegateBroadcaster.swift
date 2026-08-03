@@ -202,5 +202,41 @@ class PlanetKitFlutterCallDelegateBroadcaster: PlanetKitCallDelegate {
         PlanetKitLog.v("#flutter CallDelegateBroadcaster peerDidStopScreenShare")
         broadcast { $0.peerDidStopScreenShare?(call, reason: reason) }
     }
+
+    // MARK: Contents sharing events
+
+    func peerDidSetSharedContents(_ call: PlanetKitCall, data: Data, elapsed: TimeInterval) {
+        PlanetKitLog.v("#flutter CallDelegateBroadcaster peerDidSetSharedContents")
+        broadcast { $0.peerDidSetSharedContents?(call, data: data, elapsed: elapsed) }
+    }
+
+    func peerDidUnsetSharedContents(_ call: PlanetKitCall) {
+        PlanetKitLog.v("#flutter CallDelegateBroadcaster peerDidUnsetSharedContents")
+        broadcast { $0.peerDidUnsetSharedContents?(call) }
+    }
+
+    func peerDidSetExclusivelySharedContents(_ call: PlanetKitCall, data: Data, elapsed: TimeInterval) {
+        PlanetKitLog.v("#flutter CallDelegateBroadcaster peerDidSetExclusivelySharedContents")
+        broadcast { $0.peerDidSetExclusivelySharedContents?(call, data: data, elapsed: elapsed) }
+    }
+
+    func peerDidUnsetExclusivelySharedContents(_ call: PlanetKitCall) {
+        PlanetKitLog.v("#flutter CallDelegateBroadcaster peerDidUnsetExclusivelySharedContents")
+        broadcast { $0.peerDidUnsetExclusivelySharedContents?(call) }
+    }
+
+    // MARK: Short data events
+
+    func didReceiveShortData(_ call: PlanetKitCall, dataType: String, data: Data) {
+        PlanetKitLog.v("#flutter CallDelegateBroadcaster didReceiveShortData")
+        broadcast { $0.didReceiveShortData?(call, dataType: dataType, data: data) }
+    }
+
+    // MARK: Data session events
+
+    func dataSessionIncoming(_ call: PlanetKitCall, streamId: PlanetKitDataSessionStreamId, type: PlanetKitDataSessionType) {
+        PlanetKitLog.v("#flutter CallDelegateBroadcaster dataSessionIncoming")
+        broadcast { $0.dataSessionIncoming?(call, streamId: streamId, type: type) }
+    }
 }
 

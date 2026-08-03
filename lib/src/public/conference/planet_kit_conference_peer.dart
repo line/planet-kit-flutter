@@ -44,8 +44,14 @@ class PlanetKitConferencePeer {
   /// The user ID associated with this peer.
   final PlanetKitUserId userId;
 
+  /// Whether this peer supports the data session feature.
+  final bool isDataSessionSupported;
+
   /// Constructs a [PlanetKitConferencePeer] with a unique identifier and associated user ID.
-  PlanetKitConferencePeer({required this.id, required this.userId}) {
+  PlanetKitConferencePeer(
+      {required this.id,
+      required this.userId,
+      this.isDataSessionSupported = false}) {
     NativeResourceManager.instance.add(this, id);
   }
 

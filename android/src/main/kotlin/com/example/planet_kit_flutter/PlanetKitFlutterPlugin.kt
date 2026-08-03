@@ -16,9 +16,12 @@
 package com.example.planet_kit_flutter
 
 
+import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import com.example.planet_kit_flutter.screenshare.PlanetKitScreenShareService
 import com.example.planet_kit_flutter.call.CallEventType
 import com.example.planet_kit_flutter.call.CallEventTypeSerializer
 import com.example.planet_kit_flutter.call.NetworkReavailableCallEvent
@@ -75,18 +78,34 @@ import com.linecorp.planetkit.video.PlanetKitScreenShareState
 import com.linecorp.planetkit.video.PlanetKitVideoStatus
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterPluginBinding
+import io.flutter.embedding.engine.plugins.activity.ActivityAware
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import io.flutter.plugin.common.PluginRegistry
 import java.lang.ref.WeakReference
 
 
-class PlanetKitFlutterPlugin : FlutterPlugin, MethodCallHandler {
-    val planetKitFlutterVersion = "1.1.0"
+class PlanetKitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, PluginRegistry.ActivityResultListener {
+    companion object {
+        // Single source for the plugin version on Android (mirrors the iOS
+        // `static let` and `pubspec.yaml`). Surfaced to testers via getPlanetKitVersionInfo.
+        const val planetKitFlutterVersion = "1.2.0"
+
+        // Captured from the PlanetKit.initialize callback and held statically so it
+        // survives FlutterPlugin re-attachment. initializePlanetKit early-returns when
+        // PlanetKit.isInitialize is already true, so an instance field would be left
+        // null on re-init (e.g. engine restart in a live process); the SDK exposes no
+        // live userAgent getter. Static lifetime matches PlanetKit.isInitialize (both
+        // process/classloader scoped), so the value stays consistent across instances.
+        private var planetKitUserAgent: String? = null
+    }
     private lateinit var channel: MethodChannel
     private var flutterPluginBindingRef: WeakReference<FlutterPluginBinding>? = null
+    private var activity: Activity? = null
     private var gson: Gson
     private var flutterAssets: FlutterPlugin.FlutterAssets? = null
 
@@ -235,6 +254,15 @@ class PlanetKitFlutterPlugin : FlutterPlugin, MethodCallHandler {
     override fun onMethodCall(call: MethodCall, result: Result) {
         when (call.method) {
             "getPlatformVersion" -> result.success("Android ${android.os.Build.VERSION.RELEASE}")
+            "getPlanetKitVersionInfo" -> {
+                Log.d("FlutterPlugin", "getPlanetKitVersionInfo")
+                val info = mapOf(
+                    "sdkVersion" to PlanetKit.version,
+                    "pluginVersion" to planetKitFlutterVersion,
+                    "userAgent" to planetKitUserAgent
+                )
+                result.success(gson.toJson(info))
+            }
             "initializePlanetKit" -> initializePlanetKit(call, result)
             "makeCall" -> makeCall(call, result)
             "verifyCall" -> verifyCall(call, result)
@@ -286,6 +314,22 @@ class PlanetKitFlutterPlugin : FlutterPlugin, MethodCallHandler {
 
             "call_addPeerScreenShareView" -> callPlugin.addPeerScreenShareView(call, result)
             "call_removePeerScreenShareView" -> callPlugin.removePeerScreenShareView(call, result)
+            "call_startMyScreenShare" -> callPlugin.startMyScreenShare(call, result, activity)
+            "call_stopMyScreenShare" -> callPlugin.stopMyScreenShare(call, result, flutterPluginBindingRef?.get()?.applicationContext ?: return result.success(false))
+            "call_sendShortData" -> callPlugin.sendShortData(call, result)
+
+            "call_setSharedContents" -> callPlugin.setSharedContents(call, result)
+            "call_unsetSharedContents" -> callPlugin.unsetSharedContents(call, result)
+            "call_setExclusivelySharedContents" -> callPlugin.setExclusivelySharedContents(call, result)
+            "call_unsetExclusivelySharedContents" -> callPlugin.unsetExclusivelySharedContents(call, result)
+
+            "call_makeOutboundDataSession" -> callPlugin.makeOutboundDataSession(call, result)
+            "call_makeInboundDataSession" -> callPlugin.makeInboundDataSession(call, result)
+            "call_unsupportInboundDataSession" -> callPlugin.unsupportInboundDataSession(call, result)
+            "call_getOutboundDataSession" -> callPlugin.getOutboundDataSession(call, result)
+            "call_getInboundDataSession" -> callPlugin.getInboundDataSession(call, result)
+            "call_dataSessionSend" -> callPlugin.dataSessionSend(call, result)
+            "call_dataSessionChangeDestination" -> callPlugin.dataSessionChangeDestination(call, result)
 
 
             // My media status
@@ -317,7 +361,26 @@ class PlanetKitFlutterPlugin : FlutterPlugin, MethodCallHandler {
             "conference_pauseMyVideo" -> conferencePlugin.pauseMyVideo(call, result)
             "conference_resumeMyVideo" -> conferencePlugin.resumeMyVideo(call, result)
             "conference_getStatistics" -> conferencePlugin.getStatistics(call, result)
-            
+            "conference_startMyScreenShare" -> conferencePlugin.startMyScreenShare(call, result, activity)
+            "conference_stopMyScreenShare" -> conferencePlugin.stopMyScreenShare(call, result, flutterPluginBindingRef?.get()?.applicationContext ?: return result.success(false))
+            "conference_sendShortData" -> conferencePlugin.sendShortData(call, result)
+            "conference_sendShortDataToPeer" -> conferencePlugin.sendShortDataToPeer(call, result)
+
+            "conference_setSharedContents" -> conferencePlugin.setSharedContents(call, result)
+            "conference_unsetSharedContents" -> conferencePlugin.unsetSharedContents(call, result)
+            "conference_setExclusivelySharedContents" -> conferencePlugin.setExclusivelySharedContents(call, result)
+            "conference_unsetExclusivelySharedContents" -> conferencePlugin.unsetExclusivelySharedContents(call, result)
+            "conference_setRoomSharedContents" -> conferencePlugin.setRoomSharedContents(call, result)
+            "conference_unsetRoomSharedContents" -> conferencePlugin.unsetRoomSharedContents(call, result)
+
+            "conference_makeOutboundDataSession" -> conferencePlugin.makeOutboundDataSession(call, result)
+            "conference_makeInboundDataSession" -> conferencePlugin.makeInboundDataSession(call, result)
+            "conference_unsupportInboundDataSession" -> conferencePlugin.unsupportInboundDataSession(call, result)
+            "conference_getOutboundDataSession" -> conferencePlugin.getOutboundDataSession(call, result)
+            "conference_getInboundDataSession" -> conferencePlugin.getInboundDataSession(call, result)
+            "conference_dataSessionSend" -> conferencePlugin.dataSessionSend(call, result)
+            "conference_dataSessionChangeDestination" -> conferencePlugin.dataSessionChangeDestination(call, result)
+
             // Conference Peer
             "conferencePeer_getHoldStatus" -> conferencePeerPlugin.getHoldStatus(call, result)
             "conferencePeer_isMuted" -> conferencePeerPlugin.isMuted(call, result)
@@ -390,6 +453,8 @@ class PlanetKitFlutterPlugin : FlutterPlugin, MethodCallHandler {
                         "isVideoHwCodecSupport=$isVideoHwCodecSupport, userAgent=$userAgent)"
             )
 
+            planetKitUserAgent = userAgent
+
             if (isSuccessful) {
                 cameraPlugin.addCameraTypeChangedListener()
             }
@@ -447,6 +512,10 @@ class PlanetKitFlutterPlugin : FlutterPlugin, MethodCallHandler {
         }
         param.peerCountryCode?.let { peerCountryCode ->
             makeCallParamBuilder = makeCallParamBuilder.peerCountryCode(peerCountryCode)
+        }
+
+        param.appServerData?.let { appServerData ->
+            makeCallParamBuilder = makeCallParamBuilder.appServerData(appServerData)
         }
 
         param.holdTonePath?.let { holdTonePath ->
@@ -753,6 +822,10 @@ class PlanetKitFlutterPlugin : FlutterPlugin, MethodCallHandler {
 
         conferenceParamBuilder = conferenceParamBuilder.mediaType(param.mediaType)
 
+        param.appServerData?.let { appServerData ->
+            conferenceParamBuilder = conferenceParamBuilder.appServerData(appServerData)
+        }
+
         val conferenceParam = conferenceParamBuilder.build()
 
         val joinConferenceResult = PlanetKit.joinConference(conferenceParam, conferencePlugin)
@@ -821,6 +894,37 @@ class PlanetKitFlutterPlugin : FlutterPlugin, MethodCallHandler {
         channel.setMethodCallHandler(null)
         flutterPluginBindingRef = null
         cameraPlugin.removeCameraTypeChangedListener()
+    }
+
+    override fun onAttachedToActivity(binding: ActivityPluginBinding) {
+        activity = binding.activity
+        binding.addActivityResultListener(this)
+        PlanetKitScreenShareService.nativeInstances = nativeInstances
+    }
+
+    override fun onDetachedFromActivityForConfigChanges() {
+        activity = null
+    }
+
+    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+        activity = binding.activity
+        binding.addActivityResultListener(this)
+    }
+
+    override fun onDetachedFromActivity() {
+        callPlugin.cancelPendingScreenShare()
+        conferencePlugin.cancelPendingScreenShare()
+        activity = null
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
+        if (requestCode == PlanetKitFlutterCallPlugin.MEDIA_PROJECTION_REQUEST_CODE) {
+            val context = flutterPluginBindingRef?.get()?.applicationContext ?: return false
+            callPlugin.onMediaProjectionResult(resultCode, data, context)
+            conferencePlugin.onMediaProjectionResult(resultCode, data, context)
+            return true
+        }
+        return false
     }
 }
 

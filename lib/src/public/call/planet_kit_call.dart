@@ -25,7 +25,10 @@ import '../audio/planet_kit_hooked_audio.dart';
 import '../../internal/planet_kit_platform_interface.dart';
 import '../../internal/call/planet_kit_platform_call_event.dart';
 import '../../internal/call/planet_kit_platform_call_event_type.dart';
+import '../../internal/data_session/planet_kit_data_session_container.dart';
 import '../../internal/planet_kit_platform_resource_manager.dart';
+import '../data_session/planet_kit_data_session.dart';
+import '../planet_kit_user_id.dart';
 import '../statistics/planet_kit_statistics.dart';
 
 /// A handler for managing call events within the PlanetKit framework.
@@ -112,6 +115,35 @@ class PlanetKitCallEventHandler {
   final void Function(PlanetKitCall call, int averageVolumeLevel)?
       onPeerAudioDescriptionUpdated;
 
+  /// Optional callback triggered when the peer sets shared contents.
+  final void Function(PlanetKitCall call, Uint8List data, Duration elapsed)?
+      onPeerSharedContentsSet;
+
+  /// Optional callback triggered when the peer unsets shared contents.
+  final void Function(PlanetKitCall call)? onPeerSharedContentsUnset;
+
+  /// Optional callback triggered when the peer sets exclusively shared contents.
+  final void Function(PlanetKitCall call, Uint8List data, Duration elapsed)?
+      onPeerExclusivelySharedContentsSet;
+
+  /// Optional callback triggered when the peer unsets exclusively shared contents.
+  final void Function(PlanetKitCall call)? onPeerExclusivelySharedContentsUnset;
+
+  /// Optional callback triggered when short data is received from the peer.
+  /// Provides the data [type] string and the binary [data].
+  final void Function(PlanetKitCall call, String type, Uint8List data)?
+      onShortDataReceived;
+
+  /// Optional callback triggered when the peer starts a data session transfer
+  /// on a given [streamId] with the given [type].
+  ///
+  /// In response, create an inbound data session with
+  /// [PlanetKitCall.makeInboundDataSession], or ignore it with
+  /// [PlanetKitCall.unsupportInboundDataSession].
+  final void Function(PlanetKitCall call,
+      PlanetKitDataSessionStreamId streamId, PlanetKitDataSessionType type)?
+      onDataSessionIncoming;
+
   /// Constructs a [PlanetKitCallEventHandler].
   const PlanetKitCallEventHandler(
       {required this.onWaitConnected,
@@ -133,7 +165,13 @@ class PlanetKitCallEventHandler {
       this.onDetectedMyVideoNoSource,
       this.onPeerScreenShareStarted,
       this.onPeerScreenShareStopped,
-      this.onPeerAudioDescriptionUpdated});
+      this.onPeerAudioDescriptionUpdated,
+      this.onPeerSharedContentsSet,
+      this.onPeerSharedContentsUnset,
+      this.onPeerExclusivelySharedContentsSet,
+      this.onPeerExclusivelySharedContentsUnset,
+      this.onShortDataReceived,
+      this.onDataSessionIncoming});
 }
 
 /// A handler for hooked audio within the PlanetKit framework.
@@ -155,9 +193,17 @@ class PlanetKitCall implements HookedAudioHandler {
   PlanetKitCallHookedAudioHandler? _hookedAudioHandler;
   StreamSubscription<CallEvent>? _subscription;
   PlanetKitMyMediaStatus myMediaStatus;
+  late final PlanetKitDataSessionContainer _dataSession;
 
   /// @nodoc
   final String callId;
+
+  /// Whether the data session feature is supported on this call.
+  ///
+  /// Determined when the call connects (from the connect parameters) and valid
+  /// from [PlanetKitCallEventHandler.onConnected] onward. `false` before the
+  /// call is connected.
+  bool isDataSessionSupported = false;
 
   /// @nodoc
   PlanetKitCall(
@@ -166,6 +212,24 @@ class PlanetKitCall implements HookedAudioHandler {
       required this.myMediaStatus})
       : _eventHandler = eventHandler {
     NativeResourceManager.instance.add(this, callId);
+    _dataSession = PlanetKitDataSessionContainer(
+      makeOutbound: (streamId, type) => Platform.instance.callInterface
+          .makeOutboundDataSession(callId, streamId, type),
+      makeInbound: (streamId) => Platform.instance.callInterface
+          .makeInboundDataSession(callId, streamId),
+      unsupport: (streamId) => Platform.instance.callInterface
+          .unsupportInboundDataSession(callId, streamId),
+      getOutboundType: (streamId) => Platform.instance.callInterface
+          .getOutboundDataSessionType(callId, streamId),
+      getInboundType: (streamId) => Platform.instance.callInterface
+          .getInboundDataSessionType(callId, streamId),
+      send: (streamId, data, timestamp) => Platform.instance.callInterface
+          .dataSessionSend(callId, streamId, data, timestamp),
+      changeDestination: (streamId, target) => Platform
+          .instance.callInterface
+          .dataSessionChangeDestination(
+              callId, streamId, target?.userId, target?.serviceId),
+    );
     _subscription =
         Platform.instance.eventManager.onCallEvent.listen(_onCallEvent);
   }
@@ -282,6 +346,17 @@ class PlanetKitCall implements HookedAudioHandler {
         .removePeerScreenShareView(callId, viewId);
   }
 
+  /// Starts sending the local screen to the peer. Android only — iOS uses the
+  /// broadcast extension flow and always returns false from this method.
+  Future<bool> startMyScreenShare() async {
+    return await Platform.instance.callInterface.startMyScreenShare(callId);
+  }
+
+  /// Stops sending the local screen to the peer.
+  Future<bool> stopMyScreenShare() async {
+    return await Platform.instance.callInterface.stopMyScreenShare(callId);
+  }
+
   /// Pauses the local user's video.
   Future<bool> pauseMyVideo() async {
     return await Platform.instance.callInterface.pauseMyVideo(callId);
@@ -311,6 +386,80 @@ class PlanetKitCall implements HookedAudioHandler {
   Future<PlanetKitStatistics?> getStatistics() async {
     return await Platform.instance.callInterface.getStatistics(callId);
   }
+
+  /// Sets shared contents for the call.
+  Future<bool> setSharedContents(Uint8List data) async {
+    return await Platform.instance.callInterface
+        .setSharedContents(callId, data);
+  }
+
+  /// Unsets shared contents for the call.
+  Future<bool> unsetSharedContents() async {
+    return await Platform.instance.callInterface.unsetSharedContents(callId);
+  }
+
+  /// Sets exclusively shared contents for the call.
+  Future<bool> setExclusivelySharedContents(Uint8List data) async {
+    return await Platform.instance.callInterface
+        .setExclusivelySharedContents(callId, data);
+  }
+
+  /// Unsets exclusively shared contents for the call.
+  Future<bool> unsetExclusivelySharedContents() async {
+    return await Platform.instance.callInterface
+        .unsetExclusivelySharedContents(callId);
+  }
+
+  /// Sends short data to the peer with a [type] string and binary [data].
+  ///
+  /// Returns whether the send request was accepted. The [type] must be at most
+  /// 100 bytes (including the null terminator) and [data] at most 800 bytes.
+  /// These limits are enforced by the native SDK; a request that exceeds
+  /// them (or is made before the session is connected) resolves to `false`.
+  Future<bool> sendShortData(
+      {required String type, required Uint8List data}) async {
+    return await Platform.instance.callInterface
+        .sendShortData(callId, type, data);
+  }
+
+  /// Creates an outbound data session for [streamId] with the given [type].
+  ///
+  /// On success the result carries the created session and
+  /// [PlanetKitDataSessionFailReason.none]; on failure it carries a null
+  /// session and the fail reason.
+  Future<PlanetKitMakeOutboundDataSessionResult> makeOutboundDataSession(
+          PlanetKitDataSessionStreamId streamId,
+          PlanetKitDataSessionType type,
+          PlanetKitOutboundDataSessionHandler handler) =>
+      _dataSession.makeOutbound(streamId, type, handler);
+
+  /// Creates an inbound data session for [streamId] that received an
+  /// [PlanetKitCallEventHandler.onDataSessionIncoming] notification.
+  Future<PlanetKitMakeInboundDataSessionResult> makeInboundDataSession(
+          PlanetKitDataSessionStreamId streamId,
+          PlanetKitInboundDataSessionHandler handler) =>
+      _dataSession.makeInbound(streamId, handler);
+
+  /// Marks the inbound data session for [streamId] as unsupported, ignoring
+  /// incoming data for that stream.
+  ///
+  /// The returned bool indicates that the unsupport request was accepted. It is
+  /// always `true` on iOS (where the native call returns void) and reflects the
+  /// native result on Android. Apps should not branch on this platform-specific
+  /// semantic.
+  Future<bool> unsupportInboundDataSession(
+          PlanetKitDataSessionStreamId streamId) =>
+      _dataSession.unsupportInbound(streamId);
+
+  /// Returns the current outbound data session for [streamId], or null.
+  Future<PlanetKitOutboundDataSession?> getOutboundDataSession(
+          PlanetKitDataSessionStreamId streamId) =>
+      _dataSession.getOutbound(streamId);
+
+  /// Returns the current inbound data session for [streamId], or null.
+  Future<PlanetKitInboundDataSession?> getInboundDataSession(
+          PlanetKitDataSessionStreamId streamId) =>
+      _dataSession.getInbound(streamId);
 
   void _onCallEvent(CallEvent event) {
     if (event.id != this.callId) {
@@ -364,9 +513,89 @@ class PlanetKitCall implements HookedAudioHandler {
       _eventHandler?.onPeerScreenShareStopped?.call(this);
     } else if (type == CallEventType.peerAudioDescriptionUpdate) {
       _handlePeerAudioDescriptionUpdateEvent(event);
+    } else if (type == CallEventType.peerSharedContentsSet) {
+      _handlePeerSharedContentsSetEvent(event);
+    } else if (type == CallEventType.peerSharedContentsUnset) {
+      _eventHandler?.onPeerSharedContentsUnset?.call(this);
+    } else if (type == CallEventType.peerExclusivelySharedContentsSet) {
+      _handlePeerExclusivelySharedContentsSetEvent(event);
+    } else if (type == CallEventType.peerExclusivelySharedContentsUnset) {
+      _eventHandler?.onPeerExclusivelySharedContentsUnset?.call(this);
+    } else if (type == CallEventType.shortDataReceived) {
+      _handleShortDataReceivedEvent(event);
+    } else if (type == CallEventType.dataSessionIncoming) {
+      _handleDataSessionIncomingEvent(event);
+    } else if (type == CallEventType.dataSessionInboundReceived) {
+      _handleDataSessionInboundReceivedEvent(event);
+    } else if (type == CallEventType.dataSessionInboundClosed) {
+      _handleDataSessionInboundClosedEvent(event);
+    } else if (type == CallEventType.dataSessionOutboundClosed) {
+      _handleDataSessionOutboundClosedEvent(event);
+    } else if (type == CallEventType.dataSessionOutboundTooLongQueuedData) {
+      _handleDataSessionOutboundTooLongQueuedDataEvent(event);
     } else {
       print("#planet_kit_call event unknown");
     }
+  }
+
+  void _handleDataSessionIncomingEvent(CallEvent event) {
+    final incomingEvent = event as DataSessionIncomingEvent;
+    final type = PlanetKitDataSessionType.fromInt(incomingEvent.dataSessionType);
+    if (type == null) {
+      print("#planet_kit_call dataSessionIncoming unknown type");
+      return;
+    }
+    _dataSession.recordIncoming(incomingEvent.streamId, type);
+    _eventHandler?.onDataSessionIncoming
+        ?.call(this, incomingEvent.streamId, type);
+  }
+
+  void _handleDataSessionInboundReceivedEvent(CallEvent event) {
+    final receivedEvent = event as DataSessionInboundReceivedEvent;
+    final peerId = PlanetKitUserId(
+        userId: receivedEvent.userId, serviceId: receivedEvent.serviceId);
+    _dataSession.handleInboundReceived(
+        receivedEvent.streamId,
+        peerId,
+        receivedEvent.data,
+        receivedEvent.timestamp,
+        receivedEvent.offset);
+  }
+
+  void _handleDataSessionInboundClosedEvent(CallEvent event) {
+    final closedEvent = event as DataSessionInboundClosedEvent;
+    _dataSession.handleInboundClosed(closedEvent.streamId,
+        PlanetKitDataSessionClosedReason.fromInt(closedEvent.closedReason));
+  }
+
+  void _handleDataSessionOutboundClosedEvent(CallEvent event) {
+    final closedEvent = event as DataSessionOutboundClosedEvent;
+    _dataSession.handleOutboundClosed(closedEvent.streamId,
+        PlanetKitDataSessionClosedReason.fromInt(closedEvent.closedReason));
+  }
+
+  void _handleDataSessionOutboundTooLongQueuedDataEvent(CallEvent event) {
+    final queuedEvent = event as DataSessionOutboundTooLongQueuedDataEvent;
+    _dataSession.handleOutboundTooLongQueuedData(
+        queuedEvent.streamId, queuedEvent.enabled);
+  }
+
+  void _handlePeerSharedContentsSetEvent(CallEvent event) {
+    final setEvent = event as PeerSharedContentsSetEvent;
+    _eventHandler?.onPeerSharedContentsSet?.call(this, setEvent.data,
+        Duration(milliseconds: setEvent.elapsedMillis));
+  }
+
+  void _handlePeerExclusivelySharedContentsSetEvent(CallEvent event) {
+    final setEvent = event as PeerExclusivelySharedContentsSetEvent;
+    _eventHandler?.onPeerExclusivelySharedContentsSet?.call(this, setEvent.data,
+        Duration(milliseconds: setEvent.elapsedMillis));
+  }
+
+  void _handleShortDataReceivedEvent(CallEvent event) {
+    final shortDataEvent = event as ShortDataReceivedEvent;
+    _eventHandler?.onShortDataReceived
+        ?.call(this, shortDataEvent.dataType, shortDataEvent.data);
   }
 
   void _handlePeerVideoDidPauseEvent(CallEvent event) {
@@ -381,6 +610,7 @@ class PlanetKitCall implements HookedAudioHandler {
 
   void _handleConnectedEvent(CallEvent event) {
     final connectedEvent = event as ConnectedEvent;
+    isDataSessionSupported = connectedEvent.isDataSessionSupported;
     _eventHandler?.onConnected.call(
         this,
         connectedEvent.isInResponderPreparation,

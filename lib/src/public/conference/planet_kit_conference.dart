@@ -13,13 +13,16 @@
 // under the License.
 
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:planet_kit_flutter/src/public/planet_kit_types.dart';
 
 import '../../internal/conference/planet_kit_platform_conference_event.dart';
 import '../../internal/conference/planet_kit_platform_conference_event_type.dart';
+import '../../internal/data_session/planet_kit_data_session_container.dart';
 import '../../internal/planet_kit_platform_interface.dart';
 import '../../internal/planet_kit_platform_resource_manager.dart';
+import '../data_session/planet_kit_data_session.dart';
 import '../my_media_status/planet_kit_my_media_status.dart';
 import '../planet_kit_disconnect_reason.dart';
 import '../planet_kit_disconnect_source.dart';
@@ -44,6 +47,22 @@ class PlanetKitConferencePeerListUpdateParam {
       {required this.addedPeers,
       required this.removedPeers,
       required this.totalPeersCount});
+}
+
+/// Represents shared contents set by a peer in a conference.
+class PlanetKitConferenceSharedContents {
+  /// The conference peer that set the shared contents.
+  final PlanetKitConferencePeer peer;
+
+  /// The shared contents data.
+  final Uint8List data;
+
+  /// The elapsed time since the shared contents were set.
+  final Duration elapsed;
+
+  /// @nodoc
+  PlanetKitConferenceSharedContents(
+      {required this.peer, required this.data, required this.elapsed});
 }
 
 /// Manages event callbacks for various conference-related events.
@@ -93,6 +112,54 @@ class PlanetKitConferenceEventHandler {
   /// Optional callback for when the network becomes available again after being unavailable.
   final void Function(PlanetKitConference conference)? onNetworkReavailable;
 
+  /// Optional callback for when peers in the conference set shared contents.
+  final void Function(PlanetKitConference conference,
+          List<PlanetKitConferenceSharedContents> sharedContents)?
+      onPeersSharedContentsSet;
+
+  /// Optional callback for when peers in the conference unset shared contents.
+  final void Function(
+          PlanetKitConference conference, List<PlanetKitConferencePeer> peers)?
+      onPeersSharedContentsUnset;
+
+  /// Optional callback for when a peer in the conference sets exclusively shared contents.
+  final void Function(PlanetKitConference conference,
+          PlanetKitConferencePeer peer, Uint8List data, Duration elapsed)?
+      onPeerExclusivelySharedContentsSet;
+
+  /// Optional callback for when a peer in the conference unsets exclusively shared contents.
+  final void Function(
+          PlanetKitConference conference, PlanetKitConferencePeer peer)?
+      onPeerExclusivelySharedContentsUnset;
+
+  /// Optional callback for when a peer sets room shared contents.
+  final void Function(PlanetKitConference conference, PlanetKitUserId peerId,
+      Uint8List data, Duration elapsed)? onPeerRoomSharedContentsSet;
+
+  /// Optional callback for when a peer unsets room shared contents.
+  final void Function(PlanetKitConference conference, PlanetKitUserId peerId)?
+      onPeerRoomSharedContentsUnset;
+
+  /// Optional callback triggered when short data is received from a peer.
+  /// Provides the sender's [senderId], the data [type] string, and the binary [data].
+  final void Function(PlanetKitConference conference, PlanetKitUserId senderId,
+      String type, Uint8List data)? onShortDataReceived;
+
+  /// Optional callback triggered when a peer starts a data session transfer
+  /// on a given [streamId] with the given [type].
+  ///
+  /// In response, create an inbound data session with
+  /// [PlanetKitConference.makeInboundDataSession], or ignore it with
+  /// [PlanetKitConference.unsupportInboundDataSession].
+  final void Function(PlanetKitConference conference,
+      PlanetKitDataSessionStreamId streamId, PlanetKitDataSessionType type)?
+      onDataSessionIncoming;
+
+  /// Optional callback for when the local user's screen share is stopped because
+  /// the conference was put on hold.
+  final void Function(PlanetKitConference conference)?
+      onMyScreenShareStoppedByHold;
+
   /// Constructs [PlanetKitConferenceEventHandler].
   PlanetKitConferenceEventHandler(
       {required this.onConnected,
@@ -104,7 +171,16 @@ class PlanetKitConferenceEventHandler {
       this.onPeersHold,
       this.onPeersUnhold,
       this.onNetworkUnavailable,
-      this.onNetworkReavailable});
+      this.onNetworkReavailable,
+      this.onPeersSharedContentsSet,
+      this.onPeersSharedContentsUnset,
+      this.onPeerExclusivelySharedContentsSet,
+      this.onPeerExclusivelySharedContentsUnset,
+      this.onPeerRoomSharedContentsSet,
+      this.onPeerRoomSharedContentsUnset,
+      this.onShortDataReceived,
+      this.onDataSessionIncoming,
+      this.onMyScreenShareStoppedByHold});
 }
 
 /// Represents a conference session within the PlanetKit system.
@@ -121,6 +197,7 @@ class PlanetKitConference {
   PlanetKitConferenceEventHandler? _eventHandler;
   StreamSubscription<ConferenceEvent>? _subscription;
   final Map<String, PlanetKitConferencePeer> _peerMap = {};
+  late final PlanetKitDataSessionContainer _dataSession;
 
   void _addPeer(PlanetKitConferencePeer peer) {
     peers.add(peer);
@@ -143,6 +220,24 @@ class PlanetKitConference {
       required this.myMediaStatus})
       : _eventHandler = eventHandler {
     NativeResourceManager.instance.add(this, id);
+    _dataSession = PlanetKitDataSessionContainer(
+      makeOutbound: (streamId, type) => Platform.instance.conferenceInterface
+          .makeOutboundDataSession(id, streamId, type),
+      makeInbound: (streamId) => Platform.instance.conferenceInterface
+          .makeInboundDataSession(id, streamId),
+      unsupport: (streamId) => Platform.instance.conferenceInterface
+          .unsupportInboundDataSession(id, streamId),
+      getOutboundType: (streamId) => Platform.instance.conferenceInterface
+          .getOutboundDataSessionType(id, streamId),
+      getInboundType: (streamId) => Platform.instance.conferenceInterface
+          .getInboundDataSessionType(id, streamId),
+      send: (streamId, data, timestamp) => Platform.instance.conferenceInterface
+          .dataSessionSend(id, streamId, data, timestamp),
+      changeDestination: (streamId, target) => Platform
+          .instance.conferenceInterface
+          .dataSessionChangeDestination(
+              id, streamId, target?.userId, target?.serviceId),
+    );
     _subscription =
         Platform.instance.eventManager.onConferenceEvent.listen(_onEvent);
   }
@@ -240,6 +335,17 @@ class PlanetKitConference {
     return await Platform.instance.conferenceInterface.resumeMyVideo(id);
   }
 
+  /// Starts sending the local screen to the conference. Android only — iOS uses
+  /// the broadcast extension flow and always returns false from this method.
+  Future<bool> startMyScreenShare() async {
+    return await Platform.instance.conferenceInterface.startMyScreenShare(id);
+  }
+
+  /// Stops sending the local screen to the conference.
+  Future<bool> stopMyScreenShare() async {
+    return await Platform.instance.conferenceInterface.stopMyScreenShare(id);
+  }
+
   /// Creates a [PlanetKitPeerControl] interface for a specific peer in the conference.
   Future<PlanetKitPeerControl?> createPeerControl(
       PlanetKitConferencePeer peer) async {
@@ -256,6 +362,108 @@ class PlanetKitConference {
   Future<PlanetKitStatistics?> getStatistics() async {
     return await Platform.instance.conferenceInterface.getStatistics(id);
   }
+
+  /// Sets shared contents for the conference.
+  Future<bool> setSharedContents(Uint8List data) async {
+    return await Platform.instance.conferenceInterface
+        .setSharedContents(id, data);
+  }
+
+  /// Unsets shared contents for the conference.
+  Future<bool> unsetSharedContents() async {
+    return await Platform.instance.conferenceInterface.unsetSharedContents(id);
+  }
+
+  /// Sets exclusively shared contents for the conference.
+  Future<bool> setExclusivelySharedContents(Uint8List data) async {
+    return await Platform.instance.conferenceInterface
+        .setExclusivelySharedContents(id, data);
+  }
+
+  /// Unsets exclusively shared contents for the conference.
+  Future<bool> unsetExclusivelySharedContents() async {
+    return await Platform.instance.conferenceInterface
+        .unsetExclusivelySharedContents(id);
+  }
+
+  /// Sets room shared contents for the conference.
+  Future<bool> setRoomSharedContents(Uint8List data) async {
+    return await Platform.instance.conferenceInterface
+        .setRoomSharedContents(id, data);
+  }
+
+  /// Unsets room shared contents for the conference.
+  Future<bool> unsetRoomSharedContents() async {
+    return await Platform.instance.conferenceInterface
+        .unsetRoomSharedContents(id);
+  }
+
+  /// Broadcasts short data to all peers in the conference with a [type] string
+  /// and binary [data].
+  ///
+  /// Returns whether the send request was accepted. The [type] must be at most
+  /// 100 bytes (including the null terminator) and [data] at most 800 bytes.
+  /// These limits are enforced by the native SDK; a request that exceeds
+  /// them (or is made before the session is connected) resolves to `false`.
+  Future<bool> sendShortData(
+      {required String type, required Uint8List data}) async {
+    return await Platform.instance.conferenceInterface
+        .sendShortData(id, type, data);
+  }
+
+  /// Sends short data to a single peer identified by [peerId] with a [type]
+  /// string and binary [data].
+  ///
+  /// Returns whether the send request was accepted. The [type] must be at most
+  /// 100 bytes (including the null terminator) and [data] at most 800 bytes.
+  /// These limits are enforced by the native SDK; a request that exceeds
+  /// them (or is made before the session is connected) resolves to `false`.
+  Future<bool> sendShortDataToPeer(
+      {required PlanetKitUserId peerId,
+      required String type,
+      required Uint8List data}) async {
+    return await Platform.instance.conferenceInterface
+        .sendShortDataToPeer(id, peerId, type, data);
+  }
+
+  /// Creates an outbound data session for [streamId] with the given [type].
+  ///
+  /// On success the result carries the created session and
+  /// [PlanetKitDataSessionFailReason.none]; on failure it carries a null
+  /// session and the fail reason.
+  Future<PlanetKitMakeOutboundDataSessionResult> makeOutboundDataSession(
+          PlanetKitDataSessionStreamId streamId,
+          PlanetKitDataSessionType type,
+          PlanetKitOutboundDataSessionHandler handler) =>
+      _dataSession.makeOutbound(streamId, type, handler);
+
+  /// Creates an inbound data session for [streamId] that received an
+  /// [PlanetKitConferenceEventHandler.onDataSessionIncoming] notification.
+  Future<PlanetKitMakeInboundDataSessionResult> makeInboundDataSession(
+          PlanetKitDataSessionStreamId streamId,
+          PlanetKitInboundDataSessionHandler handler) =>
+      _dataSession.makeInbound(streamId, handler);
+
+  /// Marks the inbound data session for [streamId] as unsupported, ignoring
+  /// incoming data for that stream.
+  ///
+  /// The returned bool indicates that the unsupport request was accepted. It is
+  /// always `true` on iOS (where the native call returns void) and reflects the
+  /// native result on Android. Apps should not branch on this platform-specific
+  /// semantic.
+  Future<bool> unsupportInboundDataSession(
+          PlanetKitDataSessionStreamId streamId) =>
+      _dataSession.unsupportInbound(streamId);
+
+  /// Returns the current outbound data session for [streamId], or null.
+  Future<PlanetKitOutboundDataSession?> getOutboundDataSession(
+          PlanetKitDataSessionStreamId streamId) =>
+      _dataSession.getOutbound(streamId);
+
+  /// Returns the current inbound data session for [streamId], or null.
+  Future<PlanetKitInboundDataSession?> getInboundDataSession(
+          PlanetKitDataSessionStreamId streamId) =>
+      _dataSession.getInbound(streamId);
 
   void _onEvent(ConferenceEvent event) {
     if (event.id != this.id) {
@@ -285,9 +493,161 @@ class PlanetKitConference {
       _eventHandler?.onNetworkReavailable?.call(this);
     } else if (type == ConferenceEventType.myAudioMuteRequestedByPeer) {
       _handleMyAudioMuteRequestedByPeerEvent(event);
+    } else if (type == ConferenceEventType.peersSharedContentsSet) {
+      _handlePeersSharedContentsSetEvent(event);
+    } else if (type == ConferenceEventType.peersSharedContentsUnset) {
+      _handlePeersSharedContentsUnsetEvent(event);
+    } else if (type == ConferenceEventType.peerExclusivelySharedContentsSet) {
+      _handlePeerExclusivelySharedContentsSetEvent(event);
+    } else if (type == ConferenceEventType.peerExclusivelySharedContentsUnset) {
+      _handlePeerExclusivelySharedContentsUnsetEvent(event);
+    } else if (type == ConferenceEventType.peerRoomSharedContentsSet) {
+      _handlePeerRoomSharedContentsSetEvent(event);
+    } else if (type == ConferenceEventType.peerRoomSharedContentsUnset) {
+      _handlePeerRoomSharedContentsUnsetEvent(event);
+    } else if (type == ConferenceEventType.shortDataReceived) {
+      _handleShortDataReceivedEvent(event);
+    } else if (type == ConferenceEventType.dataSessionIncoming) {
+      _handleDataSessionIncomingEvent(event);
+    } else if (type == ConferenceEventType.dataSessionInboundReceived) {
+      _handleDataSessionInboundReceivedEvent(event);
+    } else if (type == ConferenceEventType.dataSessionInboundClosed) {
+      _handleDataSessionInboundClosedEvent(event);
+    } else if (type == ConferenceEventType.dataSessionOutboundClosed) {
+      _handleDataSessionOutboundClosedEvent(event);
+    } else if (type ==
+        ConferenceEventType.dataSessionOutboundTooLongQueuedData) {
+      _handleDataSessionOutboundTooLongQueuedDataEvent(event);
+    } else if (type == ConferenceEventType.myScreenShareStoppedByHold) {
+      _eventHandler?.onMyScreenShareStoppedByHold?.call(this);
     } else {
       print("#planet_kit_conference event unknown");
     }
+  }
+
+  void _handleDataSessionIncomingEvent(ConferenceEvent conferenceEvent) {
+    final event = conferenceEvent as DataSessionIncomingEvent;
+    final type = PlanetKitDataSessionType.fromInt(event.dataSessionType);
+    if (type == null) {
+      print("#planet_kit_conference dataSessionIncoming unknown type");
+      return;
+    }
+    _dataSession.recordIncoming(event.streamId, type);
+    _eventHandler?.onDataSessionIncoming?.call(this, event.streamId, type);
+  }
+
+  void _handleDataSessionInboundReceivedEvent(
+      ConferenceEvent conferenceEvent) {
+    final event = conferenceEvent as DataSessionInboundReceivedEvent;
+    final peerId =
+        PlanetKitUserId(userId: event.userId, serviceId: event.serviceId);
+    _dataSession.handleInboundReceived(
+        event.streamId, peerId, event.data, event.timestamp, event.offset);
+  }
+
+  void _handleDataSessionInboundClosedEvent(ConferenceEvent conferenceEvent) {
+    final event = conferenceEvent as DataSessionInboundClosedEvent;
+    _dataSession.handleInboundClosed(event.streamId,
+        PlanetKitDataSessionClosedReason.fromInt(event.closedReason));
+  }
+
+  void _handleDataSessionOutboundClosedEvent(ConferenceEvent conferenceEvent) {
+    final event = conferenceEvent as DataSessionOutboundClosedEvent;
+    _dataSession.handleOutboundClosed(event.streamId,
+        PlanetKitDataSessionClosedReason.fromInt(event.closedReason));
+  }
+
+  void _handleDataSessionOutboundTooLongQueuedDataEvent(
+      ConferenceEvent conferenceEvent) {
+    final event = conferenceEvent as DataSessionOutboundTooLongQueuedDataEvent;
+    _dataSession.handleOutboundTooLongQueuedData(event.streamId, event.enabled);
+  }
+
+  void _handlePeersSharedContentsSetEvent(ConferenceEvent conferenceEvent) {
+    final event = conferenceEvent as PeersSharedContentsSetEvent;
+
+    List<PlanetKitConferenceSharedContents> sharedContents = [];
+
+    for (final content in event.contents) {
+      final peer = _getPeer(content.peer);
+      if (peer != null) {
+        sharedContents.add(PlanetKitConferenceSharedContents(
+            peer: peer,
+            data: content.data,
+            elapsed: Duration(milliseconds: content.elapsedMillis)));
+      } else {
+        print("planet_kit_conference failed to get peer ${content.peer}");
+      }
+    }
+
+    _eventHandler?.onPeersSharedContentsSet?.call(this, sharedContents);
+  }
+
+  void _handlePeersSharedContentsUnsetEvent(ConferenceEvent conferenceEvent) {
+    final event = conferenceEvent as PeersSharedContentsUnsetEvent;
+
+    List<PlanetKitConferencePeer> unsetPeers = [];
+
+    for (final peerId in event.peers) {
+      final peer = _getPeer(peerId);
+      if (peer != null) {
+        unsetPeers.add(peer);
+      } else {
+        print("planet_kit_conference failed to get peer $peerId");
+      }
+    }
+
+    _eventHandler?.onPeersSharedContentsUnset?.call(this, unsetPeers);
+  }
+
+  void _handlePeerExclusivelySharedContentsSetEvent(
+      ConferenceEvent conferenceEvent) {
+    final event = conferenceEvent as PeerExclusivelySharedContentsSetEvent;
+
+    final peer = _getPeer(event.peer);
+    if (peer != null) {
+      _eventHandler?.onPeerExclusivelySharedContentsSet?.call(this, peer,
+          event.data, Duration(milliseconds: event.elapsedMillis));
+    } else {
+      print("planet_kit_conference failed to get peer ${event.peer}");
+    }
+  }
+
+  void _handlePeerExclusivelySharedContentsUnsetEvent(
+      ConferenceEvent conferenceEvent) {
+    final event = conferenceEvent as PeerExclusivelySharedContentsUnsetEvent;
+
+    final peer = _getPeer(event.peer);
+    if (peer != null) {
+      _eventHandler?.onPeerExclusivelySharedContentsUnset?.call(this, peer);
+    } else {
+      print("planet_kit_conference failed to get peer ${event.peer}");
+    }
+  }
+
+  void _handlePeerRoomSharedContentsSetEvent(ConferenceEvent conferenceEvent) {
+    final event = conferenceEvent as PeerRoomSharedContentsSetEvent;
+
+    final peerId =
+        PlanetKitUserId(userId: event.userId, serviceId: event.serviceId);
+    _eventHandler?.onPeerRoomSharedContentsSet?.call(this, peerId, event.data,
+        Duration(milliseconds: event.elapsedMillis));
+  }
+
+  void _handlePeerRoomSharedContentsUnsetEvent(ConferenceEvent conferenceEvent) {
+    final event = conferenceEvent as PeerRoomSharedContentsUnsetEvent;
+
+    final peerId =
+        PlanetKitUserId(userId: event.userId, serviceId: event.serviceId);
+    _eventHandler?.onPeerRoomSharedContentsUnset?.call(this, peerId);
+  }
+
+  void _handleShortDataReceivedEvent(ConferenceEvent conferenceEvent) {
+    final event = conferenceEvent as ShortDataReceivedEvent;
+    final senderId =
+        PlanetKitUserId(userId: event.userId, serviceId: event.serviceId);
+    _eventHandler?.onShortDataReceived
+        ?.call(this, senderId, event.dataType, event.data);
   }
 
   void _handlePeerListUpdateEvent(ConferenceEvent conferenceEvent) {
@@ -299,7 +659,10 @@ class PlanetKitConference {
     for (final added in event.added) {
       final peerId =
           PlanetKitUserId(userId: added.userId, serviceId: added.serviceId);
-      final peer = PlanetKitConferencePeer(id: added.id, userId: peerId);
+      final peer = PlanetKitConferencePeer(
+          id: added.id,
+          userId: peerId,
+          isDataSessionSupported: added.isDataSessionSupported);
       addedPeers.add(peer);
       _addPeer(peer);
     }
@@ -359,7 +722,7 @@ class PlanetKitConference {
       }
     }
 
-    _eventHandler?.onPeersMicMuted?.call(this, unmutedPeers);
+    _eventHandler?.onPeersMicUnmuted?.call(this, unmutedPeers);
   }
 
   void _handlePeersHoldEvent(ConferenceEvent conferenceEvent) {
@@ -394,7 +757,7 @@ class PlanetKitConference {
       }
     }
 
-    _eventHandler?.onPeersMicMuted?.call(this, unholdPeers);
+    _eventHandler?.onPeersUnhold?.call(this, unholdPeers);
   }
 
   void _handleNetworkUnavailableEvent(ConferenceEvent conferenceEvent) {

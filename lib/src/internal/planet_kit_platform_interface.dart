@@ -16,6 +16,7 @@ import 'dart:typed_data';
 import 'package:planet_kit_flutter/src/internal/conference/planet_kit_platform_conference_responses.dart';
 import 'package:planet_kit_flutter/src/public/conference/planet_kit_join_conference_param.dart';
 import 'package:planet_kit_flutter/src/public/planet_kit_types.dart';
+import 'package:planet_kit_flutter/src/public/planet_kit_version_info.dart';
 import 'package:planet_kit_flutter/src/public/statistics/planet_kit_statistics.dart';
 import 'package:planet_kit_flutter/src/public/video/planet_kit_video_status.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
@@ -100,6 +101,24 @@ abstract class CallInterface {
 
   Future<bool> addPeerScreenShareView(String callId, String viewId);
   Future<bool> removePeerScreenShareView(String callId, String viewId);
+  Future<bool> startMyScreenShare(String callId);
+  Future<bool> stopMyScreenShare(String callId);
+
+  Future<bool> setSharedContents(String callId, Uint8List data);
+  Future<bool> unsetSharedContents(String callId);
+  Future<bool> setExclusivelySharedContents(String callId, Uint8List data);
+  Future<bool> unsetExclusivelySharedContents(String callId);
+  Future<bool> sendShortData(String callId, String type, Uint8List data);
+
+  Future<int> makeOutboundDataSession(String callId, int streamId, int type);
+  Future<int> makeInboundDataSession(String callId, int streamId);
+  Future<bool> unsupportInboundDataSession(String callId, int streamId);
+  Future<int?> getOutboundDataSessionType(String callId, int streamId);
+  Future<int?> getInboundDataSessionType(String callId, int streamId);
+  Future<bool> dataSessionSend(
+      String callId, int streamId, Uint8List data, int timestamp);
+  Future<bool> dataSessionChangeDestination(
+      String callId, int streamId, String? peerUserId, String? peerServiceId);
 }
 
 abstract class ConferenceInterface {
@@ -124,6 +143,28 @@ abstract class ConferenceInterface {
   Future<bool> pauseMyVideo(String id);
   Future<bool> resumeMyVideo(String id);
   Future<PlanetKitStatistics?> getStatistics(String id);
+  Future<bool> startMyScreenShare(String conferenceId);
+  Future<bool> stopMyScreenShare(String conferenceId);
+
+  Future<bool> setSharedContents(String id, Uint8List data);
+  Future<bool> unsetSharedContents(String id);
+  Future<bool> setExclusivelySharedContents(String id, Uint8List data);
+  Future<bool> unsetExclusivelySharedContents(String id);
+  Future<bool> setRoomSharedContents(String id, Uint8List data);
+  Future<bool> unsetRoomSharedContents(String id);
+  Future<bool> sendShortData(String id, String type, Uint8List data);
+  Future<bool> sendShortDataToPeer(
+      String id, PlanetKitUserId peerId, String type, Uint8List data);
+
+  Future<int> makeOutboundDataSession(String id, int streamId, int type);
+  Future<int> makeInboundDataSession(String id, int streamId);
+  Future<bool> unsupportInboundDataSession(String id, int streamId);
+  Future<int?> getOutboundDataSessionType(String id, int streamId);
+  Future<int?> getInboundDataSessionType(String id, int streamId);
+  Future<bool> dataSessionSend(
+      String id, int streamId, Uint8List data, int timestamp);
+  Future<bool> dataSessionChangeDestination(
+      String id, int streamId, String? peerUserId, String? peerServiceId);
 }
 
 abstract class ConferencePeerInterface {
@@ -211,6 +252,10 @@ abstract class Platform extends PlatformInterface {
 
   Future<String?> getPlatformVersion() {
     throw UnimplementedError('platformVersion() has not been implemented.');
+  }
+
+  Future<PlanetKitVersionInfo?> getVersionInfo() {
+    throw UnimplementedError('getVersionInfo() has not been implemented.');
   }
 
   Future<bool> initializePlanetKit(PlanetKitInitParam initParam) {

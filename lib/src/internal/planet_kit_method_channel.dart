@@ -23,6 +23,7 @@ import 'package:planet_kit_flutter/src/internal/conference/planet_kit_platform_c
 import 'package:planet_kit_flutter/src/internal/peer_control/planet_kit_platform_peer_control_method_channel.dart';
 
 import '../public/call/planet_kit_cc_param.dart';
+import '../public/planet_kit_version_info.dart';
 import '../public/call/planet_kit_make_call_param.dart';
 import '../public/call/planet_kit_verify_call_param.dart';
 import '../public/conference/planet_kit_join_conference_param.dart';
@@ -107,6 +108,18 @@ class MethodChannelPlanetKit extends Platform {
     final version =
         await methodChannel.invokeMethod<String>('getPlatformVersion');
     return version;
+  }
+
+  @override
+  Future<PlanetKitVersionInfo?> getVersionInfo() async {
+    print("#flutter_method_channel getVersionInfo");
+    final jsonString =
+        await methodChannel.invokeMethod<String>('getPlanetKitVersionInfo');
+    if (jsonString == null) {
+      return null;
+    }
+    final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
+    return PlanetKitVersionInfo.fromJson(jsonMap);
   }
 
   @override

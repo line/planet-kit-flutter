@@ -99,6 +99,16 @@ enum class CallEventType(val type: Int) {
     PEER_DID_START_SCREEN_SHARE(17),
     PEER_DID_STOP_SCREEN_SHARE(18),
     PEER_AUDIO_DESCRIPTION_UPDATE(19),
+    SHORT_DATA_RECEIVED(20),
+    PEER_SHARED_CONTENTS_SET(21),
+    PEER_SHARED_CONTENTS_UNSET(22),
+    PEER_EXCLUSIVELY_SHARED_CONTENTS_SET(23),
+    PEER_EXCLUSIVELY_SHARED_CONTENTS_UNSET(24),
+    DATA_SESSION_INCOMING(25),
+    DATA_SESSION_INBOUND_RECEIVED(26),
+    DATA_SESSION_INBOUND_CLOSED(27),
+    DATA_SESSION_OUTBOUND_CLOSED(28),
+    DATA_SESSION_OUTBOUND_TOO_LONG_QUEUED_DATA(29),
     ADOPT_BACKGROUND_CALL(100),
 
 
@@ -123,6 +133,7 @@ data class ConnectedCallEvent(
     override val id: String,
     val isInResponderPreparation: Boolean,
     val shouldFinishPreparation: Boolean,
+    val isDataSessionSupported: Boolean,
     override val type: EventType = EventType.CALL,
     override val subType: CallEventType = CallEventType.CONNECTED
 ) : CallEvent
@@ -261,4 +272,84 @@ data class AdoptBackgroundCallEvent(
     override val id: String,
     override val type: EventType = EventType.CALL,
     override val subType: CallEventType = CallEventType.ADOPT_BACKGROUND_CALL,
+) : CallEvent
+
+data class PeerSharedContentsSetCallEvent(
+    override val id: String,
+    val data: String,
+    val elapsedMillis: Long,
+    override val type: EventType = EventType.CALL,
+    override val subType: CallEventType = CallEventType.PEER_SHARED_CONTENTS_SET,
+) : CallEvent
+
+data class PeerSharedContentsUnsetCallEvent(
+    override val id: String,
+    override val type: EventType = EventType.CALL,
+    override val subType: CallEventType = CallEventType.PEER_SHARED_CONTENTS_UNSET,
+) : CallEvent
+
+data class PeerExclusivelySharedContentsSetCallEvent(
+    override val id: String,
+    val data: String,
+    val elapsedMillis: Long,
+    override val type: EventType = EventType.CALL,
+    override val subType: CallEventType = CallEventType.PEER_EXCLUSIVELY_SHARED_CONTENTS_SET,
+) : CallEvent
+
+data class PeerExclusivelySharedContentsUnsetCallEvent(
+    override val id: String,
+    override val type: EventType = EventType.CALL,
+    override val subType: CallEventType = CallEventType.PEER_EXCLUSIVELY_SHARED_CONTENTS_UNSET,
+) : CallEvent
+
+data class ShortDataReceivedCallEvent(
+    override val id: String,
+    val dataType: String,
+    val data: String,
+    override val type: EventType = EventType.CALL,
+    override val subType: CallEventType = CallEventType.SHORT_DATA_RECEIVED,
+) : CallEvent
+
+data class DataSessionIncomingCallEvent(
+    override val id: String,
+    val streamId: Int,
+    val dataSessionType: Int,
+    override val type: EventType = EventType.CALL,
+    override val subType: CallEventType = CallEventType.DATA_SESSION_INCOMING,
+) : CallEvent
+
+data class DataSessionInboundReceivedCallEvent(
+    override val id: String,
+    val streamId: Int,
+    val userId: String,
+    val serviceId: String,
+    val data: String,
+    val timestamp: Long,
+    val offset: Long,
+    override val type: EventType = EventType.CALL,
+    override val subType: CallEventType = CallEventType.DATA_SESSION_INBOUND_RECEIVED,
+) : CallEvent
+
+data class DataSessionInboundClosedCallEvent(
+    override val id: String,
+    val streamId: Int,
+    val closedReason: Int,
+    override val type: EventType = EventType.CALL,
+    override val subType: CallEventType = CallEventType.DATA_SESSION_INBOUND_CLOSED,
+) : CallEvent
+
+data class DataSessionOutboundClosedCallEvent(
+    override val id: String,
+    val streamId: Int,
+    val closedReason: Int,
+    override val type: EventType = EventType.CALL,
+    override val subType: CallEventType = CallEventType.DATA_SESSION_OUTBOUND_CLOSED,
+) : CallEvent
+
+data class DataSessionOutboundTooLongQueuedDataCallEvent(
+    override val id: String,
+    val streamId: Int,
+    val enabled: Boolean,
+    override val type: EventType = EventType.CALL,
+    override val subType: CallEventType = CallEventType.DATA_SESSION_OUTBOUND_TOO_LONG_QUEUED_DATA,
 ) : CallEvent

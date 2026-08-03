@@ -30,6 +30,14 @@ class PlanetKitFlutterCallPlugin {
     private var myStatusDelegates: [String : Weak<PlanetKitMyMediaStatusDelegate>] = [:]
     private var peerAudioDescriptionDelegates: [String : PeerAudioDescriptionDelegate] = [:]
     private var backgroundCalls: [String: PlanetKitCall] = [:]
+
+    // Retain per-call, per-stream data session sessions and delegates.
+    // Native sessions hold delegates weakly and the Dart side routes by streamId,
+    // so the plugin must keep strong references keyed by callId + streamId.
+    private var outboundDataSessions: [String: [UInt32: PlanetKitOutboundDataSession]] = [:]
+    private var inboundDataSessions: [String: [UInt32: PlanetKitInboundDataSession]] = [:]
+    private var outboundDataSessionDelegates: [String: [UInt32: PlanetKitFlutterCallOutboundDataSessionDelegate]] = [:]
+    private var inboundDataSessionDelegates: [String: [UInt32: PlanetKitFlutterCallInboundDataSessionDelegate]] = [:]
     
     init(nativeInstances: PlanetKitFlutterNativeInstances, eventStreamHandler: PlanetKitFlutterStreamHandler, backgroundEventStreamHandler: PlanetKitFlutterStreamHandler) {
         self.nativeInstances = nativeInstances
@@ -71,7 +79,7 @@ class PlanetKitFlutterCallPlugin {
     }
     
     func acceptCall(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        PlanetKitLog.v("#flutter \(#function)")
         
         let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: CallParams.AcceptCallParam.self)
         
@@ -86,7 +94,7 @@ class PlanetKitFlutterCallPlugin {
     }
     
     func endCall(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        PlanetKitLog.v("#flutter \(#function)")
         
         let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: CallParams.EndCallParam.self)
         
@@ -106,7 +114,7 @@ class PlanetKitFlutterCallPlugin {
     }
     
     func endCallWithError(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        PlanetKitLog.v("#flutter \(#function)")
         
         let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: CallParams.EndCallWithErrorParam.self)
         
@@ -121,7 +129,7 @@ class PlanetKitFlutterCallPlugin {
     }
     
     func muteMyAudio(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        PlanetKitLog.v("#flutter \(#function)")
         
         let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: CallParams.MuteMyAudioParam.self)
         
@@ -140,7 +148,7 @@ class PlanetKitFlutterCallPlugin {
     }
     
     func speakerOut(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        PlanetKitLog.v("#flutter \(#function)")
         
         let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: CallParams.SpeakerOutParam.self)
         
@@ -156,7 +164,7 @@ class PlanetKitFlutterCallPlugin {
     }
     
     func isMyAudioMuted(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        PlanetKitLog.v("#flutter \(#function)")
         
         let callId = call.arguments as! String
         guard let call = nativeInstances.get(key: callId) as? PlanetKitCall else {
@@ -169,7 +177,7 @@ class PlanetKitFlutterCallPlugin {
     }
     
     func isPeerAudioMuted(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        PlanetKitLog.v("#flutter \(#function)")
         
         let callId = call.arguments as! String
         guard let call = nativeInstances.get(key: callId) as? PlanetKitCall else {
@@ -194,7 +202,7 @@ class PlanetKitFlutterCallPlugin {
     }
     
     func isPeerAudioSilenced(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        PlanetKitLog.v("#flutter \(#function)")
         
         let callId = call.arguments as! String
         guard let call = nativeInstances.get(key: callId) as? PlanetKitCall else {
@@ -207,7 +215,7 @@ class PlanetKitFlutterCallPlugin {
     }
     
     func notifyCallKitAudioActivation(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        PlanetKitLog.v("#flutter \(#function)")
         
         let callId = call.arguments as! String
         guard let call = nativeInstances.get(key: callId) as? PlanetKitCall else {
@@ -221,7 +229,7 @@ class PlanetKitFlutterCallPlugin {
     }
     
     func finishPreparation(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        PlanetKitLog.v("#flutter \(#function)")
         
         let callId = call.arguments as! String
         guard let call = nativeInstances.get(key: callId) as? PlanetKitCall else {
@@ -235,7 +243,7 @@ class PlanetKitFlutterCallPlugin {
     }
     
     func hold(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        PlanetKitLog.v("#flutter \(#function)")
         
         let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: CallParams.HoldCallParam.self)
         
@@ -255,7 +263,7 @@ class PlanetKitFlutterCallPlugin {
     }
     
     func unhold(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        PlanetKitLog.v("#flutter \(#function)")
         
         let callId = call.arguments as! String
         guard let call = nativeInstances.get(key: callId) as? PlanetKitCall else {
@@ -273,7 +281,7 @@ class PlanetKitFlutterCallPlugin {
     }
     
     func isOnHold(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        PlanetKitLog.v("#flutter \(#function)")
         
         let callId = call.arguments as! String
         guard let call = nativeInstances.get(key: callId) as? PlanetKitCall else {
@@ -286,7 +294,7 @@ class PlanetKitFlutterCallPlugin {
     }
     
     func requestPeerMute(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        PlanetKitLog.v("#flutter \(#function)")
         
         let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: CallParams.RequestPeerMuteParam.self)
         
@@ -305,7 +313,7 @@ class PlanetKitFlutterCallPlugin {
     }
     
     func silencePeerAudio(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        PlanetKitLog.v("#flutter \(#function)")
         
         let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: CallParams.SilencePeerAudioParam.self)
         
@@ -386,7 +394,7 @@ extension PlanetKitFlutterCallPlugin: PlanetKitCallDelegate {
         DispatchQueue.main.async {
             PlanetKitLog.v("#flutter \(#function)")
             
-            let event = ConnectedCallEvent(id: call.instanceId, isInResponderPreparation: connected.isInResponderPreparation, shouldFinishPreparation: connected.shouldFinishPreparation)
+            let event = ConnectedCallEvent(id: call.instanceId, isInResponderPreparation: connected.isInResponderPreparation, shouldFinishPreparation: connected.shouldFinishPreparation, isDataSessionSupported: connected.isDataSessionSupported)
             let encodedEvent = PlanetKitFlutterPlugin.encode(data: event)
             self.eventStreamHandler.eventSink?(encodedEvent)
         }
@@ -408,6 +416,14 @@ extension PlanetKitFlutterCallPlugin: PlanetKitCallDelegate {
                     }
                 }
             }
+
+            // Data session state must be released on every disconnect,
+            // including background-adopted calls, to avoid leaking the
+            // retained native sessions and delegates for the process lifetime.
+            outboundDataSessions.removeValue(forKey: call.instanceId)
+            inboundDataSessions.removeValue(forKey: call.instanceId)
+            outboundDataSessionDelegates.removeValue(forKey: call.instanceId)
+            inboundDataSessionDelegates.removeValue(forKey: call.instanceId)
 
             if backgroundCalls.keys.contains(call.instanceId) {
                 PlanetKitLog.v("#flutter \(#function) background call")
@@ -573,13 +589,175 @@ extension PlanetKitFlutterCallPlugin: PlanetKitCallDelegate {
             self.eventStreamHandler.eventSink?(encodedEvent)
         }
     }
+
+    // MARK: contents sharing events
+    public func peerDidSetSharedContents(_ call: PlanetKitCall, data: Data, elapsed: TimeInterval) {
+        DispatchQueue.main.async {
+            PlanetKitLog.v("#flutter \(#function)")
+            let event = PeerSharedContentsSetCallEvent(id: call.instanceId, data: data, elapsed: elapsed)
+            let encodedEvent = PlanetKitFlutterPlugin.encode(data: event)
+            self.eventStreamHandler.eventSink?(encodedEvent)
+        }
+    }
+
+    public func peerDidUnsetSharedContents(_ call: PlanetKitCall) {
+        DispatchQueue.main.async {
+            PlanetKitLog.v("#flutter \(#function)")
+            let event = PeerSharedContentsUnsetCallEvent(id: call.instanceId)
+            let encodedEvent = PlanetKitFlutterPlugin.encode(data: event)
+            self.eventStreamHandler.eventSink?(encodedEvent)
+        }
+    }
+
+    public func peerDidSetExclusivelySharedContents(_ call: PlanetKitCall, data: Data, elapsed: TimeInterval) {
+        DispatchQueue.main.async {
+            PlanetKitLog.v("#flutter \(#function)")
+            let event = PeerExclusivelySharedContentsSetCallEvent(id: call.instanceId, data: data, elapsed: elapsed)
+            let encodedEvent = PlanetKitFlutterPlugin.encode(data: event)
+            self.eventStreamHandler.eventSink?(encodedEvent)
+        }
+    }
+
+    public func peerDidUnsetExclusivelySharedContents(_ call: PlanetKitCall) {
+        DispatchQueue.main.async {
+            PlanetKitLog.v("#flutter \(#function)")
+            let event = PeerExclusivelySharedContentsUnsetCallEvent(id: call.instanceId)
+            let encodedEvent = PlanetKitFlutterPlugin.encode(data: event)
+            self.eventStreamHandler.eventSink?(encodedEvent)
+        }
+    }
+
+    // MARK: short data events
+    public func didReceiveShortData(_ call: PlanetKitCall, dataType: String, data: Data) {
+        DispatchQueue.main.async {
+            PlanetKitLog.v("#flutter \(#function)")
+            let event = ShortDataReceivedCallEvent(id: call.instanceId, dataType: dataType, data: data)
+            let encodedEvent = PlanetKitFlutterPlugin.encode(data: event)
+            self.eventStreamHandler.eventSink?(encodedEvent)
+        }
+    }
+
+    // MARK: data session events
+    public func dataSessionIncoming(_ call: PlanetKitCall, streamId: PlanetKitDataSessionStreamId, type: PlanetKitDataSessionType) {
+        DispatchQueue.main.async {
+            PlanetKitLog.v("#flutter \(#function)")
+            let event = DataSessionIncomingCallEvent(id: call.instanceId, streamId: streamId, dataSessionType: type.rawValue)
+            let encodedEvent = PlanetKitFlutterPlugin.encode(data: event)
+            self.eventStreamHandler.eventSink?(encodedEvent)
+        }
+    }
+}
+
+// MARK: contents sharing methods
+extension PlanetKitFlutterCallPlugin {
+    func setSharedContents(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        PlanetKitLog.v("#flutter \(#function)")
+        guard let args = call.arguments as? Dictionary<String, Any> else {
+            PlanetKitLog.e("#flutter \(#function) failed to get parameter")
+            result(false)
+            return
+        }
+
+        guard let callId = args["callId"] as? String,
+              let data = args["data"] as? FlutterStandardTypedData else {
+            PlanetKitLog.e("#flutter \(#function) failed to get parameter")
+            result(false)
+            return
+        }
+
+        guard let call = nativeInstances.get(key: callId) as? PlanetKitCall else {
+            PlanetKitLog.e("#flutter \(#function) call not found \(callId)")
+            result(false)
+            return
+        }
+
+        call.setSharedContents(data: data.data) { success in
+            if !success {
+                PlanetKitLog.e("#flutter \(#function) platform api returned \(success)")
+            }
+            result(success)
+        }
+    }
+
+    func unsetSharedContents(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        guard let callId = call.arguments as? String else {
+            PlanetKitLog.e("#flutter \(#function) failed to get parameter")
+            result(false)
+            return
+        }
+
+        guard let call = nativeInstances.get(key: callId) as? PlanetKitCall else {
+            PlanetKitLog.e("#flutter \(#function) call not found \(callId)")
+            result(false)
+            return
+        }
+
+        call.unsetSharedContents() { success in
+            if !success {
+                PlanetKitLog.e("#flutter \(#function) platform api returned \(success)")
+            }
+            result(success)
+        }
+    }
+
+    func setExclusivelySharedContents(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        PlanetKitLog.v("#flutter \(#function)")
+        guard let args = call.arguments as? Dictionary<String, Any> else {
+            PlanetKitLog.e("#flutter \(#function) failed to get parameter")
+            result(false)
+            return
+        }
+
+        guard let callId = args["callId"] as? String,
+              let data = args["data"] as? FlutterStandardTypedData else {
+            PlanetKitLog.e("#flutter \(#function) failed to get parameter")
+            result(false)
+            return
+        }
+
+        guard let call = nativeInstances.get(key: callId) as? PlanetKitCall else {
+            PlanetKitLog.e("#flutter \(#function) call not found \(callId)")
+            result(false)
+            return
+        }
+
+        call.setExclusivelySharedContents(data: data.data) { success in
+            if !success {
+                PlanetKitLog.e("#flutter \(#function) platform api returned \(success)")
+            }
+            result(success)
+        }
+    }
+
+    func unsetExclusivelySharedContents(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        guard let callId = call.arguments as? String else {
+            PlanetKitLog.e("#flutter \(#function) failed to get parameter")
+            result(false)
+            return
+        }
+
+        guard let call = nativeInstances.get(key: callId) as? PlanetKitCall else {
+            PlanetKitLog.e("#flutter \(#function) call not found \(callId)")
+            result(false)
+            return
+        }
+
+        call.unsetExclusivelySharedContents() { success in
+            if !success {
+                PlanetKitLog.e("#flutter \(#function) platform api returned \(success)")
+            }
+            result(success)
+        }
+    }
 }
 
 // MARK: video methods
 extension PlanetKitFlutterCallPlugin {
     
     func enableVideo(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        PlanetKitLog.v("#flutter \(#function)")
         
         let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: CallParams.EnableVideoParam.self)
         
@@ -596,7 +774,7 @@ extension PlanetKitFlutterCallPlugin {
     }
     
     func disableVideo(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        PlanetKitLog.v("#flutter \(#function)")
         
         let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: CallParams.DisableVideoParam.self)
         
@@ -613,7 +791,7 @@ extension PlanetKitFlutterCallPlugin {
     }
     
     func pauseMyVideo(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        PlanetKitLog.v("#flutter \(#function)")
         
         let callId = call.arguments as! String
         guard let call = nativeInstances.get(key: callId) as? PlanetKitCall else {
@@ -628,7 +806,7 @@ extension PlanetKitFlutterCallPlugin {
     }
     
     func resumeMyVideo(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        PlanetKitLog.v("#flutter \(#function)")
         
         let callId = call.arguments as! String
         guard let call = nativeInstances.get(key: callId) as? PlanetKitCall else {
@@ -643,7 +821,7 @@ extension PlanetKitFlutterCallPlugin {
     }
     
     func addMyVideoView(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        PlanetKitLog.v("#flutter \(#function)")
         
         let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: CallParams.AddVideoViewParam.self)
         
@@ -666,7 +844,7 @@ extension PlanetKitFlutterCallPlugin {
     }
     
     func addPeerVideoView(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        PlanetKitLog.v("#flutter \(#function)")
         
         let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: CallParams.AddVideoViewParam.self)
         
@@ -689,7 +867,7 @@ extension PlanetKitFlutterCallPlugin {
     }
     
     func removeMyVideoView(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        PlanetKitLog.v("#flutter \(#function)")
         let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: CallParams.RemoveVideoViewParam.self)
         
         guard let call = nativeInstances.get(key: param.callId) as? PlanetKitCall else {
@@ -712,7 +890,7 @@ extension PlanetKitFlutterCallPlugin {
     }
     
     func removePeerVideoView(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        PlanetKitLog.v("#flutter \(#function)")
         let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: CallParams.RemoveVideoViewParam.self)
         
         guard let call = nativeInstances.get(key: param.callId) as? PlanetKitCall else {
@@ -737,7 +915,7 @@ extension PlanetKitFlutterCallPlugin {
 // Statistics
 extension PlanetKitFlutterCallPlugin {
     func getStatistics(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        PlanetKitLog.v("#flutter \(#function)")
         
         let callId = call.arguments as! String
         guard let call = nativeInstances.get(key: callId) as? PlanetKitCall else {
@@ -786,7 +964,7 @@ extension PlanetKitFlutterCallPlugin {
 // Screen share
 extension PlanetKitFlutterCallPlugin {
     func addPeerScreenShareView(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
+        PlanetKitLog.v("#flutter \(#function)")
         
         let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: CallParams.AddVideoViewParam.self)
         
@@ -810,26 +988,285 @@ extension PlanetKitFlutterCallPlugin {
     }
     
     func removePeerScreenShareView(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        PlanetKitLog.v("#flutter \(#function) \(String(describing: call.arguments))")
-        
+        PlanetKitLog.v("#flutter \(#function)")
+
         let param = PlanetKitFlutterPlugin.decodeMethodCallArg(call: call, codable: CallParams.RemoveVideoViewParam.self)
-        
+
         guard let call = nativeInstances.get(key: param.callId) as? PlanetKitCall else {
             PlanetKitLog.e("#flutter \(#function) call not found \(param.callId)")
             result(false)
             return
         }
-        
+
         guard let view = PlanetKitFlutterVideoViews.shared.getView(id: param.viewId) else {
             PlanetKitLog.e("#flutter \(#function) view not found \(param.viewId)")
             result(false)
             return
         }
-        
-        
+
+
         call.removePeerScreenShareView(delegate: view.delegate)
         PlanetKitFlutterVideoViews.shared.release(id: param.viewId)
 
         result(true)
+    }
+
+    func startMyScreenShare(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        PlanetKitLog.v("#flutter \(#function) iOS uses broadcast extension for screen share send")
+        result(false)
+    }
+
+    func stopMyScreenShare(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        PlanetKitLog.v("#flutter \(#function) iOS uses broadcast extension for screen share send")
+        result(false)
+    }
+}
+
+// Short data
+extension PlanetKitFlutterCallPlugin {
+    func sendShortData(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        PlanetKitLog.v("#flutter \(#function)")
+
+        guard let args = call.arguments as? Dictionary<String, Any>,
+              let callId = args["callId"] as? String,
+              let type = args["type"] as? String,
+              let data = args["data"] as? FlutterStandardTypedData else {
+            PlanetKitLog.e("#flutter \(#function) invalid arguments")
+            result(false)
+            return
+        }
+
+        guard let call = nativeInstances.get(key: callId) as? PlanetKitCall else {
+            PlanetKitLog.e("#flutter \(#function) call not found \(callId)")
+            result(false)
+            return
+        }
+
+        call.sendShortData(type: type, data: data.data) { success in
+            if !success {
+                PlanetKitLog.e("#flutter \(#function) platform api returned \(success)")
+            }
+            result(success)
+        }
+    }
+}
+
+// Data session
+extension PlanetKitFlutterCallPlugin {
+    func makeOutboundDataSession(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        PlanetKitLog.v("#flutter \(#function)")
+
+        guard let args = call.arguments as? Dictionary<String, Any>,
+              let callId = args["callId"] as? String,
+              let streamIdInt = args["streamId"] as? Int,
+              let typeInt = args["type"] as? Int else {
+            PlanetKitLog.e("#flutter \(#function) invalid arguments")
+            result(PlanetKitDataSessionFailReason.internal.rawValue)
+            return
+        }
+
+        guard let call = nativeInstances.get(key: callId) as? PlanetKitCall else {
+            PlanetKitLog.e("#flutter \(#function) call not found \(callId)")
+            result(PlanetKitDataSessionFailReason.internal.rawValue)
+            return
+        }
+
+        guard let type = PlanetKitDataSessionType(rawValue: typeInt) else {
+            PlanetKitLog.e("#flutter \(#function) invalid type \(typeInt)")
+            result(PlanetKitDataSessionFailReason.invalidType.rawValue)
+            return
+        }
+
+        let streamId = UInt32(streamIdInt)
+        let delegate = PlanetKitFlutterCallOutboundDataSessionDelegate(callId: callId, streamId: streamId, eventStreamHandler: eventStreamHandler)
+
+        call.makeOutboundDataSession(streamId: streamId, type: type, delegate: delegate) { [weak self] session, failReason in
+            guard let `self` = self else {
+                result(failReason.rawValue)
+                return
+            }
+
+            if failReason == .none, let session = session {
+                self.outboundDataSessionDelegates[callId, default: [:]][streamId] = delegate
+                self.outboundDataSessions[callId, default: [:]][streamId] = session
+            }
+            else {
+                PlanetKitLog.e("#flutter \(#function) failed with reason \(failReason)")
+            }
+            result(failReason.rawValue)
+        }
+    }
+
+    func makeInboundDataSession(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        PlanetKitLog.v("#flutter \(#function)")
+
+        guard let args = call.arguments as? Dictionary<String, Any>,
+              let callId = args["callId"] as? String,
+              let streamIdInt = args["streamId"] as? Int else {
+            PlanetKitLog.e("#flutter \(#function) invalid arguments")
+            result(PlanetKitDataSessionFailReason.internal.rawValue)
+            return
+        }
+
+        guard let call = nativeInstances.get(key: callId) as? PlanetKitCall else {
+            PlanetKitLog.e("#flutter \(#function) call not found \(callId)")
+            result(PlanetKitDataSessionFailReason.internal.rawValue)
+            return
+        }
+
+        let streamId = UInt32(streamIdInt)
+        let delegate = PlanetKitFlutterCallInboundDataSessionDelegate(callId: callId, streamId: streamId, eventStreamHandler: eventStreamHandler)
+
+        call.makeInboundDataSession(streamId: streamId, delegate: delegate) { [weak self] session, failReason in
+            guard let `self` = self else {
+                result(failReason.rawValue)
+                return
+            }
+
+            if failReason == .none, let session = session {
+                self.inboundDataSessionDelegates[callId, default: [:]][streamId] = delegate
+                self.inboundDataSessions[callId, default: [:]][streamId] = session
+            }
+            else {
+                PlanetKitLog.e("#flutter \(#function) failed with reason \(failReason)")
+            }
+            result(failReason.rawValue)
+        }
+    }
+
+    func unsupportInboundDataSession(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        PlanetKitLog.v("#flutter \(#function)")
+
+        guard let args = call.arguments as? Dictionary<String, Any>,
+              let callId = args["callId"] as? String,
+              let streamIdInt = args["streamId"] as? Int else {
+            PlanetKitLog.e("#flutter \(#function) invalid arguments")
+            result(false)
+            return
+        }
+
+        guard let call = nativeInstances.get(key: callId) as? PlanetKitCall else {
+            PlanetKitLog.e("#flutter \(#function) call not found \(callId)")
+            result(false)
+            return
+        }
+
+        let streamId = UInt32(streamIdInt)
+        call.unsupportInboundDataSession(streamId: streamId)
+
+        inboundDataSessions[callId]?.removeValue(forKey: streamId)
+        inboundDataSessionDelegates[callId]?.removeValue(forKey: streamId)
+
+        result(true)
+    }
+
+    func getOutboundDataSession(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        PlanetKitLog.v("#flutter \(#function)")
+
+        guard let args = call.arguments as? Dictionary<String, Any>,
+              let callId = args["callId"] as? String,
+              let streamIdInt = args["streamId"] as? Int else {
+            PlanetKitLog.e("#flutter \(#function) invalid arguments")
+            result(nil)
+            return
+        }
+
+        guard let call = nativeInstances.get(key: callId) as? PlanetKitCall else {
+            PlanetKitLog.e("#flutter \(#function) call not found \(callId)")
+            result(nil)
+            return
+        }
+
+        let streamId = UInt32(streamIdInt)
+        guard let session = call.getOutboundDataSession(streamId: streamId) else {
+            result(nil)
+            return
+        }
+
+        result(session.type.rawValue)
+    }
+
+    func getInboundDataSession(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        PlanetKitLog.v("#flutter \(#function)")
+
+        guard let args = call.arguments as? Dictionary<String, Any>,
+              let callId = args["callId"] as? String,
+              let streamIdInt = args["streamId"] as? Int else {
+            PlanetKitLog.e("#flutter \(#function) invalid arguments")
+            result(nil)
+            return
+        }
+
+        guard let call = nativeInstances.get(key: callId) as? PlanetKitCall else {
+            PlanetKitLog.e("#flutter \(#function) call not found \(callId)")
+            result(nil)
+            return
+        }
+
+        let streamId = UInt32(streamIdInt)
+        guard let session = call.getInboundDataSession(streamId: streamId) else {
+            result(nil)
+            return
+        }
+
+        result(session.type.rawValue)
+    }
+
+    func dataSessionSend(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        PlanetKitLog.v("#flutter \(#function)")
+
+        guard let args = call.arguments as? Dictionary<String, Any>,
+              let callId = args["callId"] as? String,
+              let streamIdInt = args["streamId"] as? Int,
+              let data = args["data"] as? FlutterStandardTypedData,
+              let timestampInt = args["timestamp"] as? Int else {
+            PlanetKitLog.e("#flutter \(#function) invalid arguments")
+            result(false)
+            return
+        }
+
+        let streamId = UInt32(streamIdInt)
+        guard let session = outboundDataSessions[callId]?[streamId] else {
+            PlanetKitLog.e("#flutter \(#function) outbound data session not found \(callId) \(streamId)")
+            result(false)
+            return
+        }
+
+        let sent = session.send(data: data.data, timestamp: UInt64(bitPattern: Int64(timestampInt)))
+        result(sent)
+    }
+
+    func dataSessionChangeDestination(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        PlanetKitLog.v("#flutter \(#function)")
+
+        guard let args = call.arguments as? Dictionary<String, Any>,
+              let callId = args["callId"] as? String,
+              let streamIdInt = args["streamId"] as? Int else {
+            PlanetKitLog.e("#flutter \(#function) invalid arguments")
+            result(false)
+            return
+        }
+
+        let peerUserId = args["peerUserId"] as? String
+        let peerServiceId = args["peerServiceId"] as? String
+
+        let streamId = UInt32(streamIdInt)
+        guard let session = outboundDataSessions[callId]?[streamId] else {
+            PlanetKitLog.e("#flutter \(#function) outbound data session not found \(callId) \(streamId)")
+            result(false)
+            return
+        }
+
+        // Guard both fields (mirrors the Android side); if either is missing,
+        // fall back to nil = all peers rather than force-unwrapping.
+        let peerId: PlanetKitUserId?
+        if let peerUserId = peerUserId, let peerServiceId = peerServiceId {
+            peerId = PlanetKitUserId(id: peerUserId, serviceId: peerServiceId)
+        } else {
+            peerId = nil
+        }
+        session.changeDestination(streamId: streamId, peerId: peerId) { success in
+            result(success)
+        }
     }
 }

@@ -80,7 +80,9 @@ object ConferenceParams {
         val mediaType: PlanetKitMediaType,
         val enableStatistics: Boolean,
 
-        val initialMyVideoState: PlanetKitInitialMyVideoState
+        val initialMyVideoState: PlanetKitInitialMyVideoState,
+
+        val appServerData: String?
     )
 
     data class CreatePeerControlParam(
@@ -102,6 +104,7 @@ object ConferenceParams {
         val conferenceId: String,
         val initialMyVideoState: PlanetKitInitialMyVideoState
     )
+
 }
 
 data class JoinConferenceResponse(
@@ -120,6 +123,19 @@ enum class ConferenceEventType(val type: Int) {
     NETWORK_UNAVAILABLE(7),
     NETWORK_REAVAILABLE(8),
     MY_AUDIO_MUTE_REQUESTED_BY_PEER(9),
+    SHORT_DATA_RECEIVED(10),
+    PEERS_SHARED_CONTENTS_SET(11),
+    PEERS_SHARED_CONTENTS_UNSET(12),
+    PEER_EXCLUSIVELY_SHARED_CONTENTS_SET(13),
+    PEER_EXCLUSIVELY_SHARED_CONTENTS_UNSET(14),
+    PEER_ROOM_SHARED_CONTENTS_SET(15),
+    PEER_ROOM_SHARED_CONTENTS_UNSET(16),
+    DATA_SESSION_INCOMING(17),
+    DATA_SESSION_INBOUND_RECEIVED(18),
+    DATA_SESSION_INBOUND_CLOSED(19),
+    DATA_SESSION_OUTBOUND_CLOSED(20),
+    DATA_SESSION_OUTBOUND_TOO_LONG_QUEUED_DATA(21),
+    MY_SCREEN_SHARE_STOPPED_BY_HOLD(22),
     ERROR(-1); // Assuming -1 is an appropriate representation for error
 }
 
@@ -145,6 +161,12 @@ object ConferenceEvents {
         override val subType: ConferenceEventType = ConferenceEventType.CONNECTED
     ) : ConferenceEvent
 
+    data class MyScreenShareStoppedByHoldEvent(
+        override val id: String,
+        override val type: EventType = EventType.CONFERENCE,
+        override val subType: ConferenceEventType = ConferenceEventType.MY_SCREEN_SHARE_STOPPED_BY_HOLD
+    ) : ConferenceEvent
+
     data class DisconnectedEvent(
         override val id: String,
         val disconnectReason: PlanetKitDisconnectReason,
@@ -159,7 +181,8 @@ object ConferenceEvents {
     data class InitialPeerInfo(
         val id: String,
         val userId: String,
-        val serviceId: String
+        val serviceId: String,
+        val isDataSessionSupported: Boolean
     )
 
     data class PeerListUpdateEvent(
@@ -231,5 +254,125 @@ object ConferenceEvents {
 
         override val type: EventType = EventType.CONFERENCE,
         override val subType: ConferenceEventType = ConferenceEventType.PEERS_MIC_UNMUTE,
+    ) : ConferenceEvent
+
+    data class SharedContentsEventData(
+        val peer: String,
+        val data: String,
+        val elapsedMillis: Long
+    )
+
+    data class PeersSharedContentsSetEvent(
+        override val id: String,
+        val contents: List<SharedContentsEventData>,
+
+        override val type: EventType = EventType.CONFERENCE,
+        override val subType: ConferenceEventType = ConferenceEventType.PEERS_SHARED_CONTENTS_SET,
+    ) : ConferenceEvent
+
+    data class PeersSharedContentsUnsetEvent(
+        override val id: String,
+        val peers: List<String>,
+
+        override val type: EventType = EventType.CONFERENCE,
+        override val subType: ConferenceEventType = ConferenceEventType.PEERS_SHARED_CONTENTS_UNSET,
+    ) : ConferenceEvent
+
+    data class PeerExclusivelySharedContentsSetEvent(
+        override val id: String,
+        val peer: String,
+        val data: String,
+        val elapsedMillis: Long,
+
+        override val type: EventType = EventType.CONFERENCE,
+        override val subType: ConferenceEventType = ConferenceEventType.PEER_EXCLUSIVELY_SHARED_CONTENTS_SET,
+    ) : ConferenceEvent
+
+    data class PeerExclusivelySharedContentsUnsetEvent(
+        override val id: String,
+        val peer: String,
+
+        override val type: EventType = EventType.CONFERENCE,
+        override val subType: ConferenceEventType = ConferenceEventType.PEER_EXCLUSIVELY_SHARED_CONTENTS_UNSET,
+    ) : ConferenceEvent
+
+    data class PeerRoomSharedContentsSetEvent(
+        override val id: String,
+        val userId: String,
+        val serviceId: String,
+        val data: String,
+        val elapsedMillis: Long,
+
+        override val type: EventType = EventType.CONFERENCE,
+        override val subType: ConferenceEventType = ConferenceEventType.PEER_ROOM_SHARED_CONTENTS_SET,
+    ) : ConferenceEvent
+
+    data class PeerRoomSharedContentsUnsetEvent(
+        override val id: String,
+        val userId: String,
+        val serviceId: String,
+
+        override val type: EventType = EventType.CONFERENCE,
+        override val subType: ConferenceEventType = ConferenceEventType.PEER_ROOM_SHARED_CONTENTS_UNSET,
+    ) : ConferenceEvent
+
+    data class ShortDataReceivedEvent(
+        override val id: String,
+        val userId: String,
+        val serviceId: String,
+        val dataType: String,
+        val data: String,
+
+        override val type: EventType = EventType.CONFERENCE,
+        override val subType: ConferenceEventType = ConferenceEventType.SHORT_DATA_RECEIVED,
+    ) : ConferenceEvent
+
+    data class DataSessionIncomingEvent(
+        override val id: String,
+        val streamId: Int,
+        val dataSessionType: Int,
+
+        override val type: EventType = EventType.CONFERENCE,
+        override val subType: ConferenceEventType = ConferenceEventType.DATA_SESSION_INCOMING,
+    ) : ConferenceEvent
+
+    data class DataSessionInboundReceivedEvent(
+        override val id: String,
+        val streamId: Int,
+        val userId: String,
+        val serviceId: String,
+        val data: String,
+        val timestamp: Long,
+        val offset: Long,
+
+        override val type: EventType = EventType.CONFERENCE,
+        override val subType: ConferenceEventType = ConferenceEventType.DATA_SESSION_INBOUND_RECEIVED,
+    ) : ConferenceEvent
+
+    data class DataSessionInboundClosedEvent(
+        override val id: String,
+        val streamId: Int,
+        val closedReason: Int,
+
+        override val type: EventType = EventType.CONFERENCE,
+        override val subType: ConferenceEventType = ConferenceEventType.DATA_SESSION_INBOUND_CLOSED,
+    ) : ConferenceEvent
+
+    data class DataSessionOutboundClosedEvent(
+        override val id: String,
+        val streamId: Int,
+        val closedReason: Int,
+
+        override val type: EventType = EventType.CONFERENCE,
+        override val subType: ConferenceEventType = ConferenceEventType.DATA_SESSION_OUTBOUND_CLOSED,
+    ) : ConferenceEvent
+
+    data class DataSessionOutboundTooLongQueuedDataEvent(
+        override val id: String,
+        val streamId: Int,
+        val enabled: Boolean,
+
+        override val type: EventType = EventType.CONFERENCE,
+        override val subType: ConferenceEventType = ConferenceEventType.DATA_SESSION_OUTBOUND_TOO_LONG_QUEUED_DATA,
     ) : ConferenceEvent
 }

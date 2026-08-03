@@ -12,11 +12,15 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
+import 'dart:typed_data';
+
 import 'package:json_annotation/json_annotation.dart';
 import '../../public/planet_kit_types.dart';
 import 'planet_kit_platform_call_event_type.dart';
+import '../planet_kit_platform_base64_converter.dart';
 import '../planet_kit_platform_event.dart';
 import '../planet_kit_platform_event_types.dart';
+import '../planet_kit_platform_base64_converter.dart';
 import '../../public/planet_kit_disconnect_reason.dart';
 import '../../public/planet_kit_disconnect_source.dart';
 
@@ -51,8 +55,24 @@ class CallEventFactory {
       return PeerDidStopScreenShareEvent.fromJson(data);
     } else if (type == CallEventType.peerAudioDescriptionUpdate) {
       return PeerAudioDescriptionUpdateEvent.fromJson(data);
+    } else if (type == CallEventType.peerSharedContentsSet) {
+      return PeerSharedContentsSetEvent.fromJson(data);
+    } else if (type == CallEventType.peerExclusivelySharedContentsSet) {
+      return PeerExclusivelySharedContentsSetEvent.fromJson(data);
     } else if (type == CallEventType.adoptBackgroundCall) {
       return AdoptBackgroundCallEvent.fromJson(data);
+    } else if (type == CallEventType.shortDataReceived) {
+      return ShortDataReceivedEvent.fromJson(data);
+    } else if (type == CallEventType.dataSessionIncoming) {
+      return DataSessionIncomingEvent.fromJson(data);
+    } else if (type == CallEventType.dataSessionInboundReceived) {
+      return DataSessionInboundReceivedEvent.fromJson(data);
+    } else if (type == CallEventType.dataSessionInboundClosed) {
+      return DataSessionInboundClosedEvent.fromJson(data);
+    } else if (type == CallEventType.dataSessionOutboundClosed) {
+      return DataSessionOutboundClosedEvent.fromJson(data);
+    } else if (type == CallEventType.dataSessionOutboundTooLongQueuedData) {
+      return DataSessionOutboundTooLongQueuedDataEvent.fromJson(data);
     } else {
       return event;
     }
@@ -115,8 +135,16 @@ class NetworkDidReavailableEvent extends CallEvent {
 class ConnectedEvent extends CallEvent {
   final bool isInResponderPreparation;
   final bool shouldFinishPreparation;
+
+  /// Whether the data session feature is supported on this connected call.
+  /// Defaults to false for compatibility with native builds that predate this
+  /// field.
+  @JsonKey(defaultValue: false)
+  final bool isDataSessionSupported;
+
   ConnectedEvent(super.type, super.id, super.subType,
-      this.isInResponderPreparation, this.shouldFinishPreparation);
+      this.isInResponderPreparation, this.shouldFinishPreparation,
+      this.isDataSessionSupported);
 
   factory ConnectedEvent.fromJson(Map<String, dynamic> json) =>
       _$ConnectedEventFromJson(json);
@@ -203,4 +231,117 @@ class AdoptBackgroundCallEvent extends CallEvent {
 
   factory AdoptBackgroundCallEvent.fromJson(Map<String, dynamic> json) =>
       _$AdoptBackgroundCallEventFromJson(json);
+}
+
+@JsonSerializable(createToJson: false)
+class PeerSharedContentsSetEvent extends CallEvent {
+  @Base64DataConverter()
+  final Uint8List data;
+  final int elapsedMillis;
+
+  PeerSharedContentsSetEvent(
+      super.type, super.id, super.subType, this.data, this.elapsedMillis);
+
+  factory PeerSharedContentsSetEvent.fromJson(Map<String, dynamic> json) =>
+      _$PeerSharedContentsSetEventFromJson(json);
+}
+
+@JsonSerializable(createToJson: false)
+class PeerExclusivelySharedContentsSetEvent extends CallEvent {
+  @Base64DataConverter()
+  final Uint8List data;
+  final int elapsedMillis;
+
+  PeerExclusivelySharedContentsSetEvent(
+      super.type, super.id, super.subType, this.data, this.elapsedMillis);
+
+  factory PeerExclusivelySharedContentsSetEvent.fromJson(
+          Map<String, dynamic> json) =>
+      _$PeerExclusivelySharedContentsSetEventFromJson(json);
+}
+
+@JsonSerializable(createToJson: false)
+class ShortDataReceivedEvent extends CallEvent {
+  final String dataType;
+
+  @Base64DataConverter()
+  final Uint8List data;
+
+  ShortDataReceivedEvent(
+      super.type, super.id, super.subType, this.dataType, this.data);
+
+  factory ShortDataReceivedEvent.fromJson(Map<String, dynamic> json) =>
+      _$ShortDataReceivedEventFromJson(json);
+}
+
+@JsonSerializable(createToJson: false)
+class DataSessionIncomingEvent extends CallEvent {
+  final int streamId;
+  final int dataSessionType;
+
+  DataSessionIncomingEvent(
+      super.type, super.id, super.subType, this.streamId, this.dataSessionType);
+
+  factory DataSessionIncomingEvent.fromJson(Map<String, dynamic> json) =>
+      _$DataSessionIncomingEventFromJson(json);
+}
+
+@JsonSerializable(createToJson: false)
+class DataSessionInboundReceivedEvent extends CallEvent {
+  final int streamId;
+
+  // Peer is serialized as flat userId/serviceId to match the existing inbound
+  // event convention (e.g. conference shortDataReceived / shared-contents).
+  final String userId;
+  final String serviceId;
+
+  @Base64DataConverter()
+  final Uint8List data;
+
+  final int timestamp;
+  final int offset;
+
+  DataSessionInboundReceivedEvent(super.type, super.id, super.subType,
+      this.streamId, this.userId, this.serviceId, this.data, this.timestamp,
+      this.offset);
+
+  factory DataSessionInboundReceivedEvent.fromJson(Map<String, dynamic> json) =>
+      _$DataSessionInboundReceivedEventFromJson(json);
+}
+
+@JsonSerializable(createToJson: false)
+class DataSessionInboundClosedEvent extends CallEvent {
+  final int streamId;
+  final int closedReason;
+
+  DataSessionInboundClosedEvent(
+      super.type, super.id, super.subType, this.streamId, this.closedReason);
+
+  factory DataSessionInboundClosedEvent.fromJson(Map<String, dynamic> json) =>
+      _$DataSessionInboundClosedEventFromJson(json);
+}
+
+@JsonSerializable(createToJson: false)
+class DataSessionOutboundClosedEvent extends CallEvent {
+  final int streamId;
+  final int closedReason;
+
+  DataSessionOutboundClosedEvent(
+      super.type, super.id, super.subType, this.streamId, this.closedReason);
+
+  factory DataSessionOutboundClosedEvent.fromJson(Map<String, dynamic> json) =>
+      _$DataSessionOutboundClosedEventFromJson(json);
+}
+
+@JsonSerializable(createToJson: false)
+class DataSessionOutboundTooLongQueuedDataEvent extends CallEvent {
+  final int streamId;
+  final bool enabled;
+
+  DataSessionOutboundTooLongQueuedDataEvent(
+      super.type, super.id, super.subType, this.streamId, this.enabled);
+
+  factory DataSessionOutboundTooLongQueuedDataEvent.fromJson(
+          Map<String, dynamic> json) =>
+      _$DataSessionOutboundTooLongQueuedDataEventFromJson(json);
 }

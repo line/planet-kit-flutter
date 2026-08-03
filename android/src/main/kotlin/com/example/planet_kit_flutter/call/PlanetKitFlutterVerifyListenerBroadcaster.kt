@@ -102,6 +102,17 @@ class PlanetKitFlutterVerifyListenerBroadcaster private constructor() : VerifyLi
             broadcast { listener ->
                 listener.onDisconnected(call, disconnected)
             }
+            // remove the background-call registry entry exactly once,
+            // AFTER every listener has been notified. Each engine's plugin routes
+            // this disconnect based on registry membership; evicting it inside a
+            // listener let the first engine starve the others (notably the FCM
+            // background isolate that owns the verify handler). Each listener's
+            // emit is itself posted to the main looper, so this follow-up post is
+            // ordered (FIFO) after all of them, keeping routing correct before the
+            // entry is cleaned up.
+            Handler(Looper.getMainLooper()).post {
+                PlanetKitFlutterBackgroundCalls.instance.remove(call.hashCode().toString())
+            }
         }
     }
 

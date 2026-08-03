@@ -29,4 +29,5 @@ Map<String, dynamic> _$PlanetKitJoinConferenceParamToJson(
       'screenShareKey': instance.screenShareKey?.toJson(),
       'initialMyVideoState': const PlanetKitInitialMyVideoStateConverter()
           .toJson(instance.initialMyVideoState),
+      'appServerData': instance.appServerData,
     };

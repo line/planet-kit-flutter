@@ -301,4 +301,123 @@ class CallMethodChannel implements CallInterface {
     return await methodChannel.invokeMethod<bool>(
         'call_removePeerScreenShareView', param.toJson()) as bool;
   }
+
+  @override
+  Future<bool> startMyScreenShare(String callId) async {
+    print("#flutter_method_channel startMyScreenShare with callId $callId");
+    return await methodChannel.invokeMethod<bool>(
+        'call_startMyScreenShare', callId) as bool;
+  }
+
+  @override
+  Future<bool> stopMyScreenShare(String callId) async {
+    print("#flutter_method_channel stopMyScreenShare with callId $callId");
+    return await methodChannel.invokeMethod<bool>(
+        'call_stopMyScreenShare', callId) as bool;
+  }
+
+  @override
+  Future<bool> setSharedContents(String callId, Uint8List data) async {
+    print("#flutter_method_channel setSharedContents with callId $callId");
+    return await methodChannel.invokeMethod<bool>(
+        'call_setSharedContents', {'callId': callId, 'data': data}) as bool;
+  }
+
+  @override
+  Future<bool> unsetSharedContents(String callId) async {
+    print("#flutter_method_channel unsetSharedContents with callId $callId");
+    return await methodChannel.invokeMethod<bool>(
+        'call_unsetSharedContents', callId) as bool;
+  }
+
+  @override
+  Future<bool> setExclusivelySharedContents(
+      String callId, Uint8List data) async {
+    print(
+        "#flutter_method_channel setExclusivelySharedContents with callId $callId");
+    return await methodChannel.invokeMethod<bool>(
+        'call_setExclusivelySharedContents',
+        {'callId': callId, 'data': data}) as bool;
+  }
+
+  @override
+  Future<bool> unsetExclusivelySharedContents(String callId) async {
+    print(
+        "#flutter_method_channel unsetExclusivelySharedContents with callId $callId");
+    return await methodChannel.invokeMethod<bool>(
+        'call_unsetExclusivelySharedContents', callId) as bool;
+  }
+
+  @override
+  Future<bool> sendShortData(String callId, String type, Uint8List data) async {
+    print(
+        "#flutter_method_channel sendShortData with callId $callId type $type size ${data.length}");
+    return await methodChannel.invokeMethod<bool>('call_sendShortData',
+        {'callId': callId, 'type': type, 'data': data}) as bool;
+  }
+
+  @override
+  Future<int> makeOutboundDataSession(
+      String callId, int streamId, int type) async {
+    print(
+        "#flutter_method_channel makeOutboundDataSession with callId $callId streamId $streamId type $type");
+    return await methodChannel.invokeMethod<int>('call_makeOutboundDataSession',
+        {'callId': callId, 'streamId': streamId, 'type': type}) as int;
+  }
+
+  @override
+  Future<int> makeInboundDataSession(String callId, int streamId) async {
+    print(
+        "#flutter_method_channel makeInboundDataSession with callId $callId streamId $streamId");
+    return await methodChannel.invokeMethod<int>('call_makeInboundDataSession',
+        {'callId': callId, 'streamId': streamId}) as int;
+  }
+
+  @override
+  Future<bool> unsupportInboundDataSession(String callId, int streamId) async {
+    print(
+        "#flutter_method_channel unsupportInboundDataSession with callId $callId streamId $streamId");
+    return await methodChannel.invokeMethod<bool>(
+        'call_unsupportInboundDataSession',
+        {'callId': callId, 'streamId': streamId}) as bool;
+  }
+
+  @override
+  Future<int?> getOutboundDataSessionType(String callId, int streamId) async {
+    print(
+        "#flutter_method_channel getOutboundDataSessionType with callId $callId streamId $streamId");
+    return await methodChannel.invokeMethod<int?>('call_getOutboundDataSession',
+        {'callId': callId, 'streamId': streamId});
+  }
+
+  @override
+  Future<int?> getInboundDataSessionType(String callId, int streamId) async {
+    print(
+        "#flutter_method_channel getInboundDataSessionType with callId $callId streamId $streamId");
+    return await methodChannel.invokeMethod<int?>('call_getInboundDataSession',
+        {'callId': callId, 'streamId': streamId});
+  }
+
+  @override
+  Future<bool> dataSessionSend(
+      String callId, int streamId, Uint8List data, int timestamp) async {
+    return await methodChannel.invokeMethod<bool>('call_dataSessionSend', {
+      'callId': callId,
+      'streamId': streamId,
+      'data': data,
+      'timestamp': timestamp
+    }) as bool;
+  }
+
+  @override
+  Future<bool> dataSessionChangeDestination(String callId, int streamId,
+      String? peerUserId, String? peerServiceId) async {
+    return await methodChannel
+        .invokeMethod<bool>('call_dataSessionChangeDestination', {
+      'callId': callId,
+      'streamId': streamId,
+      'peerUserId': peerUserId,
+      'peerServiceId': peerServiceId
+    }) as bool;
+  }
 }

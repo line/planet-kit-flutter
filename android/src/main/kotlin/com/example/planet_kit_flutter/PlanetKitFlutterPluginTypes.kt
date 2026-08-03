@@ -191,7 +191,9 @@ data class MakeCallParam(
     val responseOnEnableVideo: PlanetKitResponseOnEnableVideo,
 
     val enableStatistics: Boolean,
-    val initialMyVideoState: PlanetKitInitialMyVideoState
+    val initialMyVideoState: PlanetKitInitialMyVideoState,
+
+    val appServerData: String?
 )
 
 data class CCParam(

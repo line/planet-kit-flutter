@@ -25,9 +25,17 @@ extension PlanetKitCCParam: PluginInstance {
     }
 }
 
+/// Wire payload for `getPlanetKitVersionInfo`, decoded by the Dart
+/// `PlanetKitVersionInfo` model.
+struct PlanetKitFlutterVersionInfo: Encodable {
+    let sdkVersion: String
+    let pluginVersion: String
+    let userAgent: String?
+}
+
 
 public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
-    static let planetKitFlutterVersion = "1.1.0"
+    static let planetKitFlutterVersion = "1.2.0"
     var registrar: FlutterPluginRegistrar?
     let eventStreamHandler = PlanetKitFlutterStreamHandler()
     let backgroundEventStreamHandler = PlanetKitFlutterStreamHandler()
@@ -89,6 +97,13 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
         switch call.method {
         case "getPlatformVersion":
             result("iOS " + UIDevice.current.systemVersion)
+        case "getPlanetKitVersionInfo":
+            PlanetKitLog.v("#flutter getPlanetKitVersionInfo")
+            let info = PlanetKitFlutterVersionInfo(
+                sdkVersion: PlanetKitManager.shared.version,
+                pluginVersion: PlanetKitFlutterPlugin.planetKitFlutterVersion,
+                userAgent: PlanetKitManager.shared.userAgent)
+            result(PlanetKitFlutterPlugin.encode(data: info))
         case "initializePlanetKit":
             initializePlanetKit(call: call, result: result)
         case "makeCall":
@@ -213,7 +228,53 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
         case "call_removePeerScreenShareView":
             callPlugin.removePeerScreenShareView(call: call, result: result)
             break
-            
+        case "call_startMyScreenShare":
+            callPlugin.startMyScreenShare(call: call, result: result)
+            break
+        case "call_stopMyScreenShare":
+            callPlugin.stopMyScreenShare(call: call, result: result)
+            break
+        case "call_sendShortData":
+            callPlugin.sendShortData(call: call, result: result)
+            break
+
+            // MARK: call contents sharing
+        case "call_setSharedContents":
+            callPlugin.setSharedContents(call: call, result: result)
+            break
+        case "call_unsetSharedContents":
+            callPlugin.unsetSharedContents(call: call, result: result)
+            break
+        case "call_setExclusivelySharedContents":
+            callPlugin.setExclusivelySharedContents(call: call, result: result)
+            break
+        case "call_unsetExclusivelySharedContents":
+            callPlugin.unsetExclusivelySharedContents(call: call, result: result)
+            break
+
+            // MARK: call data session
+        case "call_makeOutboundDataSession":
+            callPlugin.makeOutboundDataSession(call: call, result: result)
+            break
+        case "call_makeInboundDataSession":
+            callPlugin.makeInboundDataSession(call: call, result: result)
+            break
+        case "call_unsupportInboundDataSession":
+            callPlugin.unsupportInboundDataSession(call: call, result: result)
+            break
+        case "call_getOutboundDataSession":
+            callPlugin.getOutboundDataSession(call: call, result: result)
+            break
+        case "call_getInboundDataSession":
+            callPlugin.getInboundDataSession(call: call, result: result)
+            break
+        case "call_dataSessionSend":
+            callPlugin.dataSessionSend(call: call, result: result)
+            break
+        case "call_dataSessionChangeDestination":
+            callPlugin.dataSessionChangeDestination(call: call, result: result)
+            break
+
             // MARK: my media status
         case "myMediaStatus_isMyAudioMuted":
             myMediaStatusPlugin.isMyAudioMutedMyMediaStatus(call: call, result: result)
@@ -287,7 +348,62 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
         case "conference_getStatistics":
             conferencePlugin.getStatistics(call: call, result: result)
             break
-            
+        case "conference_startMyScreenShare":
+            conferencePlugin.startMyScreenShare(call: call, result: result)
+            break
+        case "conference_stopMyScreenShare":
+            conferencePlugin.stopMyScreenShare(call: call, result: result)
+            break
+        case "conference_sendShortData":
+            conferencePlugin.sendShortData(call: call, result: result)
+            break
+        case "conference_sendShortDataToPeer":
+            conferencePlugin.sendShortDataToPeer(call: call, result: result)
+            break
+
+            // MARK: conference contents sharing
+        case "conference_setSharedContents":
+            conferencePlugin.setSharedContents(call: call, result: result)
+            break
+        case "conference_unsetSharedContents":
+            conferencePlugin.unsetSharedContents(call: call, result: result)
+            break
+        case "conference_setExclusivelySharedContents":
+            conferencePlugin.setExclusivelySharedContents(call: call, result: result)
+            break
+        case "conference_unsetExclusivelySharedContents":
+            conferencePlugin.unsetExclusivelySharedContents(call: call, result: result)
+            break
+        case "conference_setRoomSharedContents":
+            conferencePlugin.setRoomSharedContents(call: call, result: result)
+            break
+        case "conference_unsetRoomSharedContents":
+            conferencePlugin.unsetRoomSharedContents(call: call, result: result)
+            break
+
+            // MARK: conference data session
+        case "conference_makeOutboundDataSession":
+            conferencePlugin.makeOutboundDataSession(call: call, result: result)
+            break
+        case "conference_makeInboundDataSession":
+            conferencePlugin.makeInboundDataSession(call: call, result: result)
+            break
+        case "conference_unsupportInboundDataSession":
+            conferencePlugin.unsupportInboundDataSession(call: call, result: result)
+            break
+        case "conference_getOutboundDataSession":
+            conferencePlugin.getOutboundDataSession(call: call, result: result)
+            break
+        case "conference_getInboundDataSession":
+            conferencePlugin.getInboundDataSession(call: call, result: result)
+            break
+        case "conference_dataSessionSend":
+            conferencePlugin.dataSessionSend(call: call, result: result)
+            break
+        case "conference_dataSessionChangeDestination":
+            conferencePlugin.dataSessionChangeDestination(call: call, result: result)
+            break
+
             // MARK: conference peer
         case "conferencePeer_getVideoStatus":
             conferencePeerPlugin.getVideoStatus(call: call, result: result)
@@ -412,6 +528,7 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
         makeCallParam.useResponderPreparation = param.useResponderPreparation
         makeCallParam.mediaType = param.mediaType
         makeCallParam.initialMyVideoState = param.initialMyVideoState
+        makeCallParam.appServerData = param.appServerData
         
         var settings = PlanetKitMakeCallSettingBuilder()
         
@@ -655,6 +772,7 @@ public class PlanetKitFlutterPlugin: NSObject, FlutterPlugin {
         
         joinConferenceParam.mediaType = param.mediaType
         joinConferenceParam.initialMyVideoState = param.initialMyVideoState
+        joinConferenceParam.appServerData = param.appServerData
         
         var settings = PlanetKitJoinConferenceSettingBuilder()
 

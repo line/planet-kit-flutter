@@ -95,6 +95,11 @@ class PlanetKitMakeCallParam {
   @PlanetKitInitialMyVideoStateConverter()
   final PlanetKitInitialMyVideoState initialMyVideoState;
 
+  /// Application-defined data delivered to the app server when the call starts.
+  /// Maximum size is 4096 bytes including null termination. Exceeding this limit
+  /// causes the call to fail with [PlanetKitStartFailReason.tooLongAppServerData].
+  final String? appServerData;
+
   /// @nodoc
   PlanetKitMakeCallParam._(
       {required this.myUserId,
@@ -117,7 +122,8 @@ class PlanetKitMakeCallParam {
       required this.responseOnEnableVideo,
       required this.enableStatistics,
       required this.screenShareKey,
-      required this.initialMyVideoState});
+      required this.initialMyVideoState,
+      required this.appServerData});
 
   /// @nodoc
   Map<String, dynamic> toJson() => _$PlanetKitMakeCallParamToJson(this);
@@ -148,6 +154,7 @@ class PlanetKitMakeCallParamBuilder {
   ScreenShareKey? _screenShareKey;
   PlanetKitInitialMyVideoState _initialMyVideoState =
       PlanetKitInitialMyVideoState.resume;
+  String? _appServerData;
 
   /// Sets the user ID of the caller and returns the builder.
   PlanetKitMakeCallParamBuilder setMyUserId(String myUserId) {
@@ -282,6 +289,13 @@ class PlanetKitMakeCallParamBuilder {
     return this;
   }
 
+  /// Sets application-defined data delivered to the app server and returns the builder.
+  /// Maximum size is 4096 bytes including null termination.
+  PlanetKitMakeCallParamBuilder setAppServerData(String appServerData) {
+    _appServerData = appServerData;
+    return this;
+  }
+
   /// Constructs a [PlanetKitMakeCallParam] with necessary details for making a call.
   /// Throws an exception if any required fields are missing.
   PlanetKitMakeCallParam build() {
@@ -314,6 +328,9 @@ class PlanetKitMakeCallParamBuilder {
         responseOnEnableVideo: _responseOnEnableVideo,
         enableStatistics: _enableStatistics,
         screenShareKey: _screenShareKey,
-        initialMyVideoState: _initialMyVideoState);
+        initialMyVideoState: _initialMyVideoState,
+        // Treat empty string as unset (no app server data attached) per flt-EC003.
+        appServerData:
+            (_appServerData?.isNotEmpty ?? false) ? _appServerData : null);
   }
 }

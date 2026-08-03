@@ -38,7 +38,20 @@ enum ConferenceEventType {
   peersUnhold,
   networkUnavailable,
   networkReavailable,
-  myAudioMuteRequestedByPeer;
+  myAudioMuteRequestedByPeer,
+  shortDataReceived, // 10
+  peersSharedContentsSet, // 11
+  peersSharedContentsUnset, // 12
+  peerExclusivelySharedContentsSet, // 13
+  peerExclusivelySharedContentsUnset, // 14
+  peerRoomSharedContentsSet, // 15
+  peerRoomSharedContentsUnset, // 16
+  dataSessionIncoming, // 17
+  dataSessionInboundReceived, // 18
+  dataSessionInboundClosed, // 19
+  dataSessionOutboundClosed, // 20
+  dataSessionOutboundTooLongQueuedData, // 21
+  myScreenShareStoppedByHold; // 22
 
   static ConferenceEventType fromInt(int value) {
     switch (value) {
@@ -62,6 +75,32 @@ enum ConferenceEventType {
         return ConferenceEventType.networkReavailable;
       case 9:
         return ConferenceEventType.myAudioMuteRequestedByPeer;
+      case 10:
+        return ConferenceEventType.shortDataReceived;
+      case 11:
+        return ConferenceEventType.peersSharedContentsSet;
+      case 12:
+        return ConferenceEventType.peersSharedContentsUnset;
+      case 13:
+        return ConferenceEventType.peerExclusivelySharedContentsSet;
+      case 14:
+        return ConferenceEventType.peerExclusivelySharedContentsUnset;
+      case 15:
+        return ConferenceEventType.peerRoomSharedContentsSet;
+      case 16:
+        return ConferenceEventType.peerRoomSharedContentsUnset;
+      case 17:
+        return ConferenceEventType.dataSessionIncoming;
+      case 18:
+        return ConferenceEventType.dataSessionInboundReceived;
+      case 19:
+        return ConferenceEventType.dataSessionInboundClosed;
+      case 20:
+        return ConferenceEventType.dataSessionOutboundClosed;
+      case 21:
+        return ConferenceEventType.dataSessionOutboundTooLongQueuedData;
+      case 22:
+        return ConferenceEventType.myScreenShareStoppedByHold;
       default:
         return ConferenceEventType.error;
     }

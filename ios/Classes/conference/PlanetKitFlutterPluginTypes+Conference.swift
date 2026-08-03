@@ -68,6 +68,7 @@ struct ConferenceParams {
         
         let screenShareKey: ScreenShareKey?
         let initialMyVideoState: PlanetKitInitialMyVideoState
+        let appServerData: String?
     }
     
     struct CreatePeerControlParam: Decodable {
@@ -111,6 +112,27 @@ enum ConferenceEventType: Int, Encodable {
     case networkUnavailable = 7
     case networkReavailable = 8
     case myAudioMuteRequestedByPeer = 9
+
+    // MARK: short data
+    case shortDataReceived = 10
+
+    // MARK: contents sharing
+    case peersSharedContentsSet = 11
+    case peersSharedContentsUnset = 12
+    case peerExclusivelySharedContentsSet = 13
+    case peerExclusivelySharedContentsUnset = 14
+    case peerRoomSharedContentsSet = 15
+    case peerRoomSharedContentsUnset = 16
+
+    // MARK: data session
+    case dataSessionIncoming = 17
+    case dataSessionInboundReceived = 18
+    case dataSessionInboundClosed = 19
+    case dataSessionOutboundClosed = 20
+    case dataSessionOutboundTooLongQueuedData = 21
+
+    // MARK: screen share
+    case myScreenShareStoppedByHold = 22
 }
 
 
@@ -153,11 +175,13 @@ struct ConferenceEvents {
         let id: String
         let userId: String
         let serviceId: String
-        
-        init(id: String, userId: String, serviceId: String) {
+        let isDataSessionSupported: Bool
+
+        init(id: String, userId: String, serviceId: String, isDataSessionSupported: Bool) {
             self.id = id
             self.userId = userId
             self.serviceId = serviceId
+            self.isDataSessionSupported = isDataSessionSupported
         }
     }
     
@@ -193,7 +217,17 @@ struct ConferenceEvents {
         let type: EventType = .conference
         let id: String
         let subType: ConferenceEventType = .networkReavailable
-        
+
+        init(id: String) {
+            self.id = id
+        }
+    }
+
+    struct MyScreenShareStoppedByHoldEvent: ConferenceEvent {
+        let type: EventType = .conference
+        let id: String
+        let subType: ConferenceEventType = .myScreenShareStoppedByHold
+
         init(id: String) {
             self.id = id
         }
@@ -264,10 +298,208 @@ struct ConferenceEvents {
         let id: String
         let subType: ConferenceEventType = .peersMicUnmute
         let peers: [String]
-        
+
         init(id: String, peers: [String]) {
             self.id = id
             self.peers = peers
+        }
+    }
+
+    // MARK: contents sharing events
+    struct PeerSharedContentsData: Encodable {
+        let peer: String
+        let data: String
+        let elapsedMillis: Int
+
+        init(peer: String, data: Data, elapsed: TimeInterval) {
+            self.peer = peer
+            self.data = data.base64EncodedString()
+            self.elapsedMillis = Int((elapsed * 1000).rounded())
+        }
+    }
+
+    struct PeersSharedContentsSetEvent: ConferenceEvent {
+        let type: EventType = .conference
+        let id: String
+        let subType: ConferenceEventType = .peersSharedContentsSet
+        let contents: [PeerSharedContentsData]
+
+        init(id: String, contents: [PeerSharedContentsData]) {
+            self.id = id
+            self.contents = contents
+        }
+    }
+
+    struct PeersSharedContentsUnsetEvent: ConferenceEvent {
+        let type: EventType = .conference
+        let id: String
+        let subType: ConferenceEventType = .peersSharedContentsUnset
+        let peers: [String]
+
+        init(id: String, peers: [String]) {
+            self.id = id
+            self.peers = peers
+        }
+    }
+
+    struct PeerExclusivelySharedContentsSetEvent: ConferenceEvent {
+        let type: EventType = .conference
+        let id: String
+        let subType: ConferenceEventType = .peerExclusivelySharedContentsSet
+        let peer: String
+        let data: String
+        let elapsedMillis: Int
+
+        init(id: String, peer: String, data: Data, elapsed: TimeInterval) {
+            self.id = id
+            self.peer = peer
+            self.data = data.base64EncodedString()
+            self.elapsedMillis = Int((elapsed * 1000).rounded())
+        }
+    }
+
+    struct PeerExclusivelySharedContentsUnsetEvent: ConferenceEvent {
+        let type: EventType = .conference
+        let id: String
+        let subType: ConferenceEventType = .peerExclusivelySharedContentsUnset
+        let peer: String
+
+        init(id: String, peer: String) {
+            self.id = id
+            self.peer = peer
+        }
+    }
+
+    struct PeerRoomSharedContentsSetEvent: ConferenceEvent {
+        let type: EventType = .conference
+        let id: String
+        let subType: ConferenceEventType = .peerRoomSharedContentsSet
+        let userId: String
+        let serviceId: String
+        let data: String
+        let elapsedMillis: Int
+
+        init(id: String, userId: String, serviceId: String, data: Data, elapsed: TimeInterval) {
+            self.id = id
+            self.userId = userId
+            self.serviceId = serviceId
+            self.data = data.base64EncodedString()
+            self.elapsedMillis = Int((elapsed * 1000).rounded())
+        }
+    }
+
+    struct PeerRoomSharedContentsUnsetEvent: ConferenceEvent {
+        let type: EventType = .conference
+        let id: String
+        let subType: ConferenceEventType = .peerRoomSharedContentsUnset
+        let userId: String
+        let serviceId: String
+
+        init(id: String, userId: String, serviceId: String) {
+            self.id = id
+            self.userId = userId
+            self.serviceId = serviceId
+        }
+    }
+
+    // MARK: short data events
+    struct ShortDataReceivedEvent: ConferenceEvent {
+        let type: EventType = .conference
+        let id: String
+        let subType: ConferenceEventType = .shortDataReceived
+        let userId: String
+        let serviceId: String
+        let dataType: String
+        let data: String
+
+        init(id: String, userId: String, serviceId: String, dataType: String, data: Data) {
+            self.id = id
+            self.userId = userId
+            self.serviceId = serviceId
+            self.dataType = dataType
+            self.data = data.base64EncodedString()
+        }
+    }
+
+    // MARK: data session events
+    struct DataSessionIncomingEvent: ConferenceEvent {
+        let type: EventType = .conference
+        let id: String
+        let subType: ConferenceEventType = .dataSessionIncoming
+        let streamId: Int
+        let dataSessionType: Int
+
+        init(id: String, streamId: UInt32, dataSessionType: Int) {
+            self.id = id
+            self.streamId = Int(streamId)
+            self.dataSessionType = dataSessionType
+        }
+    }
+
+    struct DataSessionInboundReceivedEvent: ConferenceEvent {
+        let type: EventType = .conference
+        let id: String
+        let subType: ConferenceEventType = .dataSessionInboundReceived
+        let streamId: Int
+        let userId: String
+        let serviceId: String
+        let data: String
+        let timestamp: Int
+        let offset: Int
+
+        init(id: String, streamId: UInt32, peerId: PlanetKitUserId, data: Data, timestamp: UInt64, offset: UInt64) {
+            self.id = id
+            self.streamId = Int(streamId)
+            self.userId = peerId.id
+            self.serviceId = peerId.serviceId
+            self.data = data.base64EncodedString()
+            // timestamp is an app-defined opaque value; the sender encodes it
+            // with UInt64(bitPattern:), so reverse it the same way. Int(timestamp)
+            // would trap for values above Int.max (e.g. a negative app timestamp).
+            self.timestamp = Int(bitPattern: UInt(timestamp))
+            self.offset = Int(offset)
+        }
+    }
+
+    struct DataSessionInboundClosedEvent: ConferenceEvent {
+        let type: EventType = .conference
+        let id: String
+        let subType: ConferenceEventType = .dataSessionInboundClosed
+        let streamId: Int
+        let closedReason: Int
+
+        init(id: String, streamId: UInt32, closedReason: Int) {
+            self.id = id
+            self.streamId = Int(streamId)
+            self.closedReason = closedReason
+        }
+    }
+
+    struct DataSessionOutboundClosedEvent: ConferenceEvent {
+        let type: EventType = .conference
+        let id: String
+        let subType: ConferenceEventType = .dataSessionOutboundClosed
+        let streamId: Int
+        let closedReason: Int
+
+        init(id: String, streamId: UInt32, closedReason: Int) {
+            self.id = id
+            self.streamId = Int(streamId)
+            self.closedReason = closedReason
+        }
+    }
+
+    struct DataSessionOutboundTooLongQueuedDataEvent: ConferenceEvent {
+        let type: EventType = .conference
+        let id: String
+        let subType: ConferenceEventType = .dataSessionOutboundTooLongQueuedData
+        let streamId: Int
+        let enabled: Bool
+
+        init(id: String, streamId: UInt32, enabled: Bool) {
+            self.id = id
+            self.streamId = Int(streamId)
+            self.enabled = enabled
         }
     }
 }

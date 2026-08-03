@@ -48,8 +48,10 @@ struct MakeCallParam: Decodable {
     let enableStatistics: Bool
     
     let screenShareKey: ScreenShareKey?
-    
+
     let initialMyVideoState: PlanetKitInitialMyVideoState
+
+    let appServerData: String?
 }
 
 struct MakeCallResponse: Encodable {
@@ -132,6 +134,23 @@ enum CallEventType: Int, Encodable {
     case peerDidStopScreenShare = 18
     
     case peerAudioDescriptionUpdate = 19
+
+    // MARK: short data
+    case shortDataReceived = 20
+
+    // MARK: contents sharing
+    case peerSharedContentsSet = 21
+    case peerSharedContentsUnset = 22
+    case peerExclusivelySharedContentsSet = 23
+    case peerExclusivelySharedContentsUnset = 24
+
+    // MARK: data session
+    case dataSessionIncoming = 25
+    case dataSessionInboundReceived = 26
+    case dataSessionInboundClosed = 27
+    case dataSessionOutboundClosed = 28
+    case dataSessionOutboundTooLongQueuedData = 29
+
     case adoptBackgroundCall = 100
 }
 
@@ -147,14 +166,16 @@ struct ConnectedCallEvent: CallEvent {
     let subType: CallEventType
     let isInResponderPreparation: Bool
     let shouldFinishPreparation: Bool
-    
-    init(id: String, isInResponderPreparation: Bool, shouldFinishPreparation: Bool) {
+    let isDataSessionSupported: Bool
+
+    init(id: String, isInResponderPreparation: Bool, shouldFinishPreparation: Bool, isDataSessionSupported: Bool) {
         type = .call
         subType = .connected
 
         self.id = id
         self.isInResponderPreparation = isInResponderPreparation
         self.shouldFinishPreparation = shouldFinishPreparation
+        self.isDataSessionSupported = isDataSessionSupported
     }
 }
 
@@ -421,6 +442,63 @@ struct PeerAudioDescriptionUpdateEvent: CallEvent {
     }
 }
 
+// MARK: contents sharing events
+struct PeerSharedContentsSetCallEvent: CallEvent {
+    let type: EventType
+    let id: String
+    let subType: CallEventType
+    let data: String
+    let elapsedMillis: Int
+    init(id: String, data: Data, elapsed: TimeInterval) {
+        type = .call
+        subType = .peerSharedContentsSet
+
+        self.id = id
+        self.data = data.base64EncodedString()
+        self.elapsedMillis = Int((elapsed * 1000).rounded())
+    }
+}
+
+struct PeerSharedContentsUnsetCallEvent: CallEvent {
+    let type: EventType
+    let id: String
+    let subType: CallEventType
+    init(id: String) {
+        type = .call
+        subType = .peerSharedContentsUnset
+
+        self.id = id
+    }
+}
+
+struct PeerExclusivelySharedContentsSetCallEvent: CallEvent {
+    let type: EventType
+    let id: String
+    let subType: CallEventType
+    let data: String
+    let elapsedMillis: Int
+    init(id: String, data: Data, elapsed: TimeInterval) {
+        type = .call
+        subType = .peerExclusivelySharedContentsSet
+
+        self.id = id
+        self.data = data.base64EncodedString()
+        self.elapsedMillis = Int((elapsed * 1000).rounded())
+    }
+}
+
+struct PeerExclusivelySharedContentsUnsetCallEvent: CallEvent {
+    let type: EventType
+    let id: String
+    let subType: CallEventType
+    init(id: String) {
+        type = .call
+        subType = .peerExclusivelySharedContentsUnset
+
+        self.id = id
+    }
+}
+
 struct AdoptBackgroundCallEvent: CallEvent {
     let type: EventType
     let id: String
@@ -430,6 +508,114 @@ struct AdoptBackgroundCallEvent: CallEvent {
         subType = .adoptBackgroundCall
         
         self.id = id
+    }
+}
+
+struct ShortDataReceivedCallEvent: CallEvent {
+    let type: EventType
+    let id: String
+    let subType: CallEventType
+    let dataType: String
+    let data: String
+    init(id: String, dataType: String, data: Data) {
+        type = .call
+        subType = .shortDataReceived
+
+        self.id = id
+        self.dataType = dataType
+        self.data = data.base64EncodedString()
+    }
+}
+
+// MARK: data session events
+struct DataSessionIncomingCallEvent: CallEvent {
+    let type: EventType
+    let id: String
+    let subType: CallEventType
+    let streamId: Int
+    let dataSessionType: Int
+    init(id: String, streamId: UInt32, dataSessionType: Int) {
+        type = .call
+        subType = .dataSessionIncoming
+
+        self.id = id
+        self.streamId = Int(streamId)
+        self.dataSessionType = dataSessionType
+    }
+}
+
+struct DataSessionInboundReceivedCallEvent: CallEvent {
+    let type: EventType
+    let id: String
+    let subType: CallEventType
+    let streamId: Int
+    let userId: String
+    let serviceId: String
+    let data: String
+    let timestamp: Int
+    let offset: Int
+    init(id: String, streamId: UInt32, peerId: PlanetKitUserId, data: Data, timestamp: UInt64, offset: UInt64) {
+        type = .call
+        subType = .dataSessionInboundReceived
+
+        self.id = id
+        self.streamId = Int(streamId)
+        self.userId = peerId.id
+        self.serviceId = peerId.serviceId
+        self.data = data.base64EncodedString()
+        // timestamp is an app-defined opaque value; the sender encodes it with
+        // UInt64(bitPattern:), so reverse it the same way. Int(timestamp) would
+        // trap for values above Int.max (e.g. a negative app timestamp).
+        self.timestamp = Int(bitPattern: UInt(timestamp))
+        self.offset = Int(offset)
+    }
+}
+
+struct DataSessionInboundClosedCallEvent: CallEvent {
+    let type: EventType
+    let id: String
+    let subType: CallEventType
+    let streamId: Int
+    let closedReason: Int
+    init(id: String, streamId: UInt32, closedReason: Int) {
+        type = .call
+        subType = .dataSessionInboundClosed
+
+        self.id = id
+        self.streamId = Int(streamId)
+        self.closedReason = closedReason
+    }
+}
+
+struct DataSessionOutboundClosedCallEvent: CallEvent {
+    let type: EventType
+    let id: String
+    let subType: CallEventType
+    let streamId: Int
+    let closedReason: Int
+    init(id: String, streamId: UInt32, closedReason: Int) {
+        type = .call
+        subType = .dataSessionOutboundClosed
+
+        self.id = id
+        self.streamId = Int(streamId)
+        self.closedReason = closedReason
+    }
+}
+
+struct DataSessionOutboundTooLongQueuedDataCallEvent: CallEvent {
+    let type: EventType
+    let id: String
+    let subType: CallEventType
+    let streamId: Int
+    let enabled: Bool
+    init(id: String, streamId: UInt32, enabled: Bool) {
+        type = .call
+        subType = .dataSessionOutboundTooLongQueuedData
+
+        self.id = id
+        self.streamId = Int(streamId)
+        self.enabled = enabled
     }
 }
 

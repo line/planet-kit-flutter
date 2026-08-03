@@ -25,14 +25,16 @@ import 'planet_kit_platform_event_types.dart';
 import 'planet_kit_platform_interface.dart';
 
 class BackgroundEventManager implements BackgroundEventManagerInterface {
-  final EventChannel _backgroundEventChannel =
-      const EventChannel('planetkit_background_event');
+  final EventChannel _backgroundEventChannel;
   late final StreamSubscription<dynamic> _backgroundEventSubscription;
 
   final StreamController<BackgroundCallEvent> _backgroundCallEventController =
       StreamController<BackgroundCallEvent>.broadcast();
 
-  BackgroundEventManager() {
+  BackgroundEventManager({
+    EventChannel backgroundEventChannel =
+        const EventChannel('planetkit_background_event'),
+  }) : _backgroundEventChannel = backgroundEventChannel {
     _backgroundEventSubscription = _backgroundEventChannel
         .receiveBroadcastStream()
         .listen(_onBackgroundEvent, onError: _onBackgroundError);

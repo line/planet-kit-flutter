@@ -198,4 +198,152 @@ class ConferenceMethodChannel implements ConferenceInterface {
     final response = PlanetKitStatistics.fromJson(jsonMap);
     return response;
   }
+
+  @override
+  Future<bool> startMyScreenShare(String conferenceId) async {
+    print("#flutter_method_channel startMyScreenShare with conferenceId $conferenceId");
+    return await methodChannel.invokeMethod<bool>(
+        'conference_startMyScreenShare', conferenceId) as bool;
+  }
+
+  @override
+  Future<bool> stopMyScreenShare(String conferenceId) async {
+    print("#flutter_method_channel stopMyScreenShare with conferenceId $conferenceId");
+    return await methodChannel.invokeMethod<bool>(
+        'conference_stopMyScreenShare', conferenceId) as bool;
+  }
+
+  @override
+  Future<bool> setSharedContents(String id, Uint8List data) async {
+    print("#flutter_method_channel setSharedContents with id $id");
+    return await methodChannel.invokeMethod<bool>(
+        'conference_setSharedContents', {'id': id, 'data': data}) as bool;
+  }
+
+  @override
+  Future<bool> unsetSharedContents(String id) async {
+    print("#flutter_method_channel unsetSharedContents with id $id");
+    return await methodChannel.invokeMethod<bool>(
+        'conference_unsetSharedContents', id) as bool;
+  }
+
+  @override
+  Future<bool> setExclusivelySharedContents(String id, Uint8List data) async {
+    print("#flutter_method_channel setExclusivelySharedContents with id $id");
+    return await methodChannel.invokeMethod<bool>(
+        'conference_setExclusivelySharedContents',
+        {'id': id, 'data': data}) as bool;
+  }
+
+  @override
+  Future<bool> unsetExclusivelySharedContents(String id) async {
+    print("#flutter_method_channel unsetExclusivelySharedContents with id $id");
+    return await methodChannel.invokeMethod<bool>(
+        'conference_unsetExclusivelySharedContents', id) as bool;
+  }
+
+  @override
+  Future<bool> setRoomSharedContents(String id, Uint8List data) async {
+    print("#flutter_method_channel setRoomSharedContents with id $id");
+    return await methodChannel.invokeMethod<bool>(
+        'conference_setRoomSharedContents', {'id': id, 'data': data}) as bool;
+  }
+
+  @override
+  Future<bool> unsetRoomSharedContents(String id) async {
+    print("#flutter_method_channel unsetRoomSharedContents with id $id");
+    return await methodChannel.invokeMethod<bool>(
+        'conference_unsetRoomSharedContents', id) as bool;
+  }
+
+  @override
+  Future<bool> sendShortData(String id, String type, Uint8List data) async {
+    print(
+        "#flutter_method_channel sendShortData with id $id type $type size ${data.length}");
+    return await methodChannel.invokeMethod<bool>('conference_sendShortData',
+        {'id': id, 'type': type, 'data': data}) as bool;
+  }
+
+  @override
+  Future<bool> sendShortDataToPeer(
+      String id, PlanetKitUserId peerId, String type, Uint8List data) async {
+    print(
+        "#flutter_method_channel sendShortDataToPeer with id $id peer $peerId type $type size ${data.length}");
+    return await methodChannel.invokeMethod<bool>(
+        'conference_sendShortDataToPeer', {
+      'id': id,
+      'peerId': peerId.toJson(),
+      'type': type,
+      'data': data
+    }) as bool;
+  }
+
+  @override
+  Future<int> makeOutboundDataSession(String id, int streamId, int type) async {
+    print(
+        "#flutter_method_channel makeOutboundDataSession with id $id streamId $streamId type $type");
+    return await methodChannel.invokeMethod<int>(
+        'conference_makeOutboundDataSession',
+        {'id': id, 'streamId': streamId, 'type': type}) as int;
+  }
+
+  @override
+  Future<int> makeInboundDataSession(String id, int streamId) async {
+    print(
+        "#flutter_method_channel makeInboundDataSession with id $id streamId $streamId");
+    return await methodChannel.invokeMethod<int>(
+        'conference_makeInboundDataSession',
+        {'id': id, 'streamId': streamId}) as int;
+  }
+
+  @override
+  Future<bool> unsupportInboundDataSession(String id, int streamId) async {
+    print(
+        "#flutter_method_channel unsupportInboundDataSession with id $id streamId $streamId");
+    return await methodChannel.invokeMethod<bool>(
+        'conference_unsupportInboundDataSession',
+        {'id': id, 'streamId': streamId}) as bool;
+  }
+
+  @override
+  Future<int?> getOutboundDataSessionType(String id, int streamId) async {
+    print(
+        "#flutter_method_channel getOutboundDataSessionType with id $id streamId $streamId");
+    return await methodChannel.invokeMethod<int?>(
+        'conference_getOutboundDataSession',
+        {'id': id, 'streamId': streamId});
+  }
+
+  @override
+  Future<int?> getInboundDataSessionType(String id, int streamId) async {
+    print(
+        "#flutter_method_channel getInboundDataSessionType with id $id streamId $streamId");
+    return await methodChannel.invokeMethod<int?>(
+        'conference_getInboundDataSession',
+        {'id': id, 'streamId': streamId});
+  }
+
+  @override
+  Future<bool> dataSessionSend(
+      String id, int streamId, Uint8List data, int timestamp) async {
+    return await methodChannel
+        .invokeMethod<bool>('conference_dataSessionSend', {
+      'id': id,
+      'streamId': streamId,
+      'data': data,
+      'timestamp': timestamp
+    }) as bool;
+  }
+
+  @override
+  Future<bool> dataSessionChangeDestination(String id, int streamId,
+      String? peerUserId, String? peerServiceId) async {
+    return await methodChannel
+        .invokeMethod<bool>('conference_dataSessionChangeDestination', {
+      'id': id,
+      'streamId': streamId,
+      'peerUserId': peerUserId,
+      'peerServiceId': peerServiceId
+    }) as bool;
+  }
 }

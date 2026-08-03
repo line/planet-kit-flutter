@@ -47,6 +47,16 @@ enum CallEventType {
   peerDidStartScreenShare, // 17
   peerDidStopScreenShare, // 18
   peerAudioDescriptionUpdate, // 19
+  shortDataReceived, // 20
+  peerSharedContentsSet, // 21
+  peerSharedContentsUnset, // 22
+  peerExclusivelySharedContentsSet, // 23
+  peerExclusivelySharedContentsUnset, // 24
+  dataSessionIncoming, // 25
+  dataSessionInboundReceived, // 26
+  dataSessionInboundClosed, // 27
+  dataSessionOutboundClosed, // 28
+  dataSessionOutboundTooLongQueuedData, // 29
   adoptBackgroundCall, // 100
   error; // default case
 
@@ -92,6 +102,26 @@ enum CallEventType {
         return CallEventType.peerDidStopScreenShare;
       case 19:
         return CallEventType.peerAudioDescriptionUpdate;
+      case 20:
+        return CallEventType.shortDataReceived;
+      case 21:
+        return CallEventType.peerSharedContentsSet;
+      case 22:
+        return CallEventType.peerSharedContentsUnset;
+      case 23:
+        return CallEventType.peerExclusivelySharedContentsSet;
+      case 24:
+        return CallEventType.peerExclusivelySharedContentsUnset;
+      case 25:
+        return CallEventType.dataSessionIncoming;
+      case 26:
+        return CallEventType.dataSessionInboundReceived;
+      case 27:
+        return CallEventType.dataSessionInboundClosed;
+      case 28:
+        return CallEventType.dataSessionOutboundClosed;
+      case 29:
+        return CallEventType.dataSessionOutboundTooLongQueuedData;
       case 100:
         return CallEventType.adoptBackgroundCall;
       default:

@@ -1,0 +1,276 @@
+// Copyright 2024 LINE Plus Corporation
+//
+// LINE Plus Corporation licenses this file to you under the Apache License,
+// version 2.0 (the "License"); you may not use this file except in compliance
+// with the License. You may obtain a copy of the License at:
+//
+//   https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+// License for the specific language governing permissions and limitations
+// under the License.
+
+import 'dart:typed_data';
+
+import '../planet_kit_user_id.dart';
+
+/// A stream ID that identifies a data session.
+///
+/// The application statically defines this value in the range [100, 999].
+/// The same stream ID identifies both the outbound and inbound channels.
+typedef PlanetKitDataSessionStreamId = int;
+
+/// The transfer type of a data session.
+enum PlanetKitDataSessionType {
+  /// Reliable message: retransmitted on loss. One send is delivered as exactly
+  /// one receive callback. The offset has no meaning (always 0).
+  reliableMessage,
+
+  /// Reliable bytes: retransmitted on loss. Delivered as one or more receive
+  /// callbacks, each carrying an offset within the inbound byte stream.
+  reliableBytes,
+
+  /// Unreliable bytes: not retransmitted. Delivered as one or more receive
+  /// callbacks, each carrying an offset within the inbound byte stream.
+  unreliableBytes,
+
+  /// Unreliable message: not retransmitted. One send is delivered as exactly
+  /// one receive callback. The offset has no meaning (always 0).
+  unreliableMessage;
+
+  /// @nodoc
+  int get intValue {
+    switch (this) {
+      case PlanetKitDataSessionType.reliableMessage:
+        return 1;
+      case PlanetKitDataSessionType.reliableBytes:
+        return 2;
+      case PlanetKitDataSessionType.unreliableBytes:
+        return 3;
+      case PlanetKitDataSessionType.unreliableMessage:
+        return 4;
+    }
+  }
+
+  /// @nodoc
+  /// Returns null for the internal `unknown` (0) value, which is not exposed.
+  static PlanetKitDataSessionType? fromInt(int value) {
+    switch (value) {
+      case 1:
+        return PlanetKitDataSessionType.reliableMessage;
+      case 2:
+        return PlanetKitDataSessionType.reliableBytes;
+      case 3:
+        return PlanetKitDataSessionType.unreliableBytes;
+      case 4:
+        return PlanetKitDataSessionType.unreliableMessage;
+      default:
+        return null;
+    }
+  }
+}
+
+/// The reason a data session creation (make) call failed.
+///
+/// All reasons reported by the native SDK are exposed.
+enum PlanetKitDataSessionFailReason {
+  /// Success.
+  none,
+
+  /// An unexpected internal error occurred. (Defensive reason; the app does not
+  /// trigger this directly.)
+  internal,
+
+  /// An inbound data session was requested without a preceding incoming event.
+  /// Inbound sessions can only be created after an `onDataSessionIncoming`
+  /// notification.
+  notIncoming,
+
+  /// A data session with the same stream ID already exists.
+  /// Retrieve the existing instance with `getOutboundDataSession` /
+  /// `getInboundDataSession`.
+  alreadyExist,
+
+  /// The stream ID is invalid. The valid range is [100, 999].
+  invalidId,
+
+  /// The data session type is invalid. (The public Dart `type` is a closed
+  /// enum, so this is a native-consistency reason that is not produced on the
+  /// normal path.)
+  invalidType;
+
+  /// @nodoc
+  static PlanetKitDataSessionFailReason fromInt(int value) {
+    switch (value) {
+      case 0:
+        return PlanetKitDataSessionFailReason.none;
+      case 1:
+        return PlanetKitDataSessionFailReason.internal;
+      case 3:
+        return PlanetKitDataSessionFailReason.notIncoming;
+      case 4:
+        return PlanetKitDataSessionFailReason.alreadyExist;
+      case 5:
+        return PlanetKitDataSessionFailReason.invalidId;
+      case 6:
+        return PlanetKitDataSessionFailReason.invalidType;
+      default:
+        return PlanetKitDataSessionFailReason.internal;
+    }
+  }
+}
+
+/// The reason a data session was closed.
+enum PlanetKitDataSessionClosedReason {
+  /// The session ended normally (for example, the call/conference ended).
+  sessionEnd,
+
+  /// The session was closed abnormally due to an internal error.
+  internal,
+
+  /// The peer does not support the stream ID (marked as unsupported).
+  unsupported;
+
+  /// @nodoc
+  static PlanetKitDataSessionClosedReason fromInt(int value) {
+    switch (value) {
+      case 0:
+        return PlanetKitDataSessionClosedReason.sessionEnd;
+      case 1:
+        return PlanetKitDataSessionClosedReason.internal;
+      case 2:
+        return PlanetKitDataSessionClosedReason.unsupported;
+      default:
+        return PlanetKitDataSessionClosedReason.internal;
+    }
+  }
+}
+
+/// An outbound data session used to send binary data to the peer(s).
+class PlanetKitOutboundDataSession {
+  /// The stream ID that identifies this data session.
+  final PlanetKitDataSessionStreamId streamId;
+
+  /// The transfer type of this data session.
+  final PlanetKitDataSessionType type;
+
+  final Future<bool> Function(Uint8List data, int timestamp) _send;
+  final Future<bool> Function(PlanetKitUserId? target) _changeDestination;
+
+  PlanetKitUserId? _target;
+
+  /// @nodoc
+  PlanetKitOutboundDataSession(
+      {required this.streamId,
+      required this.type,
+      required Future<bool> Function(Uint8List data, int timestamp) send,
+      required Future<bool> Function(PlanetKitUserId? target)
+          changeDestination})
+      : _send = send,
+        _changeDestination = changeDestination;
+
+  /// The current receiver target, or null when data is sent to all peers.
+  ///
+  /// Starts as null (all peers). Updated by a successful [changeDestination].
+  PlanetKitUserId? get target => _target;
+
+  /// Sends binary [data] over the data session and returns whether the send
+  /// request was accepted.
+  ///
+  /// [timestamp] is an app-defined value used to identify the data on the
+  /// receiving side. The [data] must be within the per-type maximum size
+  /// (message types: 128 KB, byte types: 4 MB).
+  Future<bool> send(Uint8List data, int timestamp) => _send(data, timestamp);
+
+  /// Changes the receiver [target] to a specific peer, or to all peers when
+  /// [target] is null, and returns whether the change was accepted.
+  ///
+  /// On success the current [target] is updated. This is meaningful for a
+  /// conference.
+  Future<bool> changeDestination(PlanetKitUserId? target) async {
+    final changed = await _changeDestination(target);
+    if (changed) {
+      _target = target;
+    }
+    return changed;
+  }
+}
+
+/// A handler for outbound data session events.
+class PlanetKitOutboundDataSessionHandler {
+  /// Called when the session is closed.
+  final void Function(PlanetKitOutboundDataSession session,
+      PlanetKitDataSessionClosedReason reason)? onClose;
+
+  /// Called when the send back-pressure state is raised (`enabled == true`)
+  /// or cleared (`enabled == false`).
+  final void Function(PlanetKitOutboundDataSession session, bool enabled)?
+      onTooLongQueuedData;
+
+  /// Constructs a [PlanetKitOutboundDataSessionHandler].
+  const PlanetKitOutboundDataSessionHandler(
+      {this.onClose, this.onTooLongQueuedData});
+}
+
+/// An inbound data session used to receive binary data from the peer(s).
+class PlanetKitInboundDataSession {
+  /// The stream ID that identifies this data session.
+  final PlanetKitDataSessionStreamId streamId;
+
+  /// The transfer type of this data session.
+  final PlanetKitDataSessionType type;
+
+  /// @nodoc
+  PlanetKitInboundDataSession({required this.streamId, required this.type});
+}
+
+/// A handler for inbound data session events.
+class PlanetKitInboundDataSessionHandler {
+  /// Called when the session is closed.
+  final void Function(PlanetKitInboundDataSession session,
+      PlanetKitDataSessionClosedReason reason)? onClose;
+
+  /// Called when data is received.
+  ///
+  /// [offset] is the byte position within the inbound stream for byte types,
+  /// and 0 for message types.
+  final void Function(PlanetKitInboundDataSession session, PlanetKitUserId peerId,
+      Uint8List data, int timestamp, int offset)? onReceive;
+
+  /// Constructs a [PlanetKitInboundDataSessionHandler].
+  const PlanetKitInboundDataSessionHandler({this.onClose, this.onReceive});
+}
+
+/// The result of creating an outbound data session.
+///
+/// On success, [dataSession] is non-null and [reason] is
+/// [PlanetKitDataSessionFailReason.none].
+class PlanetKitMakeOutboundDataSessionResult {
+  /// The fail reason. [PlanetKitDataSessionFailReason.none] on success.
+  final PlanetKitDataSessionFailReason reason;
+
+  /// The created session, or null on failure.
+  final PlanetKitOutboundDataSession? dataSession;
+
+  /// @nodoc
+  PlanetKitMakeOutboundDataSessionResult(
+      {required this.reason, this.dataSession});
+}
+
+/// The result of creating an inbound data session.
+///
+/// On success, [dataSession] is non-null and [reason] is
+/// [PlanetKitDataSessionFailReason.none].
+class PlanetKitMakeInboundDataSessionResult {
+  /// The fail reason. [PlanetKitDataSessionFailReason.none] on success.
+  final PlanetKitDataSessionFailReason reason;
+
+  /// The created session, or null on failure.
+  final PlanetKitInboundDataSession? dataSession;
+
+  /// @nodoc
+  PlanetKitMakeInboundDataSessionResult(
+      {required this.reason, this.dataSession});
+}

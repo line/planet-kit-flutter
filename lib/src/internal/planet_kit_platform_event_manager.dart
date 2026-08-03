@@ -28,13 +28,17 @@ import 'planet_kit_platform_interface.dart';
 // BackgroundEventManager moved to `planet_kit_platform_background_event_manager.dart`
 
 class EventManager implements EventManagerInterface {
-  final EventChannel _eventChannel = const EventChannel('planetkit_event');
-  final EventChannel _interceptedAudioStream =
-      const EventChannel('planetkit_hooked_audio');
+  final EventChannel _eventChannel;
+  final EventChannel _interceptedAudioStream;
 
   final Map<String, HookedAudioHandler> _interceptedAudioHandlers = {};
 
-  EventManager() {
+  EventManager({
+    EventChannel eventChannel = const EventChannel('planetkit_event'),
+    EventChannel interceptedAudioStream =
+        const EventChannel('planetkit_hooked_audio'),
+  })  : _eventChannel = eventChannel,
+        _interceptedAudioStream = interceptedAudioStream {
     print("#flutter_method_channel event manager constructor");
     _eventChannel.receiveBroadcastStream().listen(_onEvent, onError: _onError);
     _interceptedAudioStream
@@ -47,24 +51,33 @@ class EventManager implements EventManagerInterface {
   }
 
   void _onEvent(dynamic data) {
-    Map<String, dynamic> jsonMap = jsonDecode(data);
-    final eventData = Event.fromJson(jsonMap);
+    // Parsing happens inside the broadcast stream's onData callback. A throw
+    // here (malformed payload, missing/wrong-typed field, decode failure) is
+    // not delivered to `onError`, so it must be contained to avoid dropping
+    // events or polluting the zone's uncaught-error handler. One bad event
+    // must never affect delivery of subsequent events.
+    try {
+      Map<String, dynamic> jsonMap = jsonDecode(data);
+      final eventData = Event.fromJson(jsonMap);
 
-    if (eventData.type == EventType.call) {
-      final callEvent = CallEventFactory.fromJson(jsonMap);
-      _callEventController.add(callEvent);
-    } else if (eventData.type == EventType.myMediaStatus) {
-      final eventData = MyMediaStatusEventFactory.fromJson(jsonMap);
-      _myMediaStatusEventController.add(eventData);
-    } else if (eventData.type == EventType.conference) {
-      final eventData = ConferenceEventFactory.fromJson(jsonMap);
-      _conferenceEventController.add(eventData);
-    } else if (eventData.type == EventType.peerControl) {
-      final eventData = PeerControlEventFactory.fromJson(jsonMap);
-      _peerControlEventController.add(eventData);
-    } else if (eventData.type == EventType.camera) {
-      final eventData = CameraEventFactory.fromJson(jsonMap);
-      _cameraEventController.add(eventData);
+      if (eventData.type == EventType.call) {
+        final callEvent = CallEventFactory.fromJson(jsonMap);
+        _callEventController.add(callEvent);
+      } else if (eventData.type == EventType.myMediaStatus) {
+        final eventData = MyMediaStatusEventFactory.fromJson(jsonMap);
+        _myMediaStatusEventController.add(eventData);
+      } else if (eventData.type == EventType.conference) {
+        final eventData = ConferenceEventFactory.fromJson(jsonMap);
+        _conferenceEventController.add(eventData);
+      } else if (eventData.type == EventType.peerControl) {
+        final eventData = PeerControlEventFactory.fromJson(jsonMap);
+        _peerControlEventController.add(eventData);
+      } else if (eventData.type == EventType.camera) {
+        final eventData = CameraEventFactory.fromJson(jsonMap);
+        _cameraEventController.add(eventData);
+      }
+    } catch (e, stackTrace) {
+      print("#flutter_event_manager dropped malformed event: $e\n$stackTrace");
     }
   }
 

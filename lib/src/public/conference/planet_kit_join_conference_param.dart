@@ -70,6 +70,11 @@ class PlanetKitJoinConferenceParam {
   @PlanetKitInitialMyVideoStateConverter()
   final PlanetKitInitialMyVideoState initialMyVideoState;
 
+  /// Application-defined data delivered to the app server when the conference starts.
+  /// Maximum size is 4096 bytes including null termination. Exceeding this limit
+  /// causes the join to fail with [PlanetKitStartFailReason.tooLongAppServerData].
+  final String? appServerData;
+
   /// @nodoc
   PlanetKitJoinConferenceParam._(
       {required this.myUserId,
@@ -86,7 +91,8 @@ class PlanetKitJoinConferenceParam {
       required this.callKitType,
       required this.enableStatistics,
       required this.screenShareKey,
-      required this.initialMyVideoState});
+      required this.initialMyVideoState,
+      required this.appServerData});
 
   /// @nodoc
   Map<String, dynamic> toJson() => _$PlanetKitJoinConferenceParamToJson(this);
@@ -110,6 +116,7 @@ class PlanetKitJoinConferenceParamBuilder {
   ScreenShareKey? _screenShareKey;
   PlanetKitInitialMyVideoState _initialMyVideoState =
       PlanetKitInitialMyVideoState.resume;
+  String? _appServerData;
 
   /// Sets the user ID and returns the builder.
   PlanetKitJoinConferenceParamBuilder setMyUserId(String myUserId) {
@@ -207,6 +214,13 @@ class PlanetKitJoinConferenceParamBuilder {
     return this;
   }
 
+  /// Sets application-defined data delivered to the app server and returns the builder.
+  /// Maximum size is 4096 bytes including null termination.
+  PlanetKitJoinConferenceParamBuilder setAppServerData(String appServerData) {
+    _appServerData = appServerData;
+    return this;
+  }
+
   /// Builds and returns a [PlanetKitJoinConferenceParam] instance.
   ///
   /// Throws an exception if any required fields are not set.
@@ -236,6 +250,9 @@ class PlanetKitJoinConferenceParamBuilder {
         callKitType: _callKitType,
         enableStatistics: _enableStatistics,
         screenShareKey: _screenShareKey,
-        initialMyVideoState: _initialMyVideoState);
+        initialMyVideoState: _initialMyVideoState,
+        // Treat empty string as unset (no app server data attached) per flt-EC003.
+        appServerData:
+            (_appServerData?.isNotEmpty ?? false) ? _appServerData : null);
   }
 }

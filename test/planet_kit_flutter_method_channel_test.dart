@@ -20,7 +20,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   MethodChannelPlanetKit platform = MethodChannelPlanetKit();
-  const MethodChannel channel = MethodChannel('planet_kit_flutter');
+  const MethodChannel channel = MethodChannel('planetkit_sdk');
 
   setUp(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger

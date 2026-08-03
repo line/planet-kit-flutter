@@ -20,6 +20,7 @@ import '../internal/call/planet_kit_background_call_impl.dart'
 import 'my_media_status/planet_kit_my_media_status.dart';
 import 'planet_kit_start_fail_reason.dart';
 import 'planet_kit_init_param.dart';
+import 'planet_kit_version_info.dart';
 import 'call/planet_kit_call.dart';
 import 'call/planet_kit_verify_call_param.dart';
 import 'call/planet_kit_verify_call_result.dart';
@@ -41,6 +42,16 @@ class PlanetKitManager {
   /// Retrieves the platform version.
   Future<String?> getPlatformVersion() {
     return Platform.instance.getPlatformVersion();
+  }
+
+  /// Retrieves detailed version information about the running PlanetKit stack.
+  ///
+  /// Returns the native PlanetKit SDK version, the Flutter plugin version, and
+  /// (after [initializePlanetKit]) the SDK user agent. Useful for surfacing the
+  /// current versions in a debug/about screen. Returns `null` if the platform
+  /// fails to provide the information.
+  Future<PlanetKitVersionInfo?> getVersionInfo() {
+    return Platform.instance.getVersionInfo();
   }
 
   /// Initializes the PlanetKit with the given initialization parameters.
