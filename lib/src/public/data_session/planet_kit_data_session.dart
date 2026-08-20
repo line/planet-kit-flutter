@@ -25,7 +25,10 @@ typedef PlanetKitDataSessionStreamId = int;
 /// The transfer type of a data session.
 enum PlanetKitDataSessionType {
   /// Reliable message: retransmitted on loss. One send is delivered as exactly
-  /// one receive callback. The offset has no meaning (always 0).
+  /// one receive callback.
+  ///
+  /// The receive offset is still the session-cumulative byte position, exactly
+  /// as for the byte types — it is 0 only for the first message on a session.
   reliableMessage,
 
   /// Reliable bytes: retransmitted on loss. Delivered as one or more receive
@@ -37,7 +40,10 @@ enum PlanetKitDataSessionType {
   unreliableBytes,
 
   /// Unreliable message: not retransmitted. One send is delivered as exactly
-  /// one receive callback. The offset has no meaning (always 0).
+  /// one receive callback.
+  ///
+  /// The receive offset is still the session-cumulative byte position, exactly
+  /// as for the byte types — it is 0 only for the first message on a session.
   unreliableMessage;
 
   /// @nodoc
@@ -179,9 +185,15 @@ class PlanetKitOutboundDataSession {
   /// Sends binary [data] over the data session and returns whether the send
   /// request was accepted.
   ///
-  /// [timestamp] is an app-defined value used to identify the data on the
-  /// receiving side. The [data] must be within the per-type maximum size
-  /// (message types: 128 KB, byte types: 4 MB).
+  /// [timestamp] is an app-defined value forwarded to the receiver's
+  /// `onReceive` callback unchanged. Its meaning is entirely up to the app.
+  ///
+  /// One way to use it, when several logical transfers share a session, is to
+  /// set it to the transfer's absolute end position — the offset the transfer
+  /// started at plus its payload size — so the receiver can derive the payload
+  /// size as `timestamp - offset`. This release does not expose the session's
+  /// cumulative send offset, so an app doing that has to track the offset
+  /// itself, by summing the payload sizes of the sends that were accepted.
   Future<bool> send(Uint8List data, int timestamp) => _send(data, timestamp);
 
   /// Changes the receiver [target] to a specific peer, or to all peers when
@@ -234,8 +246,17 @@ class PlanetKitInboundDataSessionHandler {
 
   /// Called when data is received.
   ///
-  /// [offset] is the byte position within the inbound stream for byte types,
-  /// and 0 for message types.
+  /// [offset] is the byte position of this data within the inbound stream. It
+  /// is cumulative over the session's whole lifetime and is *not* reset between
+  /// logical transfers, so it is 0 only for the first chunk received on a
+  /// session. This holds for message types too, which differ from the byte
+  /// types only in that one send arrives as exactly one callback.
+  ///
+  /// [timestamp] is the value the sender passed to
+  /// [PlanetKitOutboundDataSession.send], forwarded unchanged. Its meaning is
+  /// defined by the app on both ends: if the sender sets it to a transfer's
+  /// absolute end position, for instance, the payload size on receive is
+  /// `timestamp - offset`.
   final void Function(PlanetKitInboundDataSession session, PlanetKitUserId peerId,
       Uint8List data, int timestamp, int offset)? onReceive;
 
